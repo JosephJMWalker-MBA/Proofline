@@ -158,6 +158,8 @@ class Ingestor:
                     "extraction",
                     evidence_id,
                     extracted.method,
+                    extracted.software_version or "",
+                    extracted.model_version or "",
                     sha256_text(extracted.text or ""),
                 )
                 added = self.store.add_evidence_extraction(
@@ -167,6 +169,8 @@ class Ingestor:
                     method=extracted.method,
                     extracted_text=extracted.text,
                     quality_score=extracted.quality_score,
+                    software_version=extracted.software_version,
+                    model_version=extracted.model_version,
                     warnings=extracted.warnings,
                 )
                 if added:
@@ -179,6 +183,8 @@ class Ingestor:
                             method=extracted.method,
                             artifact_id=artifact_id,
                             evidence_id=evidence_id,
+                            software_version=extracted.software_version,
+                            model_version=extracted.model_version,
                             quality_score=extracted.quality_score,
                             warnings=extracted.warnings,
                         )
