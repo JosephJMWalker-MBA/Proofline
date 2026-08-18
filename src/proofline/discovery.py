@@ -47,6 +47,7 @@ class DiscoveryResult:
     plan: str
     manifest: SourceManifest
     index_artifact_ids: tuple[str, ...]
+    supporting_artifact_ids: tuple[str, ...]
     manifest_sha256: str
 
     def to_dict(self) -> dict:
@@ -54,6 +55,7 @@ class DiscoveryResult:
             "plan": self.plan,
             "manifest": manifest_to_dict(self.manifest),
             "index_artifact_ids": list(self.index_artifact_ids),
+            "supporting_artifact_ids": list(self.supporting_artifact_ids),
             "manifest_sha256": self.manifest_sha256,
         }
 
@@ -194,10 +196,23 @@ def _native_identifier(uri: str, fmt: str) -> str | None:
     return f"civicengage-{match.group(1)}-{match.group(2)}-{fmt}"
 
 
+def _resource_from_link(link: DiscoveredLink, fmt: str, *, archived: bool = False) -> ManifestResource:
+    media_type = "text/html" if fmt == "html" else "application/pdf"
+    label = f"ARCHIVED {fmt.upper()}" if archived else fmt.upper()
+    identifier_format = f"archived-{fmt}" if archived else fmt
+    return ManifestResource(
+        source_uri=link.source_uri,
+        source_name=f"{link.category} — {link.meeting_label} — {label}",
+        native_identifier=_native_identifier(link.source_uri, identifier_format),
+        expected_media_type=media_type,
+    )
+
+
 def discover_civicengage_resources(
     html: str,
     spec: DiscoverySpec,
 ) -> tuple[ManifestResource, ...]:
+    """Discover current meeting records and published version-listing pages."""
     parser = _AgendaCenterParser(spec.source_uri)
     parser.feed(html)
     parser.close()
@@ -214,19 +229,49 @@ def discover_civicengage_resources(
         if fmt == "versions":
             if not spec.include_previous_versions:
                 continue
-            media_type = "text/html"
-        elif fmt is None or fmt not in spec.formats:
-            continue
-        else:
-            media_type = "text/html" if fmt == "html" else "application/pdf"
+            resources[link.source_uri] = ManifestResource(
+                source_uri=link.source_uri,
+                source_name=f"{link.category} — {link.meeting_label} — VERSIONS",
+                native_identifier=_native_identifier(link.source_uri, "versions"),
+                expected_media_type="text/html",
+            )
+        elif fmt is not None and fmt in spec.formats:
+            resources[link.source_uri] = _resource_from_link(link, fmt)
 
-        name = f"{link.category} — {link.meeting_label} — {fmt.upper()}"
-        resources[link.source_uri] = ManifestResource(
-            source_uri=link.source_uri,
-            source_name=name,
-            native_identifier=_native_identifier(link.source_uri, fmt),
-            expected_media_type=media_type,
-        )
+    return tuple(resources[uri] for uri in sorted(resources))
+
+
+def discover_civicengage_previous_versions(
+    html: str,
+    *,
+    listing_uri: str,
+    spec: DiscoverySpec,
+) -> tuple[ManifestResource, ...]:
+    """Enumerate historical files explicitly linked by a Previous Versions page.
+
+    Only `ArchivedAgenda` links are accepted. Current `Agenda` links are ignored
+    so a historical listing cannot make the current record look like independent
+    corroboration.
+    """
+    parser = _AgendaCenterParser(listing_uri)
+    parser.feed(html)
+    parser.close()
+
+    wanted_categories = {value.casefold() for value in spec.categories}
+    resources: dict[str, ManifestResource] = {}
+    for link in parser.links:
+        if link.category.casefold() not in wanted_categories:
+            continue
+        year = _meeting_year(link.meeting_label)
+        if year not in spec.years:
+            continue
+        parsed = urlparse(link.source_uri)
+        if "/AgendaCenter/ViewFile/ArchivedAgenda/" not in parsed.path:
+            continue
+        fmt = _link_format(link)
+        if fmt is None or fmt not in spec.formats:
+            continue
+        resources[link.source_uri] = _resource_from_link(link, fmt, archived=True)
 
     return tuple(resources[uri] for uri in sorted(resources))
 
@@ -244,15 +289,26 @@ def manifest_to_dict(manifest: SourceManifest) -> dict:
 
 
 class SourceDiscoverer:
-    """Preserve official index pages, then derive a deterministic watch manifest."""
+    """Preserve official discovery pages, then derive a deterministic watch manifest."""
 
     def __init__(self, state_dir: str | Path = ".proofline") -> None:
         self.state_dir = Path(state_dir)
         self.watcher = CorpusWatcher(self.state_dir)
 
+    def _artifact_text(self, artifact_id: str) -> str:
+        with self.watcher.store.connection() as connection:
+            row = connection.execute(
+                "SELECT stored_path FROM artifacts WHERE artifact_id = ?",
+                (artifact_id,),
+            ).fetchone()
+        if row is None:
+            raise RuntimeError(f"discovery artifact missing from store: {artifact_id}")
+        return (self.state_dir / row["stored_path"]).read_text(encoding="utf-8", errors="replace")
+
     def run(self, plan: DiscoveryPlan) -> DiscoveryResult:
         combined: dict[str, ManifestResource] = {}
         index_artifacts: list[str] = []
+        supporting_artifacts: list[str] = []
 
         for spec in plan.discoverers:
             index_manifest = SourceManifest(
@@ -272,18 +328,36 @@ class SourceDiscoverer:
                 continue
             index_artifacts.append(artifact_id)
 
-            with self.watcher.store.connection() as connection:
-                row = connection.execute(
-                    "SELECT stored_path FROM artifacts WHERE artifact_id = ?",
-                    (artifact_id,),
-                ).fetchone()
-            if row is None:
-                raise RuntimeError(f"discovery artifact missing from store: {artifact_id}")
-            raw_html = (self.state_dir / row["stored_path"]).read_text(
-                encoding="utf-8", errors="replace"
-            )
-            for resource in discover_civicengage_resources(raw_html, spec):
-                combined[resource.source_uri] = resource
+            raw_html = self._artifact_text(artifact_id)
+            primary = discover_civicengage_resources(raw_html, spec)
+            version_listings = [
+                resource
+                for resource in primary
+                if "/AgendaCenter/PreviousVersions/" in urlparse(resource.source_uri).path
+            ]
+            for resource in primary:
+                if resource not in version_listings:
+                    combined[resource.source_uri] = resource
+
+            if spec.include_previous_versions and version_listings:
+                version_manifest = SourceManifest(
+                    name=f"{plan.name}:version-listings",
+                    resources=tuple(version_listings),
+                )
+                version_watch = self.watcher.run(version_manifest)
+                for result in version_watch["results"]:
+                    version_artifact_id = result.get("artifact_id")
+                    source_uri = result.get("source_uri")
+                    if not version_artifact_id or not source_uri:
+                        continue
+                    supporting_artifacts.append(version_artifact_id)
+                    version_html = self._artifact_text(version_artifact_id)
+                    for archived in discover_civicengage_previous_versions(
+                        version_html,
+                        listing_uri=source_uri,
+                        spec=spec,
+                    ):
+                        combined[archived.source_uri] = archived
 
         manifest = SourceManifest(
             name=f"{plan.name}:discovered",
@@ -294,6 +368,7 @@ class SourceDiscoverer:
             plan=plan.name,
             manifest=manifest,
             index_artifact_ids=tuple(index_artifacts),
+            supporting_artifact_ids=tuple(supporting_artifacts),
             manifest_sha256=sha256_text(serialized),
         )
 
