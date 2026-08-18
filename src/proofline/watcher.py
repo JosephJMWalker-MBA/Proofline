@@ -200,7 +200,9 @@ class CorpusWatcher:
     def check_resource(self, resource: ManifestResource, *, run_id: str, manifest_name: str) -> WatchResult:
         checked_at = datetime.now(UTC)
         source_id = self.store.add_source(resource.source_uri, resource.source_name)
-        previous = self.store.latest_artifact_for_source(source_id)
+        previous = self.watch_store.latest_successful_artifact(source_id)
+        if previous is None:
+            previous = self.store.latest_artifact_for_source(source_id)
         last_error: str | None = None
         last_status: int | None = None
 
