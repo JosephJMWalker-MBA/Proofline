@@ -1,0 +1,21 @@
+{
+  "schema": "proofline-discovery-plan/v1",
+  "name": "canton-2026-public-records",
+  "discoverers": [
+    {
+      "type": "civicengage_agenda_center",
+      "source_uri": "https://cantonohio.gov/AgendaCenter",
+      "categories": [
+        "Board of Control",
+        "City Council"
+      ],
+      "years": [
+        2026
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "include_previous_versions": true
+    }
+  ]
+}
