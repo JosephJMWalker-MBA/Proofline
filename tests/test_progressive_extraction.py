@@ -19,15 +19,16 @@ from tests.fixture_corpus import build_fixture_corpus
 class FakeOcrBackend:
     name = "fake_ocr"
 
-    def __init__(self, version: str = "fake-1") -> None:
+    def __init__(self, version: str = "fake-1", quality: float = 0.99) -> None:
         self.version = version
+        self.quality = quality
 
     def extract_page(self, path, page_number: int) -> OcrPageResult:
         return OcrPageResult(
             page_number=page_number,
             text="Scanned memorandum: emergency procurement review",
             method=self.name,
-            quality_score=0.99,
+            quality_score=self.quality,
             software_version=self.version,
             model_version="fixture-model",
         )
@@ -80,6 +81,17 @@ def test_ocr_escalation_preserves_evidence_identity_and_attempt_history(tmp_path
         "fake-1",
         "fake-2",
     }
+
+    # Forced experimentation may perform worse, but it must not displace a
+    # better retained extraction merely because it happened later.
+    worse = ProgressiveExtractor(state).run_ocr(
+        ingest.artifact_id, FakeOcrBackend("fake-3", quality=0.20), force=True
+    )
+    assert worse.added == 1
+    assert len(extraction_attempts(store, evidence_id)) == 4
+    assert preferred_extraction(store, evidence_id)["quality_score"] == 0.99
+    assert review_queue(state) == []
+
     with store.connection() as connection:
         persisted_id = connection.execute(
             "SELECT evidence_id FROM evidence_units WHERE artifact_id = ?",
