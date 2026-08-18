@@ -95,7 +95,7 @@ public source
 watch/acquisition ---> artifact hash/version history
     |
     v
-extraction ---> page/record evidence ---> quality review queue
+progressive extraction ---> page/row evidence ---> quality review queue
     |
     v
 normalization ---> FTS / vector / graph indexes
@@ -132,16 +132,27 @@ proofline changes
 proofline changes --include-unchanged
 ```
 
-Each visit classifies a resource as:
+Each visit classifies a resource as `new`, `unchanged`, `changed`, or `unavailable`. A `changed` state means the bytes differ from the immediately prior successful observation. It does not explain why they changed. An `unavailable` state records a failed check; it does not by itself establish deletion or intentional removal.
 
-- `new`
-- `unchanged`
-- `changed`
-- `unavailable`
+### Review and improve extraction
 
-A `changed` state means the bytes differ from the immediately prior successful observation. It does not explain why they changed. An `unavailable` state records a failed check; it does not by itself establish deletion or intentional removal.
+```bash
+proofline review
+proofline review --threshold 0.80
+```
 
-Explicit numeric sequence metadata can also surface structural gaps without guessing identifier semantics from filenames.
+Native text is used first. Low-quality pages can be escalated with the optional local Tesseract backend:
+
+```bash
+proofline extract artifact:<sha256> --ocr tesseract
+proofline extract artifact:<sha256> --ocr tesseract --language eng --dpi 300
+```
+
+Tesseract is an optional external runtime dependency; Proofline itself can ingest and queue scanned pages without it. OCR attempts are appended rather than replacing native extraction. A forced later attempt that performs worse does not displace a better retained extraction.
+
+CSV and XLSX files are streamed row-by-row into citeable `spreadsheet_range` evidence units. Excel formulas are preserved as source expressions and are not locally evaluated.
+
+See [docs/EXTRACTION.md](docs/EXTRACTION.md).
 
 ## Local state
 
@@ -159,31 +170,43 @@ Original bytes are copied to content-addressed storage before extraction. If the
 
 ## Current implementation
 
-The evidence core includes:
+### Evidence core
 
 - SHA-256 content-addressed artifacts
 - deterministic source/evidence identifiers
 - immutable source/artifact lineage
 - stable page/logical evidence units
-- append-only evidence extraction history
-- append-only processing events enforced by SQLite triggers
-- native PyMuPDF page extraction with Unicode-aware quality scoring
-- text-file extraction
+- append-only extraction and processing history
 - observation and lead persistence with evidence-reference validation
 - `proofline ingest`, `proofline status`, and `proofline trace`
-- a generated difficult fixture corpus covering scans, corruption, duplicates, revisions, and conflicting structured records
 
-The corpus watcher includes:
+### Corpus watcher
 
 - versioned JSON manifests
-- HTTP acquisition with retry/backoff and media validation
+- HTTP retry/backoff and media validation
 - HTTP status, content type, ETag, and Last-Modified capture
 - append-only source-check history
 - `new`, `unchanged`, `changed`, and `unavailable` states
-- correct change chronology across source reversions
+- correct chronology across source reversions
 - explicit sequence-gap primitives
 - `proofline watch` and `proofline changes`
 
-Scheduling is intentionally external to the evidence core: cron, systemd timers, container schedulers, or hosted job runners can invoke the same deterministic `proofline watch` command at the desired cadence.
+Scheduling is intentionally external to the evidence core: cron, systemd timers, container schedulers, or hosted job runners can invoke the same deterministic watcher command at the desired cadence.
 
-See [ROADMAP.md](ROADMAP.md), [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md), and [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
+### Progressive extraction
+
+- native PDF/text/JSON/XML handling
+- Unicode-aware text-quality heuristics
+- versioned extraction attempts
+- preferred-extraction selection without deleting earlier attempts
+- optional PyMuPDF/Tesseract OCR escalation
+- review queue and threshold controls
+- streaming CSV and XLSX row evidence
+- formula preservation without formula evaluation
+- generated difficult fixtures for scans, corruption, duplicates, revisions, conflicting rows, and formula workbooks
+
+## Next milestone
+
+**Milestone 3: Search & Retrieval Evaluation** focuses on finding the correct evidence before adding semantic/vector infrastructure. The initial target is SQLite FTS5 plus an evaluation set that measures retrieval recall and provenance accuracy.
+
+See [ROADMAP.md](ROADMAP.md), [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md), [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md), and [docs/EXTRACTION.md](docs/EXTRACTION.md).
