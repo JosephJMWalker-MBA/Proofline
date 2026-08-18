@@ -1,0 +1,60 @@
+name: canton-calendar-agenda-probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/canton-calendar-agenda-probe.yml"
+      - "scripts/inspect_canton_calendar_agendas.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Inspect verified-host Council agenda events
+        run: |
+          mkdir -p calendar-probe
+          python scripts/inspect_canton_calendar_agendas.py | tee calendar-probe/calendar-agenda-links.json
+          test -s calendar-probe/calendar-agenda-links.json
+
+      - name: Assert agenda events expose download candidates
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('calendar-probe/calendar-agenda-links.json').read_text())
+          events = payload['events']
+          candidates = [
+              link
+              for event in events
+              for link in event.get('download_candidates', [])
+          ]
+          print(f"calendar agenda events: {len(events)}")
+          print(f"download candidates: {len(candidates)}")
+          if not events:
+              raise SystemExit('no City Council agenda calendar events discovered')
+          if not candidates:
+              raise SystemExit('agenda events exposed no download candidates')
+          PY
+
+      - name: Upload probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canton-calendar-agenda-probe
+          path: calendar-probe/
+          if-no-files-found: error
+          retention-days: 7
