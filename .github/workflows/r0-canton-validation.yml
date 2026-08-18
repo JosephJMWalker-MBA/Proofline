@@ -30,6 +30,9 @@ jobs:
       - name: Install package and tests
         run: python -m pip install -e ".[dev]"
 
+      - name: Initialize results directory
+        run: mkdir -p r0-results
+
       - name: Run full test suite
         run: python -m pytest
 
@@ -41,7 +44,6 @@ jobs:
 
       - name: Run Canton discovery and sync
         run: |
-          mkdir -p r0-results
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
 
