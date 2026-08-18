@@ -11,12 +11,17 @@ requires-python = ">=3.11"
 authors = [
   { name = "Joseph Walker" }
 ]
-dependencies = []
+dependencies = [
+  "pymupdf>=1.24",
+]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
 ]
+
+[project.scripts]
+proofline = "proofline.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/proofline"]
