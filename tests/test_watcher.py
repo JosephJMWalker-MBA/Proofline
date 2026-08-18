@@ -64,7 +64,7 @@ def _manifest(tmp_path, url: str):
     return load_manifest(path)
 
 
-def test_watcher_reports_new_unchanged_changed_and_unavailable(tmp_path):
+def test_watcher_reports_new_unchanged_changed_reversion_and_unavailable(tmp_path):
     server, thread = _server()
     try:
         url = f"http://127.0.0.1:{server.server_port}/record.txt"
@@ -84,16 +84,29 @@ def test_watcher_reports_new_unchanged_changed_and_unavailable(tmp_path):
         assert third["results"][0]["state"] == WatchState.CHANGED.value
         assert third["results"][0]["previous_artifact_id"] == first["results"][0]["artifact_id"]
 
-        _State.status = 404
+        # A source can revert to previously seen bytes. That is still a change
+        # from the immediately prior public state, but the next identical visit
+        # must be unchanged rather than repeatedly compared to version two.
+        _State.body = b"version one"
         fourth = watcher.run(manifest)
-        assert fourth["results"][0]["state"] == WatchState.UNAVAILABLE.value
+        assert fourth["results"][0]["state"] == WatchState.CHANGED.value
+        assert fourth["results"][0]["artifact_id"] == first["results"][0]["artifact_id"]
         assert fourth["results"][0]["previous_artifact_id"] == third["results"][0]["artifact_id"]
+
+        fifth = watcher.run(manifest)
+        assert fifth["results"][0]["state"] == WatchState.UNCHANGED.value
+        assert fifth["results"][0]["previous_artifact_id"] == first["results"][0]["artifact_id"]
+
+        _State.status = 404
+        sixth = watcher.run(manifest)
+        assert sixth["results"][0]["state"] == WatchState.UNAVAILABLE.value
+        assert sixth["results"][0]["previous_artifact_id"] == first["results"][0]["artifact_id"]
 
         store = ProoflineStore(tmp_path / "state" / "proofline.db")
         status = store.status()
         assert status["artifacts"] == 2
         watcher_store = WatcherStore(tmp_path / "state" / "proofline.db")
-        assert watcher_store.count_checks() == 4
+        assert watcher_store.count_checks() == 6
         changes = watcher_store.recent_changes(include_unchanged=False)
         assert {item["state"] for item in changes} == {"new", "changed", "unavailable"}
     finally:
