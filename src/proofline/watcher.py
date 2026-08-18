@@ -36,6 +36,8 @@ class ManifestResource:
     source_name: str | None = None
     native_identifier: str | None = None
     expected_media_type: str | None = None
+    sequence_group: str | None = None
+    sequence_number: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,15 +95,51 @@ def load_manifest(path: str | Path) -> SourceManifest:
         if source_uri in seen:
             raise ValueError(f"duplicate source_uri in manifest: {source_uri}")
         seen.add(source_uri)
+        sequence_group = item.get("sequence_group")
+        sequence_number = item.get("sequence_number")
+        if (sequence_group is None) != (sequence_number is None):
+            raise ValueError("sequence_group and sequence_number must be provided together")
+        if sequence_group is not None and (not isinstance(sequence_group, str) or not sequence_group):
+            raise ValueError("sequence_group must be a non-empty string")
+        if sequence_number is not None and (not isinstance(sequence_number, int) or sequence_number < 0):
+            raise ValueError("sequence_number must be a non-negative integer")
         resources.append(
             ManifestResource(
                 source_uri=source_uri,
                 source_name=item.get("source_name"),
                 native_identifier=item.get("native_identifier"),
                 expected_media_type=item.get("expected_media_type"),
+                sequence_group=sequence_group,
+                sequence_number=sequence_number,
             )
         )
     return SourceManifest(name=name, resources=tuple(resources))
+
+
+def manifest_sequence_gaps(manifest: SourceManifest) -> list[dict]:
+    """Return explicit numeric gaps from manifest-declared sequence metadata."""
+    groups: dict[str, set[int]] = {}
+    for resource in manifest.resources:
+        if resource.sequence_group is None or resource.sequence_number is None:
+            continue
+        groups.setdefault(resource.sequence_group, set()).add(resource.sequence_number)
+
+    gaps: list[dict] = []
+    for group, observed_set in sorted(groups.items()):
+        observed = sorted(observed_set)
+        if len(observed) < 2:
+            continue
+        missing = [number for number in range(observed[0], observed[-1] + 1) if number not in observed_set]
+        if missing:
+            gaps.append(
+                {
+                    "sequence_group": group,
+                    "observed_min": observed[0],
+                    "observed_max": observed[-1],
+                    "missing": missing,
+                }
+            )
+    return gaps
 
 
 class CorpusWatcher:
@@ -274,5 +312,6 @@ class CorpusWatcher:
             "run_id": run_id,
             "manifest": manifest.name,
             "counts": counts,
+            "sequence_gaps": manifest_sequence_gaps(manifest),
             "results": [result.to_dict() for result in results],
         }
