@@ -48,7 +48,7 @@ Immutable original artifacts and retrieval metadata.
 
 ### Silver — Evidence
 
-Reproducible extraction from source artifacts.
+Stable human-inspectable units with append-only extraction attempts.
 
 - pages or logical records
 - extracted text
@@ -56,6 +56,8 @@ Reproducible extraction from source artifacts.
 - extraction method
 - OCR quality/confidence
 - source locator
+
+An evidence unit remains stable while better extraction methods may add new extraction records. A later OCR result does not rewrite the history of an earlier native-text attempt.
 
 ### Gold — Derived
 
@@ -107,8 +109,49 @@ lead desk ---> human investigation
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the working technical model and [GOVERNANCE.md](GOVERNANCE.md) for epistemic and editorial boundaries.
 
+## Milestone 0 quick start
+
+Proofline currently supports local file ingestion, native PDF/text extraction, SQLite persistence, source version history, status reporting, and deterministic observation tracing.
+
+```bash
+python -m pip install -e ".[dev]"
+
+proofline ingest ./records/report.pdf \
+  --source-uri "https://example.gov/reports/report.pdf" \
+  --native-id "REPORT-2026-08"
+
+proofline status
+proofline trace obs:example
+```
+
+By default state is written beneath `.proofline/`:
+
+```text
+.proofline/
+├── proofline.db
+└── artifacts/
+    └── sha256/
+        └── <prefix>/<full-sha256>
+```
+
+Original bytes are copied to content-addressed storage before extraction. If the same source URI later returns different bytes, Proofline preserves both artifacts and links the newer snapshot to the artifact it supersedes.
+
 ## Status
 
-Proofline is in **Milestone 0: Evidence Core**. The first goal is deliberately narrow: prove that an ingested artifact can be hashed, represented immutably, decomposed into evidence units, and referenced by derived observations without losing provenance.
+Proofline is in **Milestone 0: Evidence Core**. Implemented pieces now include:
+
+- SHA-256 content-addressed artifacts
+- deterministic source/evidence identifiers
+- immutable source snapshots and artifact version links
+- stable page/logical evidence units
+- append-only evidence extraction history
+- append-only processing events enforced by SQLite triggers
+- native PyMuPDF page extraction with quality scoring
+- text-file extraction
+- observation and lead persistence with evidence-reference validation
+- `proofline ingest`, `proofline status`, and `proofline trace`
+- tests for provenance, version preservation, immutability, PDF extraction, and CLI behavior
+
+The remaining M0 work is primarily the deliberately difficult fixture corpus and refinement of the stable evidence-reference contract before moving into source watching.
 
 See [ROADMAP.md](ROADMAP.md).
