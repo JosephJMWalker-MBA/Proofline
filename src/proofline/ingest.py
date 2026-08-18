@@ -82,6 +82,7 @@ class Ingestor:
         source_name: str | None = None,
         native_identifier: str | None = None,
         retrieved_at: datetime | None = None,
+        media_type: str | None = None,
     ) -> IngestResult:
         input_path = Path(path).expanduser().resolve()
         if not input_path.is_file():
@@ -90,7 +91,7 @@ class Ingestor:
         retrieved_at = retrieved_at or datetime.now(UTC)
         source_uri = source_uri or input_path.as_uri()
         source_name = source_name or input_path.name
-        media_type = mimetypes.guess_type(input_path.name)[0] or "application/octet-stream"
+        media_type = media_type or mimetypes.guess_type(input_path.name)[0] or "application/octet-stream"
 
         digest = sha256_file(input_path)
         artifact_id = artifact_id_from_sha256(digest)
