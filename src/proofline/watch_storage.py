@@ -90,6 +90,25 @@ class WatcherStore:
                 ),
             )
 
+    def latest_successful_artifact(self, source_id: str) -> str | None:
+        """Return bytes seen on the most recent successful watcher visit.
+
+        This deliberately uses watcher chronology rather than the first-seen
+        source/artifact map, so A -> B -> A reversions are represented correctly.
+        """
+        with self.base.connection() as connection:
+            row = connection.execute(
+                """
+                SELECT artifact_id
+                FROM source_checks
+                WHERE source_id = ? AND artifact_id IS NOT NULL
+                ORDER BY checked_at DESC, rowid DESC
+                LIMIT 1
+                """,
+                (source_id,),
+            ).fetchone()
+        return str(row["artifact_id"]) if row else None
+
     def recent_changes(
         self, *, limit: int = 100, include_unchanged: bool = False, run_id: str | None = None
     ) -> list[dict]:
