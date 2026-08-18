@@ -56,22 +56,34 @@ Exit criterion:
 
 See [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
 
-## Milestone 2 — Progressive Extraction
+## Milestone 2 — Progressive Extraction ✅
 
-Goal: reliably turn heterogeneous records into evidence units while controlling cost.
+**Status: complete.**
 
-Deliverables:
+Goal: reliably turn heterogeneous records into stable evidence units while controlling extraction cost.
 
-- native PDF/text extraction
-- per-page quality heuristics
-- OCR fallback interface
-- review queue for low-confidence pages
-- spreadsheet/native-file adapters
-- extraction version metadata
+Delivered:
+
+- [x] native PDF/text/JSON/XML extraction
+- [x] Unicode-aware per-unit quality heuristics
+- [x] software/model version metadata for extraction attempts
+- [x] append-only producer upgrades even when output text is identical
+- [x] optional OCR backend interface
+- [x] PyMuPDF/Tesseract OCR backend without a hard Tesseract requirement
+- [x] threshold-gated OCR escalation
+- [x] retained native extraction alongside OCR attempts
+- [x] preferred-extraction rule that resists later quality regression
+- [x] `proofline review` review queue
+- [x] streaming CSV row evidence
+- [x] streaming XLSX/XLSM row evidence with formulas preserved, not evaluated
+- [x] difficult fixture corpus with scans, corruption, structured conflicts, and formula workbook
+- [x] extraction/review documentation
 
 Exit criterion:
 
-> Every evidence unit identifies how it was extracted and whether its quality crosses configured thresholds.
+> Every extracted evidence unit has a stable source locator, records how each extraction attempt was produced, exposes whether the preferred extraction meets the configured quality threshold, and can be reprocessed without rewriting prior evidence history.
+
+See [docs/EXTRACTION.md](docs/EXTRACTION.md).
 
 ## Milestone 3 — Search & Retrieval Evaluation
 
@@ -182,4 +194,4 @@ The development corpus should intentionally contain ugly cases:
 - audio/transcript pair
 - conflicting values across authoritative records
 
-The generated corpus currently covers born-digital PDF, image-only scan, exact duplicate, corrupted PDF, source revision pair, and conflicting structured records. Later milestones will extend it as new adapters and detectors arrive.
+The generated corpus currently covers born-digital PDF, image-only scan, exact duplicate, corrupted PDF, source revision pair, conflicting structured records, and a formula-bearing XLSX workbook. Later milestones will extend it as new adapters and detectors arrive.
