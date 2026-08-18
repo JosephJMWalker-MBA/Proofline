@@ -14,6 +14,7 @@ from .progressive import ProgressiveExtractor
 from .review import preferred_extraction, review_count, review_queue
 from .search import SearchIndex
 from .storage import ProoflineStore
+from .structured import StructuredIndex
 from .watcher import CorpusWatcher, load_manifest
 from .watch_storage import WatcherStore
 
@@ -60,7 +61,9 @@ def _build_parser() -> argparse.ArgumentParser:
     extract_parser.add_argument("--dpi", type=int, default=200)
     extract_parser.add_argument("--force", action="store_true")
 
-    subparsers.add_parser("index", help="Rebuild the disposable lexical evidence index")
+    subparsers.add_parser(
+        "index", help="Rebuild disposable lexical and structured evidence indexes"
+    )
 
     search_parser = subparsers.add_parser("search", help="Search preferred evidence with FTS5")
     search_parser.add_argument("query")
@@ -70,6 +73,26 @@ def _build_parser() -> argparse.ArgumentParser:
         "lookup", help="Look up evidence by an exact publisher-native identifier"
     )
     lookup_parser.add_argument("native_identifier")
+
+    amount_parser = subparsers.add_parser(
+        "amounts", help="Find evidence containing deterministically normalized monetary values"
+    )
+    amount_parser.add_argument("--min", dest="minimum", type=float)
+    amount_parser.add_argument("--max", dest="maximum", type=float)
+    amount_parser.add_argument("--limit", type=int, default=100)
+
+    dates_parser = subparsers.add_parser(
+        "dates", help="Find evidence by normalized date range"
+    )
+    dates_parser.add_argument("--from", dest="start")
+    dates_parser.add_argument("--to", dest="end")
+    dates_parser.add_argument("--limit", type=int, default=100)
+
+    identifier_parser = subparsers.add_parser(
+        "identifier", help="Find an identifier extracted from evidence content"
+    )
+    identifier_parser.add_argument("value")
+    identifier_parser.add_argument("--limit", type=int, default=100)
 
     evaluate_parser = subparsers.add_parser(
         "evaluate", help="Run a retrieval benchmark against explicit evidence targets"
@@ -117,8 +140,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.failed == 0 else 1
 
     if args.command == "index":
-        result = SearchIndex(state_dir).rebuild()
-        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        lexical = SearchIndex(state_dir).rebuild()
+        structured = StructuredIndex(state_dir).rebuild()
+        print(
+            json.dumps(
+                {"lexical": lexical.to_dict(), "structured": structured.to_dict()},
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
 
     if args.command == "search":
@@ -128,6 +158,29 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "lookup":
         hits = SearchIndex(state_dir).lookup_native_identifier(args.native_identifier)
+        print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "amounts":
+        hits = StructuredIndex(state_dir).money(
+            minimum=args.minimum,
+            maximum=args.maximum,
+            limit=args.limit,
+        )
+        print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "dates":
+        hits = StructuredIndex(state_dir).dates(
+            start=args.start,
+            end=args.end,
+            limit=args.limit,
+        )
+        print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "identifier":
+        hits = StructuredIndex(state_dir).identifier(args.value, limit=args.limit)
         print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
         return 0
 
@@ -141,8 +194,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "status":
         status = store.status()
         status["needs_review"] = review_count(state_dir)
-        current_build = SearchIndex(state_dir).current_build()
-        status["search_index_build"] = current_build
+        status["search_index_build"] = SearchIndex(state_dir).current_build()
+        status["structured_index_build"] = StructuredIndex(state_dir).current_build()
         print(json.dumps(status, indent=2, sort_keys=True))
         return 0
 
