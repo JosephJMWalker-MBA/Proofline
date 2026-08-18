@@ -1,0 +1,30 @@
+{
+  "schema": "proofline-source-manifest/v1",
+  "name": "Example public records",
+  "resources": [
+    {
+      "source_uri": "https://example.gov/public-records/001.pdf",
+      "source_name": "Example public record 001",
+      "native_identifier": "RECORD-001",
+      "expected_media_type": "application/pdf",
+      "sequence_group": "example-records",
+      "sequence_number": 1
+    },
+    {
+      "source_uri": "https://example.gov/public-records/002.pdf",
+      "source_name": "Example public record 002",
+      "native_identifier": "RECORD-002",
+      "expected_media_type": "application/pdf",
+      "sequence_group": "example-records",
+      "sequence_number": 2
+    },
+    {
+      "source_uri": "https://example.gov/public-records/003.pdf",
+      "source_name": "Example public record 003",
+      "native_identifier": "RECORD-003",
+      "expected_media_type": "application/pdf",
+      "sequence_group": "example-records",
+      "sequence_number": 3
+    }
+  ]
+}
