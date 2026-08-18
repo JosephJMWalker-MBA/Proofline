@@ -26,22 +26,35 @@ Exit criterion:
 
 See [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md).
 
-## Milestone 1 — Corpus Watcher
+## Milestone 1 — Corpus Watcher ✅
 
-Goal: detect what changed in a monitored public source.
+**Status: complete.**
 
-Deliverables:
+Goal: detect what changed in a monitored public source without interpreting motive.
 
-- configurable source manifests
-- scheduled source snapshots
-- new/changed/removed resource detection
-- content/version relationships
-- native identifier and sequence-gap support
-- retry and acquisition integrity checks
+Delivered:
+
+- [x] versioned JSON source manifests
+- [x] repeatable deterministic watcher runs compatible with external schedulers
+- [x] HTTP acquisition with retry/backoff, timeout, User-Agent, and defensive media validation
+- [x] new/unchanged/changed/unavailable source-state detection
+- [x] content-addressed version preservation
+- [x] append-only watcher check history
+- [x] HTTP status, Content-Type, ETag, and Last-Modified provenance
+- [x] correct chronology when a source reverts to previously seen bytes
+- [x] optional native identifiers
+- [x] explicit identifier-sequence/gap primitives
+- [x] `proofline watch` and `proofline changes`
+- [x] local HTTP tests for change, reversion, unavailability, and retries
+- [x] watcher semantics and source-manifest documentation
+
+Scheduling policy is intentionally outside the evidence core. Cron, systemd timers, container schedulers, or hosted runners can invoke one deterministic watcher run at any desired cadence without changing evidence semantics.
 
 Exit criterion:
 
-> Proofline can compare two source snapshots and produce a reproducible change set without interpreting motive.
+> Proofline can compare repeated source checks and produce a reproducible change set without interpreting motive, while preserving complete prior artifact history.
+
+See [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
 
 ## Milestone 2 — Progressive Extraction
 
@@ -169,4 +182,4 @@ The development corpus should intentionally contain ugly cases:
 - audio/transcript pair
 - conflicting values across authoritative records
 
-The generated M0 corpus currently covers born-digital PDF, image-only scan, exact duplicate, corrupted PDF, source revision pair, and conflicting structured records. Later milestones will extend it as new adapters and detectors arrive.
+The generated corpus currently covers born-digital PDF, image-only scan, exact duplicate, corrupted PDF, source revision pair, and conflicting structured records. Later milestones will extend it as new adapters and detectors arrive.
