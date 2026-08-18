@@ -10,7 +10,7 @@ from pathlib import Path
 from .ingest import Ingestor
 from .ocr import PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractor
-from .review import review_queue
+from .review import preferred_extraction, review_count, review_queue
 from .storage import ProoflineStore
 from .watcher import CorpusWatcher, load_manifest
 from .watch_storage import WatcherStore
@@ -99,7 +99,9 @@ def main(argv: list[str] | None = None) -> int:
 
     store = ProoflineStore(state_dir / "proofline.db")
     if args.command == "status":
-        print(json.dumps(store.status(), indent=2, sort_keys=True))
+        status = store.status()
+        status["needs_review"] = review_count(state_dir)
+        print(json.dumps(status, indent=2, sort_keys=True))
         return 0
 
     if args.command == "trace":
@@ -107,6 +109,11 @@ def main(argv: list[str] | None = None) -> int:
         if trace is None:
             print(f"observation not found: {args.observation_id}", file=sys.stderr)
             return 2
+        for item in trace.get("evidence", []):
+            reference = item.get("reference") or {}
+            evidence_id = reference.get("evidence_id")
+            if evidence_id:
+                item["preferred_extraction"] = preferred_extraction(store, evidence_id)
         print(json.dumps(trace, indent=2, sort_keys=True))
         return 0
 
