@@ -182,10 +182,10 @@ def _header_row_text(values: list[object]) -> str:
 
 
 def extract_pdf_native(path: str | Path) -> Iterator[ExtractedUnit]:
-    import fitz
+    import pymupdf
 
-    software_version = f"PyMuPDF {fitz.VersionBind}"
-    with fitz.open(str(path)) as document:
+    software_version = f"PyMuPDF {pymupdf.VersionBind}"
+    with pymupdf.open(str(path)) as document:
         for page_index, page in enumerate(document):
             text = page.get_text("text")
             quality = text_quality(text)

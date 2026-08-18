@@ -7,12 +7,12 @@ import json
 import shutil
 from pathlib import Path
 
-import fitz
 import openpyxl
+import pymupdf
 
 
 def _make_born_digital_pdf(path: Path) -> None:
-    document = fitz.open()
+    document = pymupdf.open()
     page = document.new_page()
     page.insert_text((72, 72), "Contract award: $250,000\nVendor: Northstar Civic Systems")
     document.save(path)
@@ -20,14 +20,14 @@ def _make_born_digital_pdf(path: Path) -> None:
 
 
 def _make_scanned_pdf(path: Path) -> None:
-    source = fitz.open()
+    source = pymupdf.open()
     page = source.new_page()
     page.insert_text((72, 72), "Scanned memorandum: emergency procurement review")
     pixmap = page.get_pixmap(dpi=150)
     image_bytes = pixmap.tobytes("png")
     source.close()
 
-    scanned = fitz.open()
+    scanned = pymupdf.open()
     scanned_page = scanned.new_page(width=pixmap.width, height=pixmap.height)
     scanned_page.insert_image(scanned_page.rect, stream=image_bytes)
     scanned.save(path)
@@ -87,7 +87,7 @@ def build_fixture_corpus(root: str | Path) -> dict:
             "corrupted_pdf_extraction_should_fail_without_losing_artifact": True,
             "version_values_differ": True,
             "structured_amounts_conflict": True,
-            "xlsx_formula_preserved_not_evaluated": True
+            "spreadsheet_formula_is_preserved_not_evaluated": True
         }
     }
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")

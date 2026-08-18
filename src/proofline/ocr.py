@@ -45,12 +45,12 @@ class PyMuPDFTesseractBackend:
         self.dpi = dpi
 
     def extract_page(self, path: str | Path, page_number: int) -> OcrPageResult:
-        import fitz
+        import pymupdf
 
         if page_number < 1:
             raise ValueError("page_number must be 1-indexed and positive")
 
-        with fitz.open(str(path)) as document:
+        with pymupdf.open(str(path)) as document:
             if page_number > len(document):
                 raise ValueError(f"page {page_number} exceeds document length {len(document)}")
             page = document[page_number - 1]
@@ -76,7 +76,7 @@ class PyMuPDFTesseractBackend:
             text=text,
             method=self.name,
             quality_score=quality,
-            software_version=f"PyMuPDF {fitz.VersionBind}; Tesseract via PyMuPDF",
+            software_version=f"PyMuPDF {pymupdf.VersionBind}; Tesseract via PyMuPDF",
             model_version=f"language={self.language};dpi={self.dpi}",
             warnings=warnings,
         )
