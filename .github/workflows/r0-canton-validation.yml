@@ -5,7 +5,7 @@ on:
     paths:
       - ".github/workflows/r0-canton-validation.yml"
       - "experiments/canton-2026/**"
-      - "scripts/r0_summary.py"
+      - "scripts/**"
       - "src/proofline/**"
       - "tests/**"
   workflow_dispatch:
@@ -45,25 +45,34 @@ jobs:
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
 
-      - name: Assert live discovery produced a corpus
+      - name: Assert live discovery produced current and archived resources
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           payload = json.loads(Path('r0-results/sync.json').read_text())
           resources = payload['discovery']['manifest']['resources']
-          print(f'discovered {len(resources)} resources')
+          supporting = payload['discovery'].get('supporting_artifact_ids', [])
+          archived = [r for r in resources if '/ArchivedAgenda/' in r['source_uri']]
+          print(f'discovered {len(resources)} watch resources')
+          print(f'preserved {len(supporting)} supporting discovery artifacts')
+          print(f'discovered {len(archived)} archived meeting resources')
           if len(resources) < 20:
               raise SystemExit(f'expected at least 20 discovered resources, got {len(resources)}')
+          if not supporting:
+              raise SystemExit('expected at least one preserved Previous Versions listing')
+          if not archived:
+              raise SystemExit('expected at least one archived meeting resource from Previous Versions')
           PY
 
-      - name: Capture corpus status and review queue
+      - name: Capture corpus status, review queue, and PDF diagnostics
         if: always()
         run: |
           if [ -f .r0/proofline.db ]; then
             python -m proofline.cli --state-dir .r0 status > r0-results/status.json || true
             python -m proofline.cli --state-dir .r0 review --limit 500 > r0-results/review.json || true
             python scripts/r0_summary.py .r0/proofline.db > r0-results/corpus-summary.json || true
+            python scripts/r0_pdf_diagnostics.py .r0 > r0-results/pdf-diagnostics.json || true
             cp .r0/proofline.db r0-results/proofline.db
           fi
           if [ -f .r0/manifests/canton-2026-public-records.json ]; then
