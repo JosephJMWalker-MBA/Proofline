@@ -61,6 +61,15 @@ def _structured_row_text(headers: list[str], values: list[object]) -> str:
     return json.dumps({"columns": mapping, "raw": raw}, ensure_ascii=False, sort_keys=True)
 
 
+def _header_row_text(values: list[object]) -> str:
+    raw = ["" if value is None else str(value) for value in values]
+    return json.dumps(
+        {"columns": {_column_name(i): value for i, value in enumerate(raw)}, "raw": raw},
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+
 def extract_pdf_native(path: str | Path) -> list[ExtractedUnit]:
     import fitz
 
@@ -106,34 +115,41 @@ def extract_plain_text(path: str | Path) -> list[ExtractedUnit]:
 
 def extract_csv(path: str | Path) -> list[ExtractedUnit]:
     units: list[ExtractedUnit] = []
+    software_version = f"Python {platform.python_version()}"
     with Path(path).open("r", encoding="utf-8-sig", errors="replace", newline="") as handle:
-        rows = list(csv.reader(handle))
-    if not rows:
-        return units
+        reader = csv.reader(handle)
+        first_row = next(reader, None)
+        if first_row is None:
+            return units
 
-    headers = [cell.strip() or _column_name(index) for index, cell in enumerate(rows[0])]
-    for row_index, row in enumerate(rows, start=1):
-        if not any(str(value).strip() for value in row):
-            continue
-        last_column = _column_name(max(0, len(row) - 1))
-        if row_index == 1:
-            text = json.dumps(
-                {"columns": {_column_name(i): value for i, value in enumerate(row)}, "raw": row},
-                ensure_ascii=False,
-                sort_keys=True,
+        headers = [cell.strip() or _column_name(index) for index, cell in enumerate(first_row)]
+        if any(str(value).strip() for value in first_row):
+            last_column = _column_name(max(0, len(first_row) - 1))
+            units.append(
+                ExtractedUnit(
+                    unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                    locator=f"sheet:CSV!A1:{last_column}1",
+                    text=_header_row_text(first_row),
+                    method="python_csv",
+                    quality_score=1.0,
+                    software_version=software_version,
+                )
             )
-        else:
-            text = _structured_row_text(headers, row)
-        units.append(
-            ExtractedUnit(
-                unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
-                locator=f"sheet:CSV!A{row_index}:{last_column}{row_index}",
-                text=text,
-                method="python_csv",
-                quality_score=1.0,
-                software_version=f"Python {platform.python_version()}",
+
+        for row_index, row in enumerate(reader, start=2):
+            if not any(str(value).strip() for value in row):
+                continue
+            last_column = _column_name(max(0, len(row) - 1))
+            units.append(
+                ExtractedUnit(
+                    unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                    locator=f"sheet:CSV!A{row_index}:{last_column}{row_index}",
+                    text=_structured_row_text(headers, row),
+                    method="python_csv",
+                    quality_score=1.0,
+                    software_version=software_version,
+                )
             )
-        )
     return units
 
 
@@ -142,40 +158,45 @@ def extract_xlsx(path: str | Path) -> list[ExtractedUnit]:
 
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=False)
     units: list[ExtractedUnit] = []
+    software_version = f"openpyxl {openpyxl.__version__}"
+    warning = ("formulas are preserved as source expressions and are not evaluated",)
     try:
         for sheet in workbook.worksheets:
-            rows = list(sheet.iter_rows(values_only=True))
-            if not rows:
+            row_iterator = sheet.iter_rows(values_only=True)
+            first_row = next(row_iterator, None)
+            if first_row is None:
                 continue
-            header_values = ["" if value is None else str(value) for value in rows[0]]
-            for row_index, row in enumerate(rows, start=1):
+
+            first_values = list(first_row)
+            headers = ["" if value is None else str(value) for value in first_values]
+            if any(value is not None and str(value).strip() for value in first_values):
+                last_column = _column_name(max(0, len(first_values) - 1))
+                units.append(
+                    ExtractedUnit(
+                        unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                        locator=f"sheet:{sheet.title}!A1:{last_column}1",
+                        text=_header_row_text(first_values),
+                        method="openpyxl_values_and_formulas",
+                        quality_score=1.0,
+                        software_version=software_version,
+                        warnings=warning,
+                    )
+                )
+
+            for row_index, row in enumerate(row_iterator, start=2):
                 values = list(row)
                 if not any(value is not None and str(value).strip() for value in values):
                     continue
                 last_column = _column_name(max(0, len(values) - 1))
-                if row_index == 1:
-                    text = json.dumps(
-                        {
-                            "columns": {
-                                _column_name(i): "" if value is None else str(value)
-                                for i, value in enumerate(values)
-                            },
-                            "raw": ["" if value is None else str(value) for value in values],
-                        },
-                        ensure_ascii=False,
-                        sort_keys=True,
-                    )
-                else:
-                    text = _structured_row_text(header_values, values)
                 units.append(
                     ExtractedUnit(
                         unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
                         locator=f"sheet:{sheet.title}!A{row_index}:{last_column}{row_index}",
-                        text=text,
+                        text=_structured_row_text(headers, values),
                         method="openpyxl_values_and_formulas",
                         quality_score=1.0,
-                        software_version=f"openpyxl {openpyxl.__version__}",
-                        warnings=("formulas are preserved as source expressions and are not evaluated",),
+                        software_version=software_version,
+                        warnings=warning,
                     )
                 )
     finally:
