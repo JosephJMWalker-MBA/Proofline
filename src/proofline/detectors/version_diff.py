@@ -51,6 +51,7 @@ class ArithmeticRelation:
 class VersionDiffResult:
     before_artifact_id: str
     after_artifact_id: str
+    input_fingerprint: str
     changed_units: tuple[EvidenceUnitDiff, ...]
     money_removed: tuple[str, ...]
     money_added: tuple[str, ...]
@@ -84,6 +85,7 @@ def _preferred_units(store: ProoflineStore, artifact_id: str) -> dict[str, dict]
                 eu.evidence_id,
                 eu.artifact_id,
                 eu.locator,
+                best.extraction_id,
                 best.extracted_text,
                 best.quality_score,
                 best.method
@@ -104,6 +106,23 @@ def _preferred_units(store: ProoflineStore, artifact_id: str) -> dict[str, dict]
             (artifact_id,),
         ).fetchall()
     return {str(row["locator"]): dict(row) for row in rows}
+
+
+def _input_fingerprint(before: dict[str, dict], after: dict[str, dict]) -> str:
+    """Identify the exact preferred Silver extraction attempts used by Gold."""
+    parts: list[str] = []
+    for side, units in (("before", before), ("after", after)):
+        for locator in sorted(units):
+            row = units[locator]
+            parts.extend(
+                [
+                    side,
+                    locator,
+                    str(row.get("evidence_id") or ""),
+                    str(row.get("extraction_id") or "none"),
+                ]
+            )
+    return stable_id("version-diff-inputs", *parts)
 
 
 def _money_values(text: str | None) -> Counter[Decimal]:
@@ -174,22 +193,12 @@ def _exact_arithmetic_relations(
     )
 
 
-def compare_artifact_versions(
-    store: ProoflineStore,
+def _compare_preferred_units(
     before_artifact_id: str,
     after_artifact_id: str,
+    before: dict[str, dict],
+    after: dict[str, dict],
 ) -> VersionDiffResult:
-    """Compare preferred Silver evidence for two explicitly related artifacts."""
-    if before_artifact_id == after_artifact_id:
-        raise ValueError("before and after artifact IDs must differ")
-
-    before = _preferred_units(store, before_artifact_id)
-    after = _preferred_units(store, after_artifact_id)
-    if not before:
-        raise ValueError(f"artifact has no evidence units: {before_artifact_id}")
-    if not after:
-        raise ValueError(f"artifact has no evidence units: {after_artifact_id}")
-
     all_locators = sorted(set(before) | set(after))
     changed_units: list[EvidenceUnitDiff] = []
     before_document: list[str] = []
@@ -242,6 +251,7 @@ def compare_artifact_versions(
     return VersionDiffResult(
         before_artifact_id=before_artifact_id,
         after_artifact_id=after_artifact_id,
+        input_fingerprint=_input_fingerprint(before, after),
         changed_units=tuple(changed_units),
         money_removed=_expanded(money_removed, formatter=_money_text),
         money_added=_expanded(money_added, formatter=_money_text),
@@ -256,6 +266,24 @@ def compare_artifact_versions(
     )
 
 
+def compare_artifact_versions(
+    store: ProoflineStore,
+    before_artifact_id: str,
+    after_artifact_id: str,
+) -> VersionDiffResult:
+    """Compare preferred Silver evidence for two explicitly related artifacts."""
+    if before_artifact_id == after_artifact_id:
+        raise ValueError("before and after artifact IDs must differ")
+
+    before = _preferred_units(store, before_artifact_id)
+    after = _preferred_units(store, after_artifact_id)
+    if not before:
+        raise ValueError(f"artifact has no evidence units: {before_artifact_id}")
+    if not after:
+        raise ValueError(f"artifact has no evidence units: {after_artifact_id}")
+    return _compare_preferred_units(before_artifact_id, after_artifact_id, before, after)
+
+
 def _excerpt(text: str | None, *, limit: int = 700) -> str | None:
     if not text:
         return None
@@ -268,13 +296,30 @@ def build_version_change_observation(
     before_artifact_id: str,
     after_artifact_id: str,
 ) -> tuple[VersionDiffResult, Observation | None]:
-    """Build an evidence-backed Gold observation for an explicit version pair."""
-    result = compare_artifact_versions(store, before_artifact_id, after_artifact_id)
+    """Build an evidence-backed Gold observation for an explicit version pair.
+
+    The observation ID includes the exact preferred extraction-attempt fingerprint,
+    so replacing the preferred Silver extraction yields a new regenerable Gold
+    artifact rather than silently reusing analysis produced from stale text.
+    """
+    if before_artifact_id == after_artifact_id:
+        raise ValueError("before and after artifact IDs must differ")
+    before_units = _preferred_units(store, before_artifact_id)
+    after_units = _preferred_units(store, after_artifact_id)
+    if not before_units:
+        raise ValueError(f"artifact has no evidence units: {before_artifact_id}")
+    if not after_units:
+        raise ValueError(f"artifact has no evidence units: {after_artifact_id}")
+
+    result = _compare_preferred_units(
+        before_artifact_id,
+        after_artifact_id,
+        before_units,
+        after_units,
+    )
     if not result.changed:
         return result, None
 
-    before_units = _preferred_units(store, before_artifact_id)
-    after_units = _preferred_units(store, after_artifact_id)
     refs: list[EvidenceReference] = []
     seen_evidence: set[str] = set()
 
@@ -326,6 +371,7 @@ def build_version_change_observation(
             "version_change",
             before_artifact_id,
             after_artifact_id,
+            result.input_fingerprint,
             _METHOD,
         ),
         observation_type="source_version_change",
@@ -341,6 +387,7 @@ def build_version_change_observation(
             "Evidence units are aligned by stable locator; substantial repagination may appear as added/removed units.",
             "Exact arithmetic relationships are descriptive coincidences unless supported by source context.",
             "Extraction errors can create apparent text/value changes and should be reviewed when quality is low.",
+            f"Gold input fingerprint: {result.input_fingerprint}",
         ),
     )
     return result, observation

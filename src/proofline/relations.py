@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 from .discovery import _AgendaCenterParser, _link_format
 from .hashing import source_id_from_uri, stable_id
 from .storage import ProoflineStore
+from .watch_storage import WatcherStore
 
 _RELATION_METHOD = "civicengage_previous_versions/v1"
 
@@ -187,39 +188,67 @@ class RelationStore:
         ]
 
 
+def _latest_source_artifact(
+    root: Path,
+    store: ProoflineStore,
+    watcher: WatcherStore,
+    source_id: str,
+) -> tuple[str, Path] | None:
+    """Resolve source bytes from watcher chronology, with snapshot fallback.
+
+    The watcher ledger is authoritative for temporal state because the source
+    snapshot table intentionally stores unique source/artifact pairs and can
+    therefore collapse A -> B -> A revisits.
+    """
+    artifact_id = watcher.latest_successful_artifact(source_id)
+    if artifact_id is None:
+        artifact_id = store.latest_artifact_for_source(source_id)
+    if artifact_id is None:
+        return None
+
+    with store.connection() as connection:
+        row = connection.execute(
+            "SELECT stored_path FROM artifacts WHERE artifact_id = ?",
+            (artifact_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    return artifact_id, root / row["stored_path"]
+
+
 def derive_civicengage_version_relations(
     state_dir: str | Path = ".proofline",
 ) -> tuple[SourceRelation, ...]:
     """Derive historical-version edges from preserved Previous Versions pages.
 
     Every relation is supported by the exact HTML artifact whose published links
-    place both the archived and current records in one version family.
+    place both the archived and current records in one version family. When a
+    watcher ledger exists, the relation evidence uses the bytes observed on the
+    latest successful visit rather than first-seen source/artifact ordering.
     """
     root = Path(state_dir)
     relations = RelationStore(root)
     store = relations.store
+    watcher = WatcherStore(root / "proofline.db")
 
     with store.connection() as connection:
-        listings = connection.execute(
+        sources = connection.execute(
             """
-            SELECT s.source_uri, ss.artifact_id, a.stored_path
-            FROM sources s
-            JOIN source_snapshots ss ON ss.source_id = s.source_id
-            JOIN artifacts a ON a.artifact_id = ss.artifact_id
-            WHERE s.source_uri LIKE '%/AgendaCenter/PreviousVersions/%'
-              AND ss.rowid IN (
-                SELECT MAX(ss2.rowid)
-                FROM source_snapshots ss2
-                WHERE ss2.source_id = s.source_id
-              )
-            ORDER BY s.source_uri
+            SELECT source_id, source_uri
+            FROM sources
+            WHERE source_uri LIKE '%/AgendaCenter/PreviousVersions/%'
+            ORDER BY source_uri
             """
         ).fetchall()
 
     created: list[SourceRelation] = []
-    for listing in listings:
-        listing_uri = str(listing["source_uri"])
-        html = (root / listing["stored_path"]).read_text(encoding="utf-8", errors="replace")
+    for source in sources:
+        latest = _latest_source_artifact(root, store, watcher, str(source["source_id"]))
+        if latest is None:
+            continue
+        evidence_artifact_id, evidence_path = latest
+        listing_uri = str(source["source_uri"])
+        html = evidence_path.read_text(encoding="utf-8", errors="replace")
         parser = _AgendaCenterParser(listing_uri)
         parser.feed(html)
         parser.close()
@@ -244,7 +273,7 @@ def derive_civicengage_version_relations(
                 source_uri=archived_uri,
                 relation_type="historical_version_of",
                 related_source_uri=current_uri,
-                evidence_artifact_id=str(listing["artifact_id"]),
+                evidence_artifact_id=evidence_artifact_id,
                 method=_RELATION_METHOD,
                 method_version="1",
                 details={

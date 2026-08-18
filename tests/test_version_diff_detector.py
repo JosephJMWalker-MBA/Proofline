@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from proofline import Ingestor, ProoflineStore
 from proofline.detectors import build_version_change_observation, compare_artifact_versions
 
@@ -35,6 +37,7 @@ def test_version_diff_surfaces_value_change_and_exact_arithmetic_context(tmp_pat
     result = compare_artifact_versions(store, before.artifact_id, after.artifact_id)
 
     assert result.changed is True
+    assert result.input_fingerprint.startswith("version-diff-inputs:")
     assert len(result.changed_units) == 1
     assert result.money_removed == ("278593.00",)
     assert result.money_added == ("282168.00",)
@@ -58,11 +61,64 @@ def test_version_diff_surfaces_value_change_and_exact_arithmetic_context(tmp_pat
     assert "3575.00" in observation.explanation
     assert "11 ×" in observation.explanation
     assert "does not infer why" in observation.uncertainty
+    assert result.input_fingerprint in observation.limitations[-1]
 
     assert store.add_observation(observation) is True
     trace = store.trace_observation(observation.observation_id)
     assert trace is not None
     assert len(trace["evidence"]) == 2
+
+
+def test_new_preferred_extraction_produces_new_gold_observation_id(tmp_path) -> None:
+    state = tmp_path / "state"
+    before_path = tmp_path / "before.txt"
+    after_path = tmp_path / "after.txt"
+    before_path.write_text("Contract amount $100.00", encoding="utf-8")
+    after_path.write_text("Contract amount $200.00", encoding="utf-8")
+
+    before = Ingestor(state).ingest(before_path, source_uri="https://records.example.gov/v1")
+    after = Ingestor(state).ingest(after_path, source_uri="https://records.example.gov/v2")
+    store = ProoflineStore(state / "proofline.db")
+
+    first_result, first_observation = build_version_change_observation(
+        store, before.artifact_id, after.artifact_id
+    )
+    assert first_observation is not None
+
+    with store.connection() as connection:
+        before_evidence = connection.execute(
+            "SELECT evidence_id FROM evidence_units WHERE artifact_id = ?",
+            (before.artifact_id,),
+        ).fetchone()[0]
+        native = connection.execute(
+            """
+            SELECT quality_score, occurred_at
+            FROM evidence_extractions
+            WHERE evidence_id = ?
+            ORDER BY occurred_at DESC, rowid DESC
+            LIMIT 1
+            """,
+            (before_evidence,),
+        ).fetchone()
+
+    occurred_at = datetime.fromisoformat(native["occurred_at"]) + timedelta(seconds=1)
+    store.add_evidence_extraction(
+        extraction_id="extraction:corrected-v2",
+        evidence_id=before_evidence,
+        occurred_at=occurred_at,
+        method="fixture_corrected_extraction",
+        extracted_text="Contract amount $101.00",
+        quality_score=float(native["quality_score"]),
+        software_version="fixture-2",
+    )
+
+    second_result, second_observation = build_version_change_observation(
+        store, before.artifact_id, after.artifact_id
+    )
+    assert second_observation is not None
+    assert second_result.input_fingerprint != first_result.input_fingerprint
+    assert second_observation.observation_id != first_observation.observation_id
+    assert second_result.money_removed == ("101.00",)
 
 
 def test_identical_extracted_versions_create_no_observation(tmp_path) -> None:
