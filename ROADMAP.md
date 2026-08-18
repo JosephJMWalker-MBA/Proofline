@@ -1,24 +1,30 @@
 # Proofline Roadmap
 
-## Milestone 0 — Evidence Core
+## Milestone 0 — Evidence Core ✅
+
+**Status: complete.**
 
 Goal: prove source integrity and evidence traceability before adding sophisticated AI.
 
-Deliverables:
+Delivered:
 
-- immutable artifact identity using SHA-256
-- source and retrieval metadata
-- page/logical evidence units
-- extraction method and quality metadata
-- append-only processing events
-- observation objects that require evidence references
-- SQLite persistence
-- a minimal CLI for ingest/status/trace
-- tests proving that observations can be traced back to original artifacts
+- [x] immutable artifact identity using SHA-256
+- [x] source and retrieval metadata
+- [x] page/logical evidence units
+- [x] extraction method and quality metadata
+- [x] append-only processing events
+- [x] observation objects that require evidence references
+- [x] SQLite persistence
+- [x] a minimal CLI for ingest/status/trace
+- [x] tests proving that observations can be traced back to original artifacts
+- [x] deliberately difficult generated fixture corpus
+- [x] stable evidence-reference v1 contract
 
 Exit criterion:
 
 > Given a derived observation, Proofline can deterministically identify the exact source artifact and evidence unit(s) from which it was produced.
+
+See [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md).
 
 ## Milestone 1 — Corpus Watcher
 
@@ -163,4 +169,4 @@ The development corpus should intentionally contain ugly cases:
 - audio/transcript pair
 - conflicting values across authoritative records
 
-The corpus should be small enough to understand manually and difficult enough to expose architectural mistakes early.
+The generated M0 corpus currently covers born-digital PDF, image-only scan, exact duplicate, corrupted PDF, source revision pair, and conflicting structured records. Later milestones will extend it as new adapters and detectors arrive.
