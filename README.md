@@ -4,13 +4,15 @@
 
 Proofline is public-record intelligence infrastructure for provenance-backed investigative leads.
 
-It is designed to continuously ingest large, messy public archives; preserve source integrity; extract searchable evidence; detect changes, anomalies, relationships, and contradictions; and surface reproducible leads for human investigators and journalists.
+It continuously turns large, messy public archives into stable evidence that can be watched, searched, compared, and eventually used to surface reproducible leads for human investigators and journalists.
 
-Proofline does **not** decide that a person or organization has done something wrong. It distinguishes source evidence from machine-derived observations and leaves editorial and investigative judgment with humans.
+Proofline does **not** decide that a person or organization did something wrong. It distinguishes source evidence from machine-derived observations and leaves accusation, fairness, newsworthiness, and publication decisions with humans.
+
+> **Looking for what exists today?** Start with [STATUS.md](STATUS.md). The roadmap explains where the system is going; `STATUS.md` distinguishes implemented capabilities, measured behavior, validation caveats, and the next experiment.
 
 ## The problem
 
-Important facts are often technically public but practically hidden inside volume:
+Important facts can be technically public but practically hidden inside volume:
 
 - massive document releases
 - scanned or poorly OCR'd PDFs
@@ -18,22 +20,18 @@ Important facts are often technically public but practically hidden inside volum
 - revisions and quiet replacements
 - duplicated records
 - inconsistent names and identifiers
-- audio and transcripts
 - records distributed across multiple agencies or systems
 
-Search alone does not solve this. The harder problem is building a trustworthy corpus that can answer:
+Search alone does not answer the harder questions:
 
 - What exists?
 - What changed?
 - What disappeared?
-- What is duplicated?
 - What cannot be reliably extracted?
-- What patterns recur across independent records?
-- What deserves human attention?
+- Which values or dates conflict across records?
+- Which patterns deserve a human's time?
 
-## Core model
-
-Proofline separates three truth layers:
+## Epistemic model
 
 ### Bronze — Source
 
@@ -42,63 +40,49 @@ Immutable original artifacts and retrieval metadata.
 - original bytes
 - source URI
 - retrieval timestamp
-- SHA-256 digest
+- SHA-256
 - native/public identifier
 - version relationship
 
 ### Silver — Evidence
 
-Stable human-inspectable units with append-only extraction attempts.
+Stable human-inspectable evidence units with append-only extraction attempts.
 
-- pages or logical records
-- extracted text
-- layout / offsets
-- extraction method
-- OCR quality/confidence
+- page or logical record
 - source locator
+- extracted text
+- extraction method/version
+- quality/confidence
 
-An evidence unit remains stable while better extraction methods may add new extraction records. A later OCR result does not rewrite the history of an earlier native-text attempt.
+Better OCR can improve the preferred extraction without changing the evidence identity or deleting earlier attempts.
 
 ### Gold — Derived
 
-Probabilistic or interpretive material that may be regenerated as models improve.
+Regenerable interpretation and analysis.
 
 - entities and aliases
 - relationships
-- classifications
 - events
-- embeddings
 - anomalies
 - observations
 - investigative leads
-- LLM-generated summaries
+- embeddings / model outputs
 
 **Gold may be wrong. Silver must be reproducible. Bronze must remain immutable.**
 
-## Design principles
-
-1. **Evidence before narrative.** The system surfaces observations and leads, not accusations.
-2. **Provenance is mandatory.** Every consequential derived claim should be traceable to its source artifact and evidence location.
-3. **Cheap extraction first.** Use existing text layers before OCR; escalate only when quality requires it.
-4. **Confidence is data.** Low-quality extraction is recorded and reviewable rather than silently accepted.
-5. **Indexes are disposable.** Search indexes and embeddings may be rebuilt. Evidence identities should remain stable.
-6. **Longitudinal memory matters.** A changed or removed public record can be as important as a newly published one.
-7. **Humans retain editorial agency.** Newsworthiness, fairness, publication, and accusation are human decisions.
-8. **Seek benign explanations.** Lead generation should preserve uncertainty and make room for ordinary explanations.
-
-## Architecture
+## Current pipeline
 
 ```text
 public source
     |
     v
-watch/acquisition ---> artifact hash/version history
+watch/acquisition ---> immutable artifact history
     |
     v
-progressive extraction ---> page/row evidence ---> quality review queue
+progressive extraction ---> page/row evidence ---> quality review
     |
     v
-normalization ---> FTS / vector / graph indexes
+lexical + structured indexes
     |
     v
 pattern detectors ---> observations ---> corroboration
@@ -107,7 +91,7 @@ pattern detectors ---> observations ---> corroboration
 lead desk ---> human investigation
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the working technical model and [GOVERNANCE.md](GOVERNANCE.md) for epistemic and editorial boundaries.
+The first three milestones are complete. Search/retrieval evaluation is active. See [ROADMAP.md](ROADMAP.md) and [STATUS.md](STATUS.md).
 
 ## Quick start
 
@@ -119,44 +103,71 @@ proofline ingest ./records/report.pdf \
   --native-id "REPORT-2026-08"
 
 proofline status
-proofline trace obs:example
 ```
 
 ### Watch public sources
 
-Proofline uses a versioned JSON source manifest. See [examples/source-manifest.json](examples/source-manifest.json) and [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
-
 ```bash
 proofline watch examples/source-manifest.json
 proofline changes
-proofline changes --include-unchanged
 ```
 
-Each visit classifies a resource as `new`, `unchanged`, `changed`, or `unavailable`. A `changed` state means the bytes differ from the immediately prior successful observation. It does not explain why they changed. An `unavailable` state records a failed check; it does not by itself establish deletion or intentional removal.
+Each visit is recorded independently as `new`, `unchanged`, `changed`, or `unavailable`. `changed` means the bytes differ from the immediately prior successful observation. It does not explain motive or significance.
 
-### Review and improve extraction
+See [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
+
+### Review extraction quality
 
 ```bash
 proofline review
 proofline review --threshold 0.80
-```
-
-Native text is used first. Low-quality pages can be escalated with the optional local Tesseract backend:
-
-```bash
 proofline extract artifact:<sha256> --ocr tesseract
-proofline extract artifact:<sha256> --ocr tesseract --language eng --dpi 300
 ```
 
-Tesseract is an optional external runtime dependency; Proofline itself can ingest and queue scanned pages without it. OCR attempts are appended rather than replacing native extraction. A forced later attempt that performs worse does not displace a better retained extraction.
-
-CSV and XLSX files are streamed row-by-row into citeable `spreadsheet_range` evidence units. Excel formulas are preserved as source expressions and are not locally evaluated.
+Tesseract is optional. Proofline can preserve and queue a scan even when OCR is unavailable. CSV/XLSX records are streamed into citeable row evidence; spreadsheet formulas are preserved but not evaluated.
 
 See [docs/EXTRACTION.md](docs/EXTRACTION.md).
 
-## Local state
+### Build and query retrieval indexes
 
-By default state is written beneath `.proofline/`:
+```bash
+proofline index
+proofline search "Northstar Civic Systems"
+proofline lookup CSV-B
+
+proofline amounts --min 250000 --max 500000
+proofline dates --from 2026-01-01 --to 2026-12-31
+proofline identifier C-001
+
+proofline evaluate tests/retrieval_eval.json --k 5
+```
+
+`proofline index` builds two disposable derivatives over preferred Silver evidence:
+
+1. SQLite FTS5 lexical evidence search with transparent BM25 ranking;
+2. deterministic structured facts for explicit monetary values/dates in prose and semantically named spreadsheet fields.
+
+Arbitrary digits are **not** assumed to be money. Arbitrary tokens are **not** assumed to be identifiers. Structured meaning must come from explicit syntax or source field semantics.
+
+See [docs/RETRIEVAL.md](docs/RETRIEVAL.md).
+
+## Provenance invariant
+
+The most important path runs backward:
+
+```text
+Lead
+  -> Observation
+      -> EvidenceUnit
+          -> Artifact
+              -> observed public source
+```
+
+An LLM is never required to traverse this chain.
+
+The stable reference contract is documented in [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md).
+
+## Local state
 
 ```text
 .proofline/
@@ -166,47 +177,29 @@ By default state is written beneath `.proofline/`:
         └── <prefix>/<full-sha256>
 ```
 
-Original bytes are copied to content-addressed storage before extraction. If the same source URI later returns different bytes, Proofline preserves both artifacts. Watcher visits are recorded separately in an append-only ledger so a sequence such as `A -> B -> A` is represented chronologically rather than collapsed into unique artifact pairs.
+Original bytes are content-addressed. Watcher chronology is stored separately from unique artifact identity, so a public source sequence such as `A -> B -> A` remains temporally visible rather than collapsing back to one remembered object.
 
-## Current implementation
+## What is next
 
-### Evidence core
+Proofline has enough infrastructure to stop proving only synthetic architectural cases.
 
-- SHA-256 content-addressed artifacts
-- deterministic source/evidence identifiers
-- immutable source/artifact lineage
-- stable page/logical evidence units
-- append-only extraction and processing history
-- observation and lead persistence with evidence-reference validation
-- `proofline ingest`, `proofline status`, and `proofline trace`
+The next product experiment is:
 
-### Corpus watcher
+> **Ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected.**
 
-- versioned JSON manifests
-- HTTP retry/backoff and media validation
-- HTTP status, content type, ETag, and Last-Modified capture
-- append-only source-check history
-- `new`, `unchanged`, `changed`, and `unavailable` states
-- correct chronology across source reversions
-- explicit sequence-gap primitives
-- `proofline watch` and `proofline changes`
+Success does not mean finding wrongdoing. A routine discrepancy with a benign explanation is still a successful investigative lead if Proofline identifies it reproducibly and gives a human the exact evidence needed to investigate it.
 
-Scheduling is intentionally external to the evidence core: cron, systemd timers, container schedulers, or hosted job runners can invoke the same deterministic watcher command at the desired cadence.
+Semantic/vector retrieval remains deferred until measured retrieval failures justify it.
 
-### Progressive extraction
+## Design principles
 
-- native PDF/text/JSON/XML handling
-- Unicode-aware text-quality heuristics
-- versioned extraction attempts
-- preferred-extraction selection without deleting earlier attempts
-- optional PyMuPDF/Tesseract OCR escalation
-- review queue and threshold controls
-- streaming CSV and XLSX row evidence
-- formula preservation without formula evaluation
-- generated difficult fixtures for scans, corruption, duplicates, revisions, conflicting rows, and formula workbooks
+1. **Evidence before narrative.**
+2. **Provenance is mandatory.**
+3. **Cheap extraction first.**
+4. **Confidence measures extraction usability, not truth.**
+5. **Indexes are disposable.**
+6. **Longitudinal memory matters.**
+7. **Humans retain editorial agency.**
+8. **Seek benign explanations.**
 
-## Next milestone
-
-**Milestone 3: Search & Retrieval Evaluation** focuses on finding the correct evidence before adding semantic/vector infrastructure. The initial target is SQLite FTS5 plus an evaluation set that measures retrieval recall and provenance accuracy.
-
-See [ROADMAP.md](ROADMAP.md), [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md), [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md), and [docs/EXTRACTION.md](docs/EXTRACTION.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md) and [GOVERNANCE.md](GOVERNANCE.md) for the deeper system and editorial contracts.
