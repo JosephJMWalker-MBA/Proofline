@@ -86,13 +86,13 @@ Probabilistic or interpretive material that may be regenerated as models improve
 7. **Humans retain editorial agency.** Newsworthiness, fairness, publication, and accusation are human decisions.
 8. **Seek benign explanations.** Lead generation should preserve uncertainty and make room for ordinary explanations.
 
-## Initial architecture
+## Architecture
 
 ```text
 public source
     |
     v
-acquisition ---> artifact hash/version history
+watch/acquisition ---> artifact hash/version history
     |
     v
 extraction ---> page/record evidence ---> quality review queue
@@ -109,9 +109,7 @@ lead desk ---> human investigation
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the working technical model and [GOVERNANCE.md](GOVERNANCE.md) for epistemic and editorial boundaries.
 
-## Milestone 0 quick start
-
-Proofline currently supports local file ingestion, native PDF/text extraction, SQLite persistence, source version history, status reporting, and deterministic observation tracing.
+## Quick start
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -124,6 +122,29 @@ proofline status
 proofline trace obs:example
 ```
 
+### Watch public sources
+
+Proofline uses a versioned JSON source manifest. See [examples/source-manifest.json](examples/source-manifest.json) and [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
+
+```bash
+proofline watch examples/source-manifest.json
+proofline changes
+proofline changes --include-unchanged
+```
+
+Each visit classifies a resource as:
+
+- `new`
+- `unchanged`
+- `changed`
+- `unavailable`
+
+A `changed` state means the bytes differ from the immediately prior successful observation. It does not explain why they changed. An `unavailable` state records a failed check; it does not by itself establish deletion or intentional removal.
+
+Explicit numeric sequence metadata can also surface structural gaps without guessing identifier semantics from filenames.
+
+## Local state
+
 By default state is written beneath `.proofline/`:
 
 ```text
@@ -134,24 +155,35 @@ By default state is written beneath `.proofline/`:
         └── <prefix>/<full-sha256>
 ```
 
-Original bytes are copied to content-addressed storage before extraction. If the same source URI later returns different bytes, Proofline preserves both artifacts and links the newer snapshot to the artifact it supersedes.
+Original bytes are copied to content-addressed storage before extraction. If the same source URI later returns different bytes, Proofline preserves both artifacts. Watcher visits are recorded separately in an append-only ledger so a sequence such as `A -> B -> A` is represented chronologically rather than collapsed into unique artifact pairs.
 
-## Status
+## Current implementation
 
-Proofline is in **Milestone 0: Evidence Core**. Implemented pieces now include:
+The evidence core includes:
 
 - SHA-256 content-addressed artifacts
 - deterministic source/evidence identifiers
-- immutable source snapshots and artifact version links
+- immutable source/artifact lineage
 - stable page/logical evidence units
 - append-only evidence extraction history
 - append-only processing events enforced by SQLite triggers
-- native PyMuPDF page extraction with quality scoring
+- native PyMuPDF page extraction with Unicode-aware quality scoring
 - text-file extraction
 - observation and lead persistence with evidence-reference validation
 - `proofline ingest`, `proofline status`, and `proofline trace`
-- tests for provenance, version preservation, immutability, PDF extraction, and CLI behavior
+- a generated difficult fixture corpus covering scans, corruption, duplicates, revisions, and conflicting structured records
 
-The remaining M0 work is primarily the deliberately difficult fixture corpus and refinement of the stable evidence-reference contract before moving into source watching.
+The corpus watcher includes:
 
-See [ROADMAP.md](ROADMAP.md).
+- versioned JSON manifests
+- HTTP acquisition with retry/backoff and media validation
+- HTTP status, content type, ETag, and Last-Modified capture
+- append-only source-check history
+- `new`, `unchanged`, `changed`, and `unavailable` states
+- correct change chronology across source reversions
+- explicit sequence-gap primitives
+- `proofline watch` and `proofline changes`
+
+Scheduling is intentionally external to the evidence core: cron, systemd timers, container schedulers, or hosted job runners can invoke the same deterministic `proofline watch` command at the desired cadence.
+
+See [ROADMAP.md](ROADMAP.md), [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md), and [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
