@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import string
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,15 +19,21 @@ class ExtractedUnit:
 
 
 def text_quality(text: str | None) -> float:
-    """Estimate whether extracted text resembles usable text, not factual correctness."""
+    """Estimate text usability without assuming English or Latin characters."""
     if not text or not text.strip():
         return 0.0
+
     stripped = text.strip()
     total = len(stripped)
-    printable_ratio = sum(ch in string.printable for ch in stripped) / total
-    readable_ratio = sum(ch.isalnum() or ch.isspace() or ch in string.punctuation for ch in stripped) / total
+    printable_ratio = sum(ch.isprintable() or ch in "\n\r\t" for ch in stripped) / total
+    alnum_space_ratio = sum(ch.isalnum() or ch.isspace() for ch in stripped) / total
+    structure_score = min(1.0, alnum_space_ratio / 0.55)
     length_score = min(1.0, total / 80.0)
-    return round(max(0.0, min(1.0, 0.45 * printable_ratio + 0.45 * readable_ratio + 0.10 * length_score)), 4)
+    replacement_ratio = stripped.count("\ufffd") / total
+
+    score = 0.55 * printable_ratio + 0.30 * structure_score + 0.15 * length_score
+    score -= min(0.50, replacement_ratio * 4.0)
+    return round(max(0.0, min(1.0, score)), 4)
 
 
 def extract_pdf_native(path: str | Path) -> list[ExtractedUnit]:
