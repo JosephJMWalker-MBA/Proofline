@@ -29,7 +29,8 @@ This file answers three questions that the roadmap and architecture documents do
 
 ### Progressive extraction — M2 complete
 
-- native PDF/text/JSON/XML extraction
+- native PDF/text/HTML/JSON/XML extraction
+- visible-text HTML extraction that excludes script/style/template content
 - stable page/row evidence identities
 - preferred extraction selected by quality without deleting prior attempts
 - optional OCR escalation
@@ -37,7 +38,7 @@ This file answers three questions that the roadmap and architecture documents do
 - streaming CSV and XLSX evidence
 - formulas preserved but never locally evaluated
 
-### Search & retrieval — M3 in progress
+### Search & retrieval — M3 implementation complete, validation pending
 
 - disposable SQLite FTS5 index over preferred evidence
 - deterministic lexical query normalization
@@ -46,11 +47,26 @@ This file answers three questions that the roadmap and architecture documents do
 - versioned retrieval benchmark format
 - hit-rate / target-recall / provenance-validity metrics
 - deterministic structured index for:
-  - monetary values
+  - explicit monetary values in prose
+  - semantically named monetary spreadsheet fields
   - dates
   - identifiers in semantically named spreadsheet fields
 - range queries for amounts and dates
 - exact content-identifier lookup
+- semantic/vector retrieval explicitly deferred because the synthetic benchmark has not demonstrated a failure class that justifies it
+
+### Source discovery — implemented for the first real corpus
+
+- versioned `proofline-discovery-plan/v1` plans
+- official index page preserved before link interpretation
+- bounded CivicEngage Agenda Center adapter
+- category/year/format filtering
+- published `Previous Versions` listing discovery
+- deterministic generated watch manifests
+- `proofline discover`
+- `proofline sync` = discover → watch/ingest → rebuild indexes
+
+See [docs/DISCOVERY.md](docs/DISCOVERY.md).
 
 ## Current CLI surface
 
@@ -59,6 +75,8 @@ proofline ingest <path>
 proofline status
 proofline trace <observation-id>
 
+proofline discover <plan.json>
+proofline sync <plan.json>
 proofline watch <manifest>
 proofline changes
 
@@ -86,11 +104,16 @@ Structured-search tests assert that:
 - prose numbers are not automatically treated as money unless explicit currency syntax is present;
 - recognized source dates normalize to ISO dates;
 - query date ranges require unambiguous `YYYY-MM-DD` boundaries;
-- identifiers are extracted only from semantically identified fields rather than guessed from every token.
+- identifiers are extracted only from semantically identified fields rather than guessed from every token;
+- serialized spreadsheet rows do not create duplicate prose facts from their own JSON representation.
+
+Discovery tests use a synthetic CivicEngage-style page to assert category/year scoping, deterministic ordering, PDF/HTML link classification, revision-list capture, and visible-text HTML extraction.
 
 ## Validation caveat
 
-The repository contains GitHub Actions pytest CI. The ChatGPT execution environment currently cannot resolve `github.com` for a local clone, so the newest commits have not been independently executed inside that environment. Do not interpret implementation claims as a substitute for passing CI.
+The ChatGPT execution environment currently cannot resolve `github.com` for a local clone, so the newest commits have not been independently executed inside that environment.
+
+A dedicated draft PR now uses GitHub Actions as the external validation harness. It runs the complete pytest suite and then performs the first live Canton sync. The PR is intentionally not treated as validated until those workflow results are observable.
 
 ## Deliberately deferred
 
@@ -98,7 +121,7 @@ The repository contains GitHub Actions pytest CI. The ChatGPT execution environm
 
 Not justified yet.
 
-The current synthetic benchmark does not demonstrate a repeatable lexical failure class. Proofline will add semantic retrieval only after a real or expanded evaluation suite shows evidence targets that deterministic lexical/structured retrieval consistently misses.
+The current synthetic benchmark does not demonstrate a repeatable lexical failure class. Proofline will add semantic retrieval only after the real corpus or an expanded evaluation suite shows evidence targets that deterministic lexical/structured retrieval consistently misses.
 
 ### LLM-generated answers
 
@@ -106,13 +129,21 @@ Also deferred.
 
 The immediate problem is reliable evidence discovery and provenance, not fluent narrative generation.
 
-## Next experiment — real public records
+## Active experiment — R0 Canton 2026
 
-The next product-level question is no longer whether the architecture can represent evidence.
+See [experiments/canton-2026/README.md](experiments/canton-2026/README.md) and GitHub Issue #5.
 
-It is:
+Scope:
 
-> Can Proofline ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected?
+- official Canton Agenda Center discovery index;
+- 2026 Board of Control;
+- 2026 City Council;
+- PDF meeting records as canonical page-level evidence;
+- published `Previous Versions` listing pages as longitudinal revision evidence.
+
+The product-level question is:
+
+> Can Proofline ingest this real corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected?
 
 A successful result does **not** require misconduct. A discrepancy that has a routine explanation is still a successful investigative lead if Proofline can show why it surfaced and provide the exact source evidence a human should inspect.
 
