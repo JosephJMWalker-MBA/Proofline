@@ -23,9 +23,11 @@ from .models import (
     SourceReference,
 )
 from .storage import ProoflineStore
+from .watcher import CorpusWatcher, ManifestResource, SourceManifest, WatchResult, WatchState, load_manifest
 
 __all__ = [
     "Artifact",
+    "CorpusWatcher",
     "EvidenceReference",
     "EvidenceUnit",
     "EvidenceUnitType",
@@ -35,11 +37,16 @@ __all__ = [
     "LeadStatus",
     "Observation",
     "ObservationStatus",
+    "ManifestResource",
     "ProcessingEvent",
     "ProoflineStore",
+    "SourceManifest",
     "SourceReference",
+    "WatchResult",
+    "WatchState",
     "artifact_id_from_sha256",
     "evidence_id_from_locator",
+    "load_manifest",
     "sha256_bytes",
     "sha256_file",
     "sha256_text",
