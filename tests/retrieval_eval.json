@@ -1,0 +1,36 @@
+{
+  "schema": "proofline-retrieval-eval/v1",
+  "name": "Proofline difficult-corpus lexical baseline",
+  "cases": [
+    {
+      "case_id": "born-digital-contract-award",
+      "query": "Contract award 250 000",
+      "expected": [
+        {
+          "source_uri": "https://fixtures.proofline.local/born-digital.pdf",
+          "locator": "page:1"
+        }
+      ]
+    },
+    {
+      "case_id": "conflicting-csv-value",
+      "query": "Northstar Civic Systems 410000",
+      "expected": [
+        {
+          "source_uri": "https://fixtures.proofline.local/contract-b.csv",
+          "locator": "sheet:CSV!A2:C2"
+        }
+      ]
+    },
+    {
+      "case_id": "formula-workbook-row",
+      "query": "Lakeview Systems calculated amount",
+      "expected": [
+        {
+          "source_uri": "https://fixtures.proofline.local/formula.xlsx",
+          "locator": "sheet:Awards!A2:D2"
+        }
+      ]
+    }
+  ]
+}
