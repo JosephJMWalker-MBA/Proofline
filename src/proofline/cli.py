@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from .discovery import SourceDiscoverer, load_discovery_plan
 from .evaluation import RetrievalEvaluator, load_retrieval_suite
 from .ingest import Ingestor
 from .ocr import PyMuPDFTesseractBackend
@@ -38,6 +39,18 @@ def _build_parser() -> argparse.ArgumentParser:
 
     trace_parser = subparsers.add_parser("trace", help="Trace an observation back to source evidence")
     trace_parser.add_argument("observation_id")
+
+    discover_parser = subparsers.add_parser(
+        "discover", help="Derive a deterministic watch manifest from official public indexes"
+    )
+    discover_parser.add_argument("plan")
+    discover_parser.add_argument("--output")
+
+    sync_parser = subparsers.add_parser(
+        "sync", help="Discover current resources and immediately watch the discovered manifest"
+    )
+    sync_parser.add_argument("plan")
+    sync_parser.add_argument("--manifest-output")
 
     watch_parser = subparsers.add_parser("watch", help="Check all resources in a source manifest")
     watch_parser.add_argument("manifest")
@@ -81,9 +94,7 @@ def _build_parser() -> argparse.ArgumentParser:
     amount_parser.add_argument("--max", dest="maximum", type=float)
     amount_parser.add_argument("--limit", type=int, default=100)
 
-    dates_parser = subparsers.add_parser(
-        "dates", help="Find evidence by normalized date range"
-    )
+    dates_parser = subparsers.add_parser("dates", help="Find evidence by normalized date range")
     dates_parser.add_argument("--from", dest="start")
     dates_parser.add_argument("--to", dest="end")
     dates_parser.add_argument("--limit", type=int, default=100)
@@ -103,6 +114,15 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _discover(state_dir: Path, plan_path: str, output: str | None):
+    plan = load_discovery_plan(plan_path)
+    discoverer = SourceDiscoverer(state_dir)
+    result = discoverer.run(plan)
+    destination = Path(output) if output else state_dir / "manifests" / f"{plan.name}.json"
+    discoverer.write_manifest(result, destination)
+    return plan, result, destination
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     state_dir = Path(args.state_dir)
@@ -115,6 +135,38 @@ def main(argv: list[str] | None = None) -> int:
             native_identifier=args.native_id,
         )
         print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "discover":
+        _, result, destination = _discover(state_dir, args.plan, args.output)
+        payload = result.to_dict()
+        payload["manifest_path"] = str(destination)
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "sync":
+        plan, discovered, destination = _discover(
+            state_dir, args.plan, args.manifest_output
+        )
+        watched = CorpusWatcher(state_dir).run(discovered.manifest)
+        lexical = SearchIndex(state_dir).rebuild()
+        structured = StructuredIndex(state_dir).rebuild()
+        print(
+            json.dumps(
+                {
+                    "plan": plan.name,
+                    "manifest_path": str(destination),
+                    "discovery": discovered.to_dict(),
+                    "watch": watched,
+                    "indexes": {
+                        "lexical": lexical.to_dict(),
+                        "structured": structured.to_dict(),
+                    },
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
 
     if args.command == "watch":
