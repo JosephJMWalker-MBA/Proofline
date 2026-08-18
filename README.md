@@ -4,11 +4,11 @@
 
 Proofline is public-record intelligence infrastructure for provenance-backed investigative leads.
 
-It continuously turns large, messy public archives into stable evidence that can be watched, searched, compared, and eventually used to surface reproducible leads for human investigators and journalists.
+It continuously turns large, messy public archives into stable evidence that can be discovered, watched, searched, compared, and eventually used to surface reproducible leads for human investigators and journalists.
 
 Proofline does **not** decide that a person or organization did something wrong. It distinguishes source evidence from machine-derived observations and leaves accusation, fairness, newsworthiness, and publication decisions with humans.
 
-> **Looking for what exists today?** Start with [STATUS.md](STATUS.md). The roadmap explains where the system is going; `STATUS.md` distinguishes implemented capabilities, measured behavior, validation caveats, and the next experiment.
+> **Looking for what exists today?** Start with [STATUS.md](STATUS.md). The roadmap explains where the system is going; `STATUS.md` distinguishes implemented capabilities, measured behavior, validation status, and the active experiment.
 
 ## The problem
 
@@ -73,7 +73,10 @@ Regenerable interpretation and analysis.
 ## Current pipeline
 
 ```text
-public source
+official public index
+    |
+    v
+discovery ---> deterministic watch manifest
     |
     v
 watch/acquisition ---> immutable artifact history
@@ -91,7 +94,7 @@ pattern detectors ---> observations ---> corroboration
 lead desk ---> human investigation
 ```
 
-The first three milestones are complete. Search/retrieval evaluation is active. See [ROADMAP.md](ROADMAP.md) and [STATUS.md](STATUS.md).
+M0 through M3 are complete and tested. R0 is the first real-public-record experiment. See [ROADMAP.md](ROADMAP.md), [STATUS.md](STATUS.md), and [experiments/canton-2026/README.md](experiments/canton-2026/README.md).
 
 ## Quick start
 
@@ -105,7 +108,20 @@ proofline ingest ./records/report.pdf \
 proofline status
 ```
 
-### Watch public sources
+### Discover and continuously sync public sources
+
+A static manifest is useful when resource URLs are already known. A discovery plan is used when an official index publishes new record URLs over time.
+
+```bash
+proofline discover experiments/canton-2026/source-plan.json
+proofline sync experiments/canton-2026/source-plan.json
+```
+
+`discover` first preserves the official index page, then derives a bounded watch manifest from links the index explicitly publishes. `sync` performs discovery, watches/ingests the resulting resources, and rebuilds retrieval indexes in one deterministic cycle.
+
+See [docs/DISCOVERY.md](docs/DISCOVERY.md).
+
+### Watch an existing manifest
 
 ```bash
 proofline watch examples/source-manifest.json
@@ -124,7 +140,7 @@ proofline review --threshold 0.80
 proofline extract artifact:<sha256> --ocr tesseract
 ```
 
-Tesseract is optional. Proofline can preserve and queue a scan even when OCR is unavailable. CSV/XLSX records are streamed into citeable row evidence; spreadsheet formulas are preserved but not evaluated.
+Tesseract is optional. Proofline can preserve and queue a scan even when OCR is unavailable. HTML is converted to visible text without script/style/template content. CSV/XLSX records are streamed into citeable row evidence; spreadsheet formulas are preserved but not evaluated.
 
 See [docs/EXTRACTION.md](docs/EXTRACTION.md).
 
@@ -172,6 +188,7 @@ The stable reference contract is documented in [docs/EVIDENCE_REFERENCE.md](docs
 ```text
 .proofline/
 ├── proofline.db
+├── manifests/
 └── artifacts/
     └── sha256/
         └── <prefix>/<full-sha256>
@@ -179,17 +196,19 @@ The stable reference contract is documented in [docs/EVIDENCE_REFERENCE.md](docs
 
 Original bytes are content-addressed. Watcher chronology is stored separately from unique artifact identity, so a public source sequence such as `A -> B -> A` remains temporally visible rather than collapsing back to one remembered object.
 
-## What is next
+## Active experiment: R0 Canton 2026
 
 Proofline has enough infrastructure to stop proving only synthetic architectural cases.
 
-The next product experiment is:
+The active product experiment is:
 
 > **Ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected.**
 
+The initial corpus is scoped in [experiments/canton-2026](experiments/canton-2026/README.md). PDF meeting records are used as canonical page-level evidence; the official Agenda Center and published revision-list pages are preserved as discovery/longitudinal evidence.
+
 Success does not mean finding wrongdoing. A routine discrepancy with a benign explanation is still a successful investigative lead if Proofline identifies it reproducibly and gives a human the exact evidence needed to investigate it.
 
-Semantic/vector retrieval remains deferred until measured retrieval failures justify it.
+Semantic/vector retrieval remains deferred until measured real-corpus retrieval failures justify it.
 
 ## Design principles
 
