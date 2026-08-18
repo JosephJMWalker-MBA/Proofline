@@ -1,0 +1,65 @@
+name: civicclerk-stream-probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/civicclerk-stream-probe.yml"
+      - "scripts/probe_civicclerk_file_streams.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe published CivicClerk file streams
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p stream-probe
+          python scripts/probe_civicclerk_file_streams.py | tee stream-probe/civicclerk-file-streams.json
+          test -s stream-probe/civicclerk-file-streams.json
+
+      - name: Require substantive PDF coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('stream-probe/civicclerk-file-streams.json').read_text())
+          events = payload['events']
+          streams = payload['streams']
+          pdf_streams = [
+              item for item in streams
+              if item.get('magic') == 'pdf' and (item.get('response') or {}).get('status') == 200
+          ]
+          covered = {item['event_id'] for item in pdf_streams}
+          print(f"events probed: {len(events)}")
+          print(f"published file candidates: {payload['published_candidate_count']}")
+          print(f"unique streams: {payload['unique_stream_count']}")
+          print(f"PDF streams: {len(pdf_streams)}")
+          print(f"events with at least one PDF: {len(covered)}")
+          print(f"magic counts: {payload['stream_magic_counts']}")
+          if len(covered) < 10:
+              raise SystemExit(f'expected PDF coverage for at least 10 calendar-linked events, got {len(covered)}')
+          PY
+
+      - name: Upload stream probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: civicclerk-stream-probe
+          path: stream-probe/
+          if-no-files-found: error
+          retention-days: 7
