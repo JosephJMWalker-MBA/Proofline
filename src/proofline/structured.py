@@ -20,8 +20,12 @@ _MONEY_RE = re.compile(
     r"(?P<number>\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)",
     re.IGNORECASE,
 )
-_ISO_DATE_RE = re.compile(r"\b(?P<year>19\d{2}|20\d{2})[-/](?P<month>0?[1-9]|1[0-2])[-/](?P<day>0?[1-9]|[12]\d|3[01])\b")
-_US_DATE_RE = re.compile(r"\b(?P<month>0?[1-9]|1[0-2])/(?P<day>0?[1-9]|[12]\d|3[01])/(?P<year>19\d{2}|20\d{2})\b")
+_ISO_DATE_RE = re.compile(
+    r"\b(?P<year>19\d{2}|20\d{2})[-/](?P<month>0?[1-9]|1[0-2])[-/](?P<day>0?[1-9]|[12]\d|3[01])\b"
+)
+_US_DATE_RE = re.compile(
+    r"\b(?P<month>0?[1-9]|1[0-2])/(?P<day>0?[1-9]|[12]\d|3[01])/(?P<year>19\d{2}|20\d{2})\b"
+)
 _MONTH_DATE_RE = re.compile(
     r"\b(?P<month>Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+"
     r"(?P<day>\d{1,2})(?:st|nd|rd|th)?[,]?\s+(?P<year>19\d{2}|20\d{2})\b",
@@ -190,7 +194,9 @@ def _parse_date_scalar(value: str) -> date | None:
     for pattern in (_ISO_DATE_RE, _US_DATE_RE):
         match = pattern.fullmatch(stripped)
         if match:
-            return _safe_date(int(match.group("year")), int(match.group("month")), int(match.group("day")))
+            return _safe_date(
+                int(match.group("year")), int(match.group("month")), int(match.group("day"))
+            )
     month_match = _MONTH_DATE_RE.fullmatch(stripped)
     if month_match:
         month_text = month_match.group("month")[:3].casefold()
@@ -230,7 +236,13 @@ def _structured_columns(text: str) -> dict[str, str] | None:
 
 
 def extract_structured_facts(text: str) -> tuple[StructuredFact, ...]:
-    """Extract conservative deterministic facts from one preferred evidence text."""
+    """Extract conservative deterministic facts from one preferred evidence text.
+
+    Structured spreadsheet rows are interpreted from source field semantics.
+    Free-form prose is scanned only for explicit currency/date syntax. These
+    paths are mutually exclusive so serialized row JSON does not manufacture
+    duplicate prose facts from its own representation.
+    """
     facts: list[StructuredFact] = []
     seen: set[tuple] = set()
 
@@ -288,6 +300,7 @@ def extract_structured_facts(text: str) -> tuple[StructuredFact, ...]:
                         normalized_text=value.casefold(),
                     )
                 )
+        return tuple(facts)
 
     for match in _MONEY_RE.finditer(text):
         parsed = _decimal_value(match.group("number"))
@@ -467,7 +480,9 @@ class StructuredIndex:
                 field_name=row["field_name"],
                 raw_text=row["raw_text"],
                 normalized_text=row["normalized_text"],
-                numeric_value=(float(row["numeric_value"]) if row["numeric_value"] is not None else None),
+                numeric_value=(
+                    float(row["numeric_value"]) if row["numeric_value"] is not None else None
+                ),
                 unit=row["unit"],
                 char_start=row["char_start"],
                 char_end=row["char_end"],
@@ -476,7 +491,13 @@ class StructuredIndex:
             for row in rows
         ]
 
-    def money(self, *, minimum: float | None = None, maximum: float | None = None, limit: int = 100) -> list[StructuredHit]:
+    def money(
+        self,
+        *,
+        minimum: float | None = None,
+        maximum: float | None = None,
+        limit: int = 100,
+    ) -> list[StructuredHit]:
         if limit < 1:
             raise ValueError("limit must be positive")
         if minimum is not None and maximum is not None and minimum > maximum:
@@ -505,7 +526,13 @@ class StructuredIndex:
             ).fetchall()
         return self._hits(rows)
 
-    def dates(self, *, start: str | None = None, end: str | None = None, limit: int = 100) -> list[StructuredHit]:
+    def dates(
+        self,
+        *,
+        start: str | None = None,
+        end: str | None = None,
+        limit: int = 100,
+    ) -> list[StructuredHit]:
         if limit < 1:
             raise ValueError("limit must be positive")
         start_value = parse_query_date(start) if start else None
