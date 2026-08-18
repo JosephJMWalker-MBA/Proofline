@@ -45,24 +45,39 @@ jobs:
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
 
-      - name: Assert live discovery produced current and archived resources
+      - name: Assert live discovery produced archived and linked resources
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+
           payload = json.loads(Path('r0-results/sync.json').read_text())
           resources = payload['discovery']['manifest']['resources']
           supporting = payload['discovery'].get('supporting_artifact_ids', [])
           archived = [r for r in resources if '/ArchivedAgenda/' in r['source_uri']]
-          print(f'discovered {len(resources)} watch resources')
+          linked = payload.get('linked_resources', [])
+          linked_watch = payload.get('linked_watch') or {'results': []}
+          unavailable_linked = [
+              item for item in linked_watch.get('results', [])
+              if item.get('state') == 'unavailable'
+          ]
+
+          print(f'discovered {len(resources)} current/archived watch resources')
           print(f'preserved {len(supporting)} supporting discovery artifacts')
           print(f'discovered {len(archived)} archived meeting resources')
+          print(f'resolved {len(linked)} pointer-PDF linked records')
+          print(f'linked-record unavailable count: {len(unavailable_linked)}')
+
           if len(resources) < 20:
               raise SystemExit(f'expected at least 20 discovered resources, got {len(resources)}')
           if not supporting:
               raise SystemExit('expected at least one preserved Previous Versions listing')
           if not archived:
               raise SystemExit('expected at least one archived meeting resource from Previous Versions')
+          if len(linked) < 20:
+              raise SystemExit(f'expected at least 20 linked records from pointer PDFs, got {len(linked)}')
+          if unavailable_linked:
+              raise SystemExit(f'linked public records were unavailable: {len(unavailable_linked)}')
           PY
 
       - name: Capture corpus status, review queue, and PDF diagnostics
