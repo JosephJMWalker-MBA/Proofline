@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from proofline.discovery import DiscoverySpec, discover_civicengage_resources
+from proofline.discovery import (
+    DiscoverySpec,
+    discover_civicengage_previous_versions,
+    discover_civicengage_resources,
+)
 from proofline.extractors import extract_html
 
 
@@ -41,17 +45,38 @@ _FIXTURE_HTML = """
 """
 
 
-def test_civicengage_discovery_is_scoped_and_deterministic() -> None:
-    spec = DiscoverySpec(
+_PREVIOUS_VERSIONS_HTML = """
+<html><body>
+  <h2>Board of Control</h2>
+  <h3>May 26, 2026 — Amended May 27, 2026 10:40 AM</h3>
+  <a href="/AgendaCenter/ViewFile/Agenda/_05262026-1147?html=true">HTML</a>
+  <a href="/AgendaCenter/ViewFile/Agenda/_05262026-1147">PDF</a>
+  <a href="/AgendaCenter/ViewFile/Agenda/_05262026-1147?packet=true">Packet</a>
+
+  <h3>May 26, 2026 — Posted May 22, 2026 8:10 AM</h3>
+  <a href="/AgendaCenter/ViewFile/ArchivedAgenda/_05262026-1033">PDF</a>
+  <a href="/AgendaCenter/ViewFile/ArchivedAgenda/_05262026-1033?packet=true">Packet</a>
+
+  <h2>City Council</h2>
+  <h3>Jan 5, 2026 — Posted Jan 7, 2026</h3>
+  <a href="/AgendaCenter/ViewFile/ArchivedAgenda/_01052026-1026">PDF</a>
+</body></html>
+"""
+
+
+def _spec(*, formats=("html", "pdf")) -> DiscoverySpec:
+    return DiscoverySpec(
         kind="civicengage_agenda_center",
         source_uri="https://city.example.gov/AgendaCenter",
         categories=("Board of Control", "City Council"),
         years=(2026,),
-        formats=("html", "pdf"),
+        formats=formats,
         include_previous_versions=True,
     )
 
-    resources = discover_civicengage_resources(_FIXTURE_HTML, spec)
+
+def test_civicengage_discovery_is_scoped_and_deterministic() -> None:
+    resources = discover_civicengage_resources(_FIXTURE_HTML, _spec())
     uris = [item.source_uri for item in resources]
 
     assert uris == sorted(uris)
@@ -69,6 +94,23 @@ def test_civicengage_discovery_is_scoped_and_deterministic() -> None:
     previous = next(item for item in resources if "PreviousVersions" in item.source_uri)
     assert previous.expected_media_type == "text/html"
     assert previous.native_identifier == "civicengage-05262026-1147-versions"
+
+
+def test_previous_versions_only_emit_archived_files_in_requested_formats() -> None:
+    resources = discover_civicengage_previous_versions(
+        _PREVIOUS_VERSIONS_HTML,
+        listing_uri="https://city.example.gov/AgendaCenter/PreviousVersions/_05262026-1147",
+        spec=_spec(formats=("pdf",)),
+    )
+
+    assert [item.source_uri for item in resources] == [
+        "https://city.example.gov/AgendaCenter/ViewFile/ArchivedAgenda/_01052026-1026",
+        "https://city.example.gov/AgendaCenter/ViewFile/ArchivedAgenda/_05262026-1033",
+    ]
+    assert all("/Agenda/" not in item.source_uri for item in resources)
+    assert all("packet=true" not in item.source_uri for item in resources)
+    assert resources[0].native_identifier == "civicengage-01052026-1026-archived-pdf"
+    assert resources[1].source_name.endswith("ARCHIVED PDF")
 
 
 def test_html_extraction_keeps_visible_record_text_without_script_or_style(tmp_path) -> None:
