@@ -7,8 +7,10 @@ import json
 import sys
 from pathlib import Path
 
-from .discovery import SourceDiscoverer, load_discovery_plan
+from .discovery import SourceDiscoverer, load_discovery_plan, manifest_to_dict
 from .evaluation import RetrievalEvaluator, load_retrieval_suite
+from .hashing import sha256_text
+from .indirection import discover_pointer_pdf_resources
 from .ingest import Ingestor
 from .ocr import PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractor
@@ -16,7 +18,7 @@ from .review import preferred_extraction, review_count, review_queue
 from .search import SearchIndex
 from .storage import ProoflineStore
 from .structured import StructuredIndex
-from .watcher import CorpusWatcher, load_manifest
+from .watcher import CorpusWatcher, SourceManifest, load_manifest
 from .watch_storage import WatcherStore
 
 
@@ -123,6 +125,13 @@ def _discover(state_dir: Path, plan_path: str, output: str | None):
     return plan, result, destination
 
 
+def _write_manifest(path: Path, manifest: SourceManifest) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    serialized = json.dumps(manifest_to_dict(manifest), indent=2, sort_keys=True) + "\n"
+    path.write_text(serialized, encoding="utf-8")
+    return sha256_text(serialized)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     state_dir = Path(args.state_dir)
@@ -148,7 +157,31 @@ def main(argv: list[str] | None = None) -> int:
         plan, discovered, destination = _discover(
             state_dir, args.plan, args.manifest_output
         )
-        watched = CorpusWatcher(state_dir).run(discovered.manifest)
+        watcher = CorpusWatcher(state_dir)
+        watched = watcher.run(discovered.manifest)
+
+        linked_resources = discover_pointer_pdf_resources(
+            state_dir,
+            discovered.manifest,
+            watched,
+        )
+        linked_watch: dict | None = None
+        final_manifest = discovered.manifest
+        if linked_resources:
+            linked_manifest = SourceManifest(
+                name=f"{plan.name}:linked-records",
+                resources=linked_resources,
+            )
+            linked_watch = watcher.run(linked_manifest)
+            by_uri = {resource.source_uri: resource for resource in discovered.manifest.resources}
+            for resource in linked_resources:
+                by_uri[resource.source_uri] = resource
+            final_manifest = SourceManifest(
+                name=discovered.manifest.name,
+                resources=tuple(by_uri[uri] for uri in sorted(by_uri)),
+            )
+
+        final_manifest_sha256 = _write_manifest(destination, final_manifest)
         lexical = SearchIndex(state_dir).rebuild()
         structured = StructuredIndex(state_dir).rebuild()
         print(
@@ -156,8 +189,19 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "plan": plan.name,
                     "manifest_path": str(destination),
+                    "manifest_sha256": final_manifest_sha256,
                     "discovery": discovered.to_dict(),
                     "watch": watched,
+                    "linked_resources": [
+                        {
+                            key: value
+                            for key, value in manifest_to_dict(
+                                SourceManifest(name="linked", resources=(resource,))
+                            )["resources"][0].items()
+                        }
+                        for resource in linked_resources
+                    ],
+                    "linked_watch": linked_watch,
                     "indexes": {
                         "lexical": lexical.to_dict(),
                         "structured": structured.to_dict(),
