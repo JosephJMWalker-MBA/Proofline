@@ -24,7 +24,13 @@ from .models import (
 )
 from .ocr import OcrBackend, OcrPageResult, PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractionResult, ProgressiveExtractor
-from .review import ReviewItem, extraction_attempts, preferred_extraction, review_queue
+from .review import (
+    ReviewItem,
+    extraction_attempts,
+    preferred_extraction,
+    review_count,
+    review_queue,
+)
 from .storage import ProoflineStore
 from .watcher import (
     CorpusWatcher,
@@ -67,6 +73,7 @@ __all__ = [
     "load_manifest",
     "manifest_sequence_gaps",
     "preferred_extraction",
+    "review_count",
     "review_queue",
     "sha256_bytes",
     "sha256_file",
