@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 
 import fitz
+import openpyxl
 
 
 def _make_born_digital_pdf(path: Path) -> None:
@@ -33,6 +34,16 @@ def _make_scanned_pdf(path: Path) -> None:
     scanned.close()
 
 
+def _make_formula_workbook(path: Path) -> None:
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Awards"
+    sheet.append(["contract_id", "vendor", "base_amount", "calculated_amount"])
+    sheet.append(["C-002", "Lakeview Systems", 125000, "=C2*2"])
+    workbook.save(path)
+    workbook.close()
+
+
 def build_fixture_corpus(root: str | Path) -> dict:
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
@@ -45,9 +56,11 @@ def build_fixture_corpus(root: str | Path) -> dict:
     version_two = root / "source_version_2.txt"
     conflict_a = root / "contract_record_a.csv"
     conflict_b = root / "contract_record_b.csv"
+    formula_workbook = root / "contract_formula.xlsx"
 
     _make_born_digital_pdf(born_digital)
     _make_scanned_pdf(scanned)
+    _make_formula_workbook(formula_workbook)
     shutil.copyfile(born_digital, duplicate)
     corrupted.write_bytes(b"%PDF-1.7\nthis is intentionally truncated and invalid")
     version_one.write_text("Award amount: $250,000\nStatus: proposed\n", encoding="utf-8")
@@ -66,13 +79,15 @@ def build_fixture_corpus(root: str | Path) -> dict:
         "corrupted_pdf": corrupted.name,
         "same_source_versions": [version_one.name, version_two.name],
         "conflicting_structured_records": [conflict_a.name, conflict_b.name],
+        "formula_workbook": formula_workbook.name,
         "expected_properties": {
             "born_digital_has_native_text": True,
             "scanned_has_native_text": False,
             "duplicate_sha256_matches_born_digital": True,
             "corrupted_pdf_extraction_should_fail_without_losing_artifact": True,
             "version_values_differ": True,
-            "structured_amounts_conflict": True
+            "structured_amounts_conflict": True,
+            "xlsx_formula_preserved_not_evaluated": True
         }
     }
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
