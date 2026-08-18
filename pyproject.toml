@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "proofline"
+version = "0.1.0"
+description = "Public-record intelligence infrastructure for provenance-backed investigative leads."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Joseph Walker" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proofline"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
