@@ -1,4 +1,4 @@
-"""Command-line interface for the Proofline evidence core."""
+"""Command-line interface for Proofline."""
 
 from __future__ import annotations
 
@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 
 from .ingest import Ingestor
+from .ocr import PyMuPDFTesseractBackend
+from .progressive import ProgressiveExtractor
+from .review import review_queue
 from .storage import ProoflineStore
 from .watcher import CorpusWatcher, load_manifest
 from .watch_storage import WatcherStore
@@ -41,6 +44,20 @@ def _build_parser() -> argparse.ArgumentParser:
     changes_parser.add_argument("--include-unchanged", action="store_true")
     changes_parser.add_argument("--run-id")
 
+    review_parser = subparsers.add_parser("review", help="List evidence below a quality threshold")
+    review_parser.add_argument("--threshold", type=float, default=0.70)
+    review_parser.add_argument("--limit", type=int, default=100)
+
+    extract_parser = subparsers.add_parser(
+        "extract", help="Escalate extraction for an existing artifact"
+    )
+    extract_parser.add_argument("artifact_id")
+    extract_parser.add_argument("--ocr", choices=["tesseract"], required=True)
+    extract_parser.add_argument("--threshold", type=float, default=0.70)
+    extract_parser.add_argument("--language", default="eng")
+    extract_parser.add_argument("--dpi", type=int, default=200)
+    extract_parser.add_argument("--force", action="store_true")
+
     return parser
 
 
@@ -63,6 +80,22 @@ def main(argv: list[str] | None = None) -> int:
         result = CorpusWatcher(state_dir).run(manifest)
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0
+
+    if args.command == "review":
+        items = review_queue(state_dir, threshold=args.threshold, limit=args.limit)
+        print(json.dumps([item.to_dict() for item in items], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "extract":
+        backend = PyMuPDFTesseractBackend(language=args.language, dpi=args.dpi)
+        result = ProgressiveExtractor(state_dir).run_ocr(
+            args.artifact_id,
+            backend,
+            threshold=args.threshold,
+            force=args.force,
+        )
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0 if result.failed == 0 else 1
 
     store = ProoflineStore(state_dir / "proofline.db")
     if args.command == "status":
