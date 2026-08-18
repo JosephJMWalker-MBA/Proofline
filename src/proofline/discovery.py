@@ -140,11 +140,19 @@ def load_discovery_plan(path: str | Path) -> DiscoveryPlan:
         categories = raw.get("categories")
         years = raw.get("years")
         formats = raw.get("formats", ["html", "pdf"])
-        if not isinstance(categories, list) or not categories or not all(isinstance(v, str) and v for v in categories):
+        if (
+            not isinstance(categories, list)
+            or not categories
+            or not all(isinstance(v, str) and v for v in categories)
+        ):
             raise ValueError("categories must be a non-empty string list")
         if not isinstance(years, list) or not years or not all(isinstance(v, int) for v in years):
             raise ValueError("years must be a non-empty integer list")
-        if not isinstance(formats, list) or not formats or not all(v in {"html", "pdf", "packet"} for v in formats):
+        if (
+            not isinstance(formats, list)
+            or not formats
+            or not all(v in {"html", "pdf", "packet"} for v in formats)
+        ):
             raise ValueError("formats must contain html, pdf, and/or packet")
         specs.append(
             DiscoverySpec(
@@ -174,6 +182,8 @@ def _link_format(link: DiscoveredLink) -> str | None:
         return "packet"
     if text == "pdf" and "/AgendaCenter/ViewFile/" in parsed.path:
         return "pdf"
+    if text == "previous versions" and "/AgendaCenter/PreviousVersions/" in parsed.path:
+        return "versions"
     return None
 
 
@@ -201,9 +211,15 @@ def discover_civicengage_resources(
         if year not in spec.years:
             continue
         fmt = _link_format(link)
-        if fmt is None or fmt not in spec.formats:
+        if fmt == "versions":
+            if not spec.include_previous_versions:
+                continue
+            media_type = "text/html"
+        elif fmt is None or fmt not in spec.formats:
             continue
-        media_type = "text/html" if fmt == "html" else "application/pdf"
+        else:
+            media_type = "text/html" if fmt == "html" else "application/pdf"
+
         name = f"{link.category} — {link.meeting_label} — {fmt.upper()}"
         resources[link.source_uri] = ManifestResource(
             source_uri=link.source_uri,
@@ -273,8 +289,7 @@ class SourceDiscoverer:
             name=f"{plan.name}:discovered",
             resources=tuple(combined[uri] for uri in sorted(combined)),
         )
-        payload = manifest_to_dict(manifest)
-        serialized = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+        serialized = json.dumps(manifest_to_dict(manifest), indent=2, sort_keys=True) + "\n"
         return DiscoveryResult(
             plan=plan.name,
             manifest=manifest,
