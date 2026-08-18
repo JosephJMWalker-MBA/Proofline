@@ -5,8 +5,10 @@ from __future__ import annotations
 import csv
 import json
 import platform
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass
+from html.parser import HTMLParser
 from pathlib import Path
 
 from .models import EvidenceUnitType
@@ -42,6 +44,110 @@ def text_quality(text: str | None) -> float:
     return round(max(0.0, min(1.0, score)), 4)
 
 
+class _VisibleTextParser(HTMLParser):
+    """Extract human-visible text without executing or interpreting page scripts."""
+
+    _SKIP_TAGS = {"script", "style", "noscript", "template", "svg"}
+    _BLOCK_TAGS = {
+        "address",
+        "article",
+        "aside",
+        "blockquote",
+        "br",
+        "dd",
+        "div",
+        "dl",
+        "dt",
+        "figcaption",
+        "footer",
+        "form",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "header",
+        "hr",
+        "li",
+        "main",
+        "nav",
+        "ol",
+        "p",
+        "pre",
+        "section",
+        "table",
+        "tbody",
+        "td",
+        "th",
+        "thead",
+        "tr",
+        "ul",
+    }
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._skip_depth = 0
+        self._parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        tag = tag.casefold()
+        if tag in self._SKIP_TAGS:
+            self._skip_depth += 1
+        if self._skip_depth == 0 and tag in self._BLOCK_TAGS:
+            self._parts.append("\n")
+
+    def handle_startendtag(self, tag: str, attrs) -> None:
+        if self._skip_depth == 0 and tag.casefold() in self._BLOCK_TAGS:
+            self._parts.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.casefold()
+        if tag in self._SKIP_TAGS:
+            if self._skip_depth:
+                self._skip_depth -= 1
+            return
+        if self._skip_depth == 0 and tag in self._BLOCK_TAGS:
+            self._parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth == 0 and data:
+            self._parts.append(data)
+
+    def visible_text(self) -> str:
+        raw = "".join(self._parts).replace("\r\n", "\n").replace("\r", "\n")
+        lines: list[str] = []
+        previous_blank = True
+        for line in raw.split("\n"):
+            cleaned = re.sub(r"[\t\f\v ]+", " ", line).strip()
+            if cleaned:
+                lines.append(cleaned)
+                previous_blank = False
+            elif not previous_blank:
+                lines.append("")
+                previous_blank = True
+        return "\n".join(lines).strip()
+
+
+def extract_html(path: str | Path) -> Iterator[ExtractedUnit]:
+    source = Path(path).read_text(encoding="utf-8", errors="replace")
+    parser = _VisibleTextParser()
+    parser.feed(source)
+    parser.close()
+    text = parser.visible_text()
+    quality = text_quality(text)
+    warnings = () if quality >= 0.70 else ("visible HTML text is absent or low quality",)
+    yield ExtractedUnit(
+        unit_type=EvidenceUnitType.RECORD,
+        locator="record:1",
+        text=text or None,
+        method="python_html_visible_text",
+        quality_score=quality,
+        software_version=f"Python {platform.python_version()}",
+        warnings=warnings,
+    )
+
+
 def _column_name(index: int) -> str:
     value = index + 1
     result = ""
@@ -55,7 +161,11 @@ def _structured_row_text(headers: list[str], values: list[object]) -> str:
     raw = ["" if value is None else str(value) for value in values]
     mapping: dict[str, str] = {}
     for index, value in enumerate(raw):
-        key = headers[index].strip() if index < len(headers) and headers[index].strip() else _column_name(index)
+        key = (
+            headers[index].strip()
+            if index < len(headers) and headers[index].strip()
+            else _column_name(index)
+        )
         if key in mapping:
             key = f"{key}__{_column_name(index)}"
         mapping[key] = value
@@ -193,6 +303,8 @@ def extract_native(path: str | Path, media_type: str | None) -> Iterator[Extract
 
     if normalized_type == "application/pdf" or suffix == ".pdf":
         return extract_pdf_native(path)
+    if normalized_type == "text/html" or suffix in {".html", ".htm"}:
+        return extract_html(path)
     if normalized_type == "text/csv" or suffix == ".csv":
         return extract_csv(path)
     if normalized_type in {
