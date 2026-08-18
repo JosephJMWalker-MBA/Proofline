@@ -52,6 +52,31 @@ def extraction_attempts(store: ProoflineStore, evidence_id: str) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def review_count(state_dir: str | Path = ".proofline", *, threshold: float = 0.70) -> int:
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("threshold must be between 0.0 and 1.0")
+    store = ProoflineStore(Path(state_dir) / "proofline.db")
+    with store.connection() as connection:
+        return int(
+            connection.execute(
+                """
+                SELECT COUNT(*)
+                FROM evidence_units eu
+                WHERE COALESCE((
+                    SELECT ee.quality_score
+                    FROM evidence_extractions ee
+                    WHERE ee.evidence_id = eu.evidence_id
+                    ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                             ee.occurred_at DESC,
+                             ee.rowid DESC
+                    LIMIT 1
+                ), 0.0) < ?
+                """,
+                (threshold,),
+            ).fetchone()[0]
+        )
+
+
 def review_queue(
     state_dir: str | Path = ".proofline", *, threshold: float = 0.70, limit: int = 100
 ) -> list[ReviewItem]:
