@@ -40,26 +40,37 @@ jobs:
           python -m proofline.cli --help >/dev/null
 
       - name: Run Canton discovery and sync
+        shell: bash
         run: |
+          set -o pipefail
           mkdir -p r0-results
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
 
-      - name: Assert live discovery produced a corpus
+      - name: Assert live discovery produced a corpus and clean version analysis
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+
           payload = json.loads(Path('r0-results/sync.json').read_text())
           resources = payload['discovery']['manifest']['resources']
+          version_analysis = payload.get('version_analysis') or {}
           print(f'discovered {len(resources)} resources')
+          print(f"version relations: {version_analysis.get('relation_count', 0)}")
+          print(f"version observations created: {version_analysis.get('observations_created', 0)}")
+          print(f"version analysis skipped: {version_analysis.get('skipped', 0)}")
+          print(f"version analysis failed: {version_analysis.get('failed', 0)}")
           if len(resources) < 20:
               raise SystemExit(f'expected at least 20 discovered resources, got {len(resources)}')
+          if version_analysis.get('failed', 0) != 0:
+              raise SystemExit(f"version analysis failures: {version_analysis['failed']}")
           PY
 
       - name: Capture corpus status and review queue
         if: always()
         run: |
+          mkdir -p r0-results
           if [ -f .r0/proofline.db ]; then
             python -m proofline.cli --state-dir .r0 status > r0-results/status.json || true
             python -m proofline.cli --state-dir .r0 review --limit 500 > r0-results/review.json || true
