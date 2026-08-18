@@ -1,5 +1,14 @@
 """Proofline public API."""
 
+from .discovery import (
+    DiscoveryPlan,
+    DiscoveryResult,
+    DiscoverySpec,
+    SourceDiscoverer,
+    discover_civicengage_resources,
+    load_discovery_plan,
+    manifest_to_dict,
+)
 from .evaluation import (
     EvaluationResult,
     ExpectedTarget,
@@ -62,6 +71,9 @@ from .watcher import (
 __all__ = [
     "Artifact",
     "CorpusWatcher",
+    "DiscoveryPlan",
+    "DiscoveryResult",
+    "DiscoverySpec",
     "EvaluationResult",
     "EvidenceReference",
     "EvidenceUnit",
@@ -88,6 +100,7 @@ __all__ = [
     "ReviewItem",
     "SearchHit",
     "SearchIndex",
+    "SourceDiscoverer",
     "SourceManifest",
     "SourceReference",
     "StructuredBuildResult",
@@ -97,12 +110,15 @@ __all__ = [
     "WatchResult",
     "WatchState",
     "artifact_id_from_sha256",
+    "discover_civicengage_resources",
     "evidence_id_from_locator",
     "extract_structured_facts",
     "extraction_attempts",
+    "load_discovery_plan",
     "load_manifest",
     "load_retrieval_suite",
     "manifest_sequence_gaps",
+    "manifest_to_dict",
     "normalize_lexical_query",
     "parse_query_date",
     "preferred_extraction",
