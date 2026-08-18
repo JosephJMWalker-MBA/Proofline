@@ -8,6 +8,7 @@ from proofline.watcher import ManifestResource, SourceManifest
 
 
 def _make_pointer_pdf(path, target: str, *, visible_text: str | None = None) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     document = pymupdf.open()
     page = document.new_page()
     if visible_text:
