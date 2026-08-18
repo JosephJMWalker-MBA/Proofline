@@ -1,5 +1,13 @@
 """Proofline public API."""
 
+from .evaluation import (
+    EvaluationResult,
+    ExpectedTarget,
+    RetrievalCase,
+    RetrievalEvaluator,
+    RetrievalSuite,
+    load_retrieval_suite,
+)
 from .hashing import (
     artifact_id_from_sha256,
     evidence_id_from_locator,
@@ -31,6 +39,7 @@ from .review import (
     review_count,
     review_queue,
 )
+from .search import IndexBuildResult, SearchHit, SearchIndex, normalize_lexical_query
 from .storage import ProoflineStore
 from .watcher import (
     CorpusWatcher,
@@ -45,9 +54,12 @@ from .watcher import (
 __all__ = [
     "Artifact",
     "CorpusWatcher",
+    "EvaluationResult",
     "EvidenceReference",
     "EvidenceUnit",
     "EvidenceUnitType",
+    "ExpectedTarget",
+    "IndexBuildResult",
     "IngestResult",
     "Ingestor",
     "Lead",
@@ -62,7 +74,12 @@ __all__ = [
     "ProgressiveExtractor",
     "ProoflineStore",
     "PyMuPDFTesseractBackend",
+    "RetrievalCase",
+    "RetrievalEvaluator",
+    "RetrievalSuite",
     "ReviewItem",
+    "SearchHit",
+    "SearchIndex",
     "SourceManifest",
     "SourceReference",
     "WatchResult",
@@ -71,7 +88,9 @@ __all__ = [
     "evidence_id_from_locator",
     "extraction_attempts",
     "load_manifest",
+    "load_retrieval_suite",
     "manifest_sequence_gaps",
+    "normalize_lexical_query",
     "preferred_extraction",
     "review_count",
     "review_queue",
