@@ -12,6 +12,7 @@ authors = [
   { name = "Joseph Walker" }
 ]
 dependencies = [
+  "openpyxl>=3.1",
   "pymupdf>=1.24",
 ]
 
