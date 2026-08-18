@@ -41,6 +41,14 @@ from .review import (
 )
 from .search import IndexBuildResult, SearchHit, SearchIndex, normalize_lexical_query
 from .storage import ProoflineStore
+from .structured import (
+    StructuredBuildResult,
+    StructuredFact,
+    StructuredHit,
+    StructuredIndex,
+    extract_structured_facts,
+    parse_query_date,
+)
 from .watcher import (
     CorpusWatcher,
     ManifestResource,
@@ -82,15 +90,21 @@ __all__ = [
     "SearchIndex",
     "SourceManifest",
     "SourceReference",
+    "StructuredBuildResult",
+    "StructuredFact",
+    "StructuredHit",
+    "StructuredIndex",
     "WatchResult",
     "WatchState",
     "artifact_id_from_sha256",
     "evidence_id_from_locator",
+    "extract_structured_facts",
     "extraction_attempts",
     "load_manifest",
     "load_retrieval_suite",
     "manifest_sequence_gaps",
     "normalize_lexical_query",
+    "parse_query_date",
     "preferred_extraction",
     "review_count",
     "review_queue",
