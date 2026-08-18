@@ -1,0 +1,166 @@
+# Proofline Roadmap
+
+## Milestone 0 — Evidence Core
+
+Goal: prove source integrity and evidence traceability before adding sophisticated AI.
+
+Deliverables:
+
+- immutable artifact identity using SHA-256
+- source and retrieval metadata
+- page/logical evidence units
+- extraction method and quality metadata
+- append-only processing events
+- observation objects that require evidence references
+- SQLite persistence
+- a minimal CLI for ingest/status/trace
+- tests proving that observations can be traced back to original artifacts
+
+Exit criterion:
+
+> Given a derived observation, Proofline can deterministically identify the exact source artifact and evidence unit(s) from which it was produced.
+
+## Milestone 1 — Corpus Watcher
+
+Goal: detect what changed in a monitored public source.
+
+Deliverables:
+
+- configurable source manifests
+- scheduled source snapshots
+- new/changed/removed resource detection
+- content/version relationships
+- native identifier and sequence-gap support
+- retry and acquisition integrity checks
+
+Exit criterion:
+
+> Proofline can compare two source snapshots and produce a reproducible change set without interpreting motive.
+
+## Milestone 2 — Progressive Extraction
+
+Goal: reliably turn heterogeneous records into evidence units while controlling cost.
+
+Deliverables:
+
+- native PDF/text extraction
+- per-page quality heuristics
+- OCR fallback interface
+- review queue for low-confidence pages
+- spreadsheet/native-file adapters
+- extraction version metadata
+
+Exit criterion:
+
+> Every evidence unit identifies how it was extracted and whether its quality crosses configured thresholds.
+
+## Milestone 3 — Search & Retrieval Evaluation
+
+Goal: find the right evidence, not merely generate plausible answers.
+
+Deliverables:
+
+- SQLite FTS5 lexical retrieval
+- structured identifier/date/value search
+- benchmark corpus containing deliberately difficult records
+- research-question evaluation set
+- retrieval recall and provenance-accuracy metrics
+- optional semantic retrieval experiment
+
+Exit criterion:
+
+> Retrieval quality is measured against known evidence targets, and any vector infrastructure is justified by measured failures of simpler methods.
+
+## Milestone 4 — Entity & Relationship Layer
+
+Goal: support cross-record investigation without creating guilt-by-association machinery.
+
+Deliverables:
+
+- entity mentions tied to evidence units
+- aliases and probabilistic resolution
+- explicit relationship evidence types
+- source-independence tracking
+- entity timeline and neighbor queries
+
+Exit criterion:
+
+> Every relationship shown to a user distinguishes explicit evidence, deterministic derivation, co-occurrence, and probabilistic inference.
+
+## Milestone 5 — Detector Framework
+
+Goal: surface reproducible anomalies and contradictions.
+
+Initial detectors:
+
+- source/version changes
+- identifier sequence gaps
+- conflicting structured values
+- repeated addresses/contact details across entities
+- unusual amendment/value changes
+- entity appearance/disappearance across versions
+- cross-source presence/absence discrepancies
+
+Exit criterion:
+
+> Each detector produces an observation with method, evidence, uncertainty, and known limitations.
+
+## Milestone 6 — Lead Desk
+
+Goal: convert observations into investigation-ready packets for human review.
+
+Deliverables:
+
+- lead scoring dimensions: novelty, anomaly, corroboration, source quality, uncertainty
+- benign-explanation field
+- questions-worth-asking generation
+- evidence packet assembly
+- lead lifecycle and reviewer notes
+- append-only disposition history
+
+Exit criterion:
+
+> A journalist can understand why a lead surfaced, inspect its evidence, reject it, explain it, or pursue it without trusting an opaque model conclusion.
+
+## Milestone 7 — LLM / MCP Research Interface
+
+Goal: let reasoning models interact with Proofline without making the model the system of record.
+
+Candidate tools:
+
+```text
+search
+fetch_evidence
+fetch_artifact_metadata
+compare_versions
+entity_lookup
+entity_neighbors
+timeline
+evidence_pack
+trace_observation
+```
+
+Exit criterion:
+
+> Model outputs can cite stable Proofline evidence references, and the same evidence can be independently retrieved without the model.
+
+## Reference test corpus
+
+The development corpus should intentionally contain ugly cases:
+
+- born-digital PDF
+- scanned PDF
+- poor OCR
+- multi-column layout
+- table
+- spreadsheet
+- handwriting
+- duplicate document
+- OCR-variant duplicate
+- corrupted artifact
+- missing identifier in a sequence
+- same URL returning a revised artifact
+- audio/transcript pair
+- conflicting values across authoritative records
+
+The corpus should be small enough to understand manually and difficult enough to expose architectural mistakes early.
