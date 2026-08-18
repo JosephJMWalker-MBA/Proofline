@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import platform
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -70,10 +71,9 @@ def _header_row_text(values: list[object]) -> str:
     )
 
 
-def extract_pdf_native(path: str | Path) -> list[ExtractedUnit]:
+def extract_pdf_native(path: str | Path) -> Iterator[ExtractedUnit]:
     import fitz
 
-    units: list[ExtractedUnit] = []
     software_version = f"PyMuPDF {fitz.VersionBind}"
     with fitz.open(str(path)) as document:
         for page_index, page in enumerate(document):
@@ -82,82 +82,70 @@ def extract_pdf_native(path: str | Path) -> list[ExtractedUnit]:
             warnings: tuple[str, ...] = ()
             if quality < 0.70:
                 warnings = ("native text is absent or low quality; OCR review may be needed",)
-            units.append(
-                ExtractedUnit(
-                    unit_type=EvidenceUnitType.PAGE,
-                    locator=f"page:{page_index + 1}",
-                    text=text or None,
-                    method="pymupdf_native_text",
-                    quality_score=quality,
-                    software_version=software_version,
-                    warnings=warnings,
-                )
+            yield ExtractedUnit(
+                unit_type=EvidenceUnitType.PAGE,
+                locator=f"page:{page_index + 1}",
+                text=text or None,
+                method="pymupdf_native_text",
+                quality_score=quality,
+                software_version=software_version,
+                warnings=warnings,
             )
-    return units
 
 
-def extract_plain_text(path: str | Path) -> list[ExtractedUnit]:
+def extract_plain_text(path: str | Path) -> Iterator[ExtractedUnit]:
     text = Path(path).read_text(encoding="utf-8", errors="replace")
     quality = text_quality(text)
     warnings = () if quality >= 0.70 else ("text content is low quality",)
-    return [
-        ExtractedUnit(
-            unit_type=EvidenceUnitType.RECORD,
-            locator="record:1",
-            text=text,
-            method="utf8_text",
-            quality_score=quality,
-            software_version=f"Python {platform.python_version()}",
-            warnings=warnings,
-        )
-    ]
+    yield ExtractedUnit(
+        unit_type=EvidenceUnitType.RECORD,
+        locator="record:1",
+        text=text,
+        method="utf8_text",
+        quality_score=quality,
+        software_version=f"Python {platform.python_version()}",
+        warnings=warnings,
+    )
 
 
-def extract_csv(path: str | Path) -> list[ExtractedUnit]:
-    units: list[ExtractedUnit] = []
+def extract_csv(path: str | Path) -> Iterator[ExtractedUnit]:
     software_version = f"Python {platform.python_version()}"
     with Path(path).open("r", encoding="utf-8-sig", errors="replace", newline="") as handle:
         reader = csv.reader(handle)
         first_row = next(reader, None)
         if first_row is None:
-            return units
+            return
 
         headers = [cell.strip() or _column_name(index) for index, cell in enumerate(first_row)]
         if any(str(value).strip() for value in first_row):
             last_column = _column_name(max(0, len(first_row) - 1))
-            units.append(
-                ExtractedUnit(
-                    unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
-                    locator=f"sheet:CSV!A1:{last_column}1",
-                    text=_header_row_text(first_row),
-                    method="python_csv",
-                    quality_score=1.0,
-                    software_version=software_version,
-                )
+            yield ExtractedUnit(
+                unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                locator=f"sheet:CSV!A1:{last_column}1",
+                text=_header_row_text(first_row),
+                method="python_csv",
+                quality_score=1.0,
+                software_version=software_version,
             )
 
         for row_index, row in enumerate(reader, start=2):
             if not any(str(value).strip() for value in row):
                 continue
             last_column = _column_name(max(0, len(row) - 1))
-            units.append(
-                ExtractedUnit(
-                    unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
-                    locator=f"sheet:CSV!A{row_index}:{last_column}{row_index}",
-                    text=_structured_row_text(headers, row),
-                    method="python_csv",
-                    quality_score=1.0,
-                    software_version=software_version,
-                )
+            yield ExtractedUnit(
+                unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                locator=f"sheet:CSV!A{row_index}:{last_column}{row_index}",
+                text=_structured_row_text(headers, row),
+                method="python_csv",
+                quality_score=1.0,
+                software_version=software_version,
             )
-    return units
 
 
-def extract_xlsx(path: str | Path) -> list[ExtractedUnit]:
+def extract_xlsx(path: str | Path) -> Iterator[ExtractedUnit]:
     import openpyxl
 
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=False)
-    units: list[ExtractedUnit] = []
     software_version = f"openpyxl {openpyxl.__version__}"
     warning = ("formulas are preserved as source expressions and are not evaluated",)
     try:
@@ -171,16 +159,14 @@ def extract_xlsx(path: str | Path) -> list[ExtractedUnit]:
             headers = ["" if value is None else str(value) for value in first_values]
             if any(value is not None and str(value).strip() for value in first_values):
                 last_column = _column_name(max(0, len(first_values) - 1))
-                units.append(
-                    ExtractedUnit(
-                        unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
-                        locator=f"sheet:{sheet.title}!A1:{last_column}1",
-                        text=_header_row_text(first_values),
-                        method="openpyxl_values_and_formulas",
-                        quality_score=1.0,
-                        software_version=software_version,
-                        warnings=warning,
-                    )
+                yield ExtractedUnit(
+                    unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                    locator=f"sheet:{sheet.title}!A1:{last_column}1",
+                    text=_header_row_text(first_values),
+                    method="openpyxl_values_and_formulas",
+                    quality_score=1.0,
+                    software_version=software_version,
+                    warnings=warning,
                 )
 
             for row_index, row in enumerate(row_iterator, start=2):
@@ -188,23 +174,20 @@ def extract_xlsx(path: str | Path) -> list[ExtractedUnit]:
                 if not any(value is not None and str(value).strip() for value in values):
                     continue
                 last_column = _column_name(max(0, len(values) - 1))
-                units.append(
-                    ExtractedUnit(
-                        unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
-                        locator=f"sheet:{sheet.title}!A{row_index}:{last_column}{row_index}",
-                        text=_structured_row_text(headers, values),
-                        method="openpyxl_values_and_formulas",
-                        quality_score=1.0,
-                        software_version=software_version,
-                        warnings=warning,
-                    )
+                yield ExtractedUnit(
+                    unit_type=EvidenceUnitType.SPREADSHEET_RANGE,
+                    locator=f"sheet:{sheet.title}!A{row_index}:{last_column}{row_index}",
+                    text=_structured_row_text(headers, values),
+                    method="openpyxl_values_and_formulas",
+                    quality_score=1.0,
+                    software_version=software_version,
+                    warnings=warning,
                 )
     finally:
         workbook.close()
-    return units
 
 
-def extract_native(path: str | Path, media_type: str | None) -> list[ExtractedUnit]:
+def extract_native(path: str | Path, media_type: str | None) -> Iterator[ExtractedUnit]:
     suffix = Path(path).suffix.lower()
     normalized_type = (media_type or "").split(";", 1)[0].strip().lower()
 
@@ -223,4 +206,4 @@ def extract_native(path: str | Path, media_type: str | None) -> list[ExtractedUn
         "application/xhtml+xml",
     } or suffix in {".txt", ".md", ".json", ".xml"}:
         return extract_plain_text(path)
-    return []
+    return iter(())
