@@ -9,6 +9,8 @@ from pathlib import Path
 
 from .ingest import Ingestor
 from .storage import ProoflineStore
+from .watcher import CorpusWatcher, load_manifest
+from .watch_storage import WatcherStore
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -31,6 +33,14 @@ def _build_parser() -> argparse.ArgumentParser:
     trace_parser = subparsers.add_parser("trace", help="Trace an observation back to source evidence")
     trace_parser.add_argument("observation_id")
 
+    watch_parser = subparsers.add_parser("watch", help="Check all resources in a source manifest")
+    watch_parser.add_argument("manifest")
+
+    changes_parser = subparsers.add_parser("changes", help="Show recorded source changes")
+    changes_parser.add_argument("--limit", type=int, default=100)
+    changes_parser.add_argument("--include-unchanged", action="store_true")
+    changes_parser.add_argument("--run-id")
+
     return parser
 
 
@@ -48,6 +58,12 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
         return 0
 
+    if args.command == "watch":
+        manifest = load_manifest(args.manifest)
+        result = CorpusWatcher(state_dir).run(manifest)
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+
     store = ProoflineStore(state_dir / "proofline.db")
     if args.command == "status":
         print(json.dumps(store.status(), indent=2, sort_keys=True))
@@ -59,6 +75,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"observation not found: {args.observation_id}", file=sys.stderr)
             return 2
         print(json.dumps(trace, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "changes":
+        changes = WatcherStore(state_dir / "proofline.db").recent_changes(
+            limit=args.limit,
+            include_unchanged=args.include_unchanged,
+            run_id=args.run_id,
+        )
+        print(json.dumps(changes, indent=2, sort_keys=True))
         return 0
 
     raise AssertionError(f"unhandled command: {args.command}")
