@@ -33,10 +33,17 @@ jobs:
       - name: Run full test suite
         run: python -m pytest
 
+      - name: Verify installed CLI
+        run: |
+          command -v proofline
+          proofline --help >/dev/null
+          python -m proofline.cli --help >/dev/null
+
       - name: Run Canton discovery and sync
         run: |
           mkdir -p r0-results
-          proofline --state-dir .r0 sync experiments/canton-2026/source-plan.json > r0-results/sync.json
+          python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
+          test -s r0-results/sync.json
 
       - name: Assert live discovery produced a corpus
         run: |
@@ -45,20 +52,26 @@ jobs:
           from pathlib import Path
           payload = json.loads(Path('r0-results/sync.json').read_text())
           resources = payload['discovery']['manifest']['resources']
+          print(f'discovered {len(resources)} resources')
           if len(resources) < 20:
               raise SystemExit(f'expected at least 20 discovered resources, got {len(resources)}')
-          print(f'discovered {len(resources)} resources')
           PY
 
       - name: Capture corpus status and review queue
+        if: always()
         run: |
-          proofline --state-dir .r0 status > r0-results/status.json
-          proofline --state-dir .r0 review --limit 500 > r0-results/review.json
-          python scripts/r0_summary.py .r0/proofline.db > r0-results/corpus-summary.json
-          cp .r0/proofline.db r0-results/proofline.db
-          cp .r0/manifests/canton-2026-public-records.json r0-results/discovered-manifest.json
+          if [ -f .r0/proofline.db ]; then
+            python -m proofline.cli --state-dir .r0 status > r0-results/status.json || true
+            python -m proofline.cli --state-dir .r0 review --limit 500 > r0-results/review.json || true
+            python scripts/r0_summary.py .r0/proofline.db > r0-results/corpus-summary.json || true
+            cp .r0/proofline.db r0-results/proofline.db
+          fi
+          if [ -f .r0/manifests/canton-2026-public-records.json ]; then
+            cp .r0/manifests/canton-2026-public-records.json r0-results/discovered-manifest.json
+          fi
 
       - name: Upload R0 evidence database and reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: r0-canton-results
