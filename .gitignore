@@ -12,6 +12,7 @@ htmlcov/
 .env
 
 # Local Proofline working data
+.proofline/
 .data/
 data/artifacts/
 data/proofline.db
