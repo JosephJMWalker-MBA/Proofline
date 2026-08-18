@@ -71,7 +71,7 @@ def normalize_lexical_query(query: str) -> str:
     tokens = _TOKEN_RE.findall(query.casefold())
     if not tokens:
         raise ValueError("query contains no searchable terms")
-    return " AND ".join(f'"{token.replace(chr(34), chr(34) * 2)}"' for token in tokens)
+    return " AND ".join(f'"{token}"' for token in tokens)
 
 
 class SearchIndex:
@@ -91,11 +91,16 @@ class SearchIndex:
                 raise RuntimeError("this SQLite build does not include FTS5 support") from exc
             raise
 
-    def rebuild(self) -> IndexBuildResult:
+    def rebuild(self, *, batch_size: int = 1000) -> IndexBuildResult:
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive")
         build_id = f"index:{uuid.uuid4()}"
         built_at = datetime.now(UTC).isoformat()
+        evidence_count = 0
+
         with self.store.connection() as connection:
-            rows = connection.execute(
+            connection.execute("DELETE FROM evidence_fts")
+            cursor = connection.execute(
                 """
                 SELECT
                     eu.evidence_id,
@@ -119,42 +124,47 @@ class SearchIndex:
                   AND TRIM(best.extracted_text) != ''
                 ORDER BY eu.evidence_id
                 """
-            ).fetchall()
-
-            connection.execute("DELETE FROM evidence_fts")
-            connection.executemany(
-                """
-                INSERT INTO evidence_fts(
-                    build_id, evidence_id, artifact_id, locator,
-                    content, method, quality_score
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                [
-                    (
-                        build_id,
-                        row["evidence_id"],
-                        row["artifact_id"],
-                        row["locator"],
-                        row["extracted_text"],
-                        row["method"],
-                        row["quality_score"],
-                    )
-                    for row in rows
-                ],
             )
+
+            while True:
+                rows = cursor.fetchmany(batch_size)
+                if not rows:
+                    break
+                connection.executemany(
+                    """
+                    INSERT INTO evidence_fts(
+                        build_id, evidence_id, artifact_id, locator,
+                        content, method, quality_score
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            build_id,
+                            row["evidence_id"],
+                            row["artifact_id"],
+                            row["locator"],
+                            row["extracted_text"],
+                            row["method"],
+                            row["quality_score"],
+                        )
+                        for row in rows
+                    ],
+                )
+                evidence_count += len(rows)
+
             connection.execute(
                 """
                 INSERT INTO search_index_builds(
                     build_id, built_at, evidence_count, tokenizer, query_mode
                 ) VALUES (?, ?, ?, ?, ?)
                 """,
-                (build_id, built_at, len(rows), _TOKENIZER, "all_terms"),
+                (build_id, built_at, evidence_count, _TOKENIZER, "all_terms"),
             )
 
         return IndexBuildResult(
             build_id=build_id,
             built_at=built_at,
-            evidence_count=len(rows),
+            evidence_count=evidence_count,
             tokenizer=_TOKENIZER,
         )
 
