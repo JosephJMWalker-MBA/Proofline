@@ -6,14 +6,27 @@
       "type": "civicengage_agenda_center",
       "source_uri": "https://cantonohio.gov/AgendaCenter",
       "categories": [
-        "Board of Control",
-        "City Council"
+        "Board of Control"
       ],
       "years": [
         2026
       ],
       "formats": [
         "pdf"
+      ],
+      "include_previous_versions": true
+    },
+    {
+      "type": "civicengage_agenda_center",
+      "source_uri": "https://cantonohio.gov/AgendaCenter",
+      "categories": [
+        "City Council"
+      ],
+      "years": [
+        2026
+      ],
+      "formats": [
+        "html"
       ],
       "include_previous_versions": true
     }
