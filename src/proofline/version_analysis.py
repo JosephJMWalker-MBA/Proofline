@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -82,6 +83,47 @@ class VersionObservationRunner:
                 """,
                 (observation_id, relation_id),
             )
+
+    def relations_for_observation(self, observation_id: str) -> list[dict]:
+        """Return the publisher-backed source relations that authorized an observation."""
+        with self.store.connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    sr.relation_id,
+                    sr.relation_type,
+                    sr.evidence_artifact_id,
+                    sr.method,
+                    sr.method_version,
+                    sr.details_json,
+                    source.source_id,
+                    source.source_uri,
+                    related.source_id AS related_source_id,
+                    related.source_uri AS related_source_uri
+                FROM observation_source_relations osr
+                JOIN source_relations sr ON sr.relation_id = osr.relation_id
+                JOIN sources source ON source.source_id = sr.source_id
+                JOIN sources related ON related.source_id = sr.related_source_id
+                WHERE osr.observation_id = ?
+                ORDER BY sr.relation_id
+                """,
+                (observation_id,),
+            ).fetchall()
+        return [
+            {
+                "relation_id": row["relation_id"],
+                "relation_type": row["relation_type"],
+                "source_id": row["source_id"],
+                "source_uri": row["source_uri"],
+                "related_source_id": row["related_source_id"],
+                "related_source_uri": row["related_source_uri"],
+                "evidence_artifact_id": row["evidence_artifact_id"],
+                "method": row["method"],
+                "method_version": row["method_version"],
+                "details": json.loads(row["details_json"]),
+            }
+            for row in rows
+        ]
 
     def _run_relation(self, relation: SourceRelation) -> VersionObservationItem:
         before_artifact_id = self._latest_artifact(relation.source_id)
