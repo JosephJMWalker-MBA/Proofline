@@ -22,6 +22,9 @@ from .models import (
     ProcessingEvent,
     SourceReference,
 )
+from .ocr import OcrBackend, OcrPageResult, PyMuPDFTesseractBackend
+from .progressive import ProgressiveExtractionResult, ProgressiveExtractor
+from .review import ReviewItem, extraction_attempts, preferred_extraction, review_queue
 from .storage import ProoflineStore
 from .watcher import (
     CorpusWatcher,
@@ -46,16 +49,25 @@ __all__ = [
     "ManifestResource",
     "Observation",
     "ObservationStatus",
+    "OcrBackend",
+    "OcrPageResult",
     "ProcessingEvent",
+    "ProgressiveExtractionResult",
+    "ProgressiveExtractor",
     "ProoflineStore",
+    "PyMuPDFTesseractBackend",
+    "ReviewItem",
     "SourceManifest",
     "SourceReference",
     "WatchResult",
     "WatchState",
     "artifact_id_from_sha256",
     "evidence_id_from_locator",
+    "extraction_attempts",
     "load_manifest",
     "manifest_sequence_gaps",
+    "preferred_extraction",
+    "review_queue",
     "sha256_bytes",
     "sha256_file",
     "sha256_text",
