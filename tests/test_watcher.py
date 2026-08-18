@@ -64,7 +64,7 @@ def _manifest(tmp_path, url: str):
     return load_manifest(path)
 
 
-def test_watcher_reports_new_unchanged_changed_and_unavailable(tmp_path) -> None:
+def test_watcher_reports_new_unchanged_changed_and_unavailable(tmp_path):
     server, thread = _server()
     try:
         url = f"http://127.0.0.1:{server.server_port}/record.txt"
@@ -105,7 +105,7 @@ def test_watcher_reports_new_unchanged_changed_and_unavailable(tmp_path) -> None
         _State.failures_remaining = 0
 
 
-def test_watcher_retries_transient_server_errors(tmp_path) -> None:
+def test_watcher_retries_transient_server_errors(tmp_path):
     server, thread = _server()
     try:
         url = f"http://127.0.0.1:{server.server_port}/retry.txt"
@@ -126,3 +126,39 @@ def test_watcher_retries_transient_server_errors(tmp_path) -> None:
         _State.status = 200
         _State.body = b"version one"
         _State.failures_remaining = 0
+
+
+def test_manifest_sequence_gaps_require_explicit_metadata(tmp_path):
+    path = tmp_path / "sequence-manifest.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "proofline-source-manifest/v1",
+                "name": "sequence fixture",
+                "resources": [
+                    {
+                        "source_uri": "https://example.gov/1.pdf",
+                        "sequence_group": "dataset-a",
+                        "sequence_number": 1,
+                    },
+                    {
+                        "source_uri": "https://example.gov/2.pdf",
+                        "sequence_group": "dataset-a",
+                        "sequence_number": 2,
+                    },
+                    {
+                        "source_uri": "https://example.gov/4.pdf",
+                        "sequence_group": "dataset-a",
+                        "sequence_number": 4,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest = load_manifest(path)
+    from proofline import manifest_sequence_gaps
+
+    assert manifest_sequence_gaps(manifest) == [
+        {"sequence_group": "dataset-a", "observed_min": 1, "observed_max": 4, "missing": [3]}
+    ]
