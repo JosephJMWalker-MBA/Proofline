@@ -48,6 +48,14 @@ from .recurrence import (
     RecurrenceResult,
     SegmentRecurrenceClusterer,
 )
+from .recurrence_packets import (
+    FactValue,
+    RecurrenceEvidencePacket,
+    RecurrenceEvidencePacketBuilder,
+    RecurrenceOccurrencePacket,
+    RecurrencePacketResult,
+    SegmentFact,
+)
 from .review import (
     ReviewItem,
     extraction_attempts,
@@ -106,6 +114,7 @@ __all__ = [
     "EvidenceUnit",
     "EvidenceUnitType",
     "ExpectedTarget",
+    "FactValue",
     "IndexBuildResult",
     "IngestResult",
     "Ingestor",
@@ -125,6 +134,10 @@ __all__ = [
     "PyMuPDFTesseractBackend",
     "RecurrenceCluster",
     "RecurrenceEdge",
+    "RecurrenceEvidencePacket",
+    "RecurrenceEvidencePacketBuilder",
+    "RecurrenceOccurrencePacket",
+    "RecurrencePacketResult",
     "RecurrenceResult",
     "RepeatedSegmentGroup",
     "RetrievalCase",
@@ -134,6 +147,7 @@ __all__ = [
     "SearchHit",
     "SearchIndex",
     "SegmentBuildResult",
+    "SegmentFact",
     "SegmentHit",
     "SegmentIndex",
     "SegmentOccurrence",
