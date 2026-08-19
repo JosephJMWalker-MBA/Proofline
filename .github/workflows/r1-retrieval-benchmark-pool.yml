@@ -6,8 +6,11 @@ on:
       - ".github/workflows/r1-retrieval-benchmark-pool.yml"
       - "src/proofline/benchmarking.py"
       - "src/proofline/benchmark_cli.py"
+      - "src/proofline/benchmark_curation.py"
+      - "src/proofline/benchmark_curate_cli.py"
       - "src/proofline/evaluation.py"
       - "tests/test_benchmarking.py"
+      - "tests/test_benchmark_curation.py"
       - "experiments/canton-2026/source-plan.json"
   workflow_dispatch:
 
@@ -42,52 +45,74 @@ jobs:
           proofline --state-dir .r1pool sync experiments/canton-2026/source-plan.json \
             > r1-benchmark-results/sync.json
 
-      - name: Generate candidate pool without retrieval evaluation
+      - name: Generate broad raw pool without retrieval evaluation
         run: |
           python -m proofline.benchmark_cli \
             --state-dir .r1pool \
+            --output r1-benchmark-results/raw-candidate-pool.json \
+            --max-per-kind 30 \
+            --max-targets 5 \
+            > r1-benchmark-results/raw-pool-summary.json
+
+      - name: Curate question quality without retrieval evaluation
+        run: |
+          python -m proofline.benchmark_curate_cli \
+            r1-benchmark-results/raw-candidate-pool.json \
             --output r1-benchmark-results/candidate-pool.json \
             --max-per-kind 6 \
-            --max-targets 5 \
-            > r1-benchmark-results/pool-summary.json
+            > r1-benchmark-results/curation-summary.json
 
-      - name: Assert candidate pool is retrieval-blind and sufficiently mixed
+      - name: Assert curated pool is retrieval-blind and sufficiently mixed
         run: |
           python - <<'PY'
           import json
           from collections import Counter
           from pathlib import Path
 
+          raw = json.loads(Path('r1-benchmark-results/raw-candidate-pool.json').read_text())
           pool = json.loads(Path('r1-benchmark-results/candidate-pool.json').read_text())
+          if raw['selection'].get('retrieval_results_consulted') is not False:
+              raise SystemExit('raw benchmark pool consulted retrieval results')
           if pool['schema'] != 'proofline-retrieval-eval/v2':
-              raise SystemExit('candidate pool is not retrieval eval v2')
+              raise SystemExit('curated pool is not retrieval eval v2')
           selection = pool.get('selection') or {}
           if selection.get('retrieval_results_consulted') is not False:
-              raise SystemExit('benchmark pool must be generated without consulting retrieval results')
+              raise SystemExit('benchmark curation must not consult retrieval results')
+          if selection.get('raw_case_count') != len(raw.get('cases') or []):
+              raise SystemExit('curation did not retain raw pool accounting')
 
           cases = pool.get('cases') or []
           if len(cases) < 12:
-              raise SystemExit(f'candidate pool unexpectedly small: {len(cases)}')
+              raise SystemExit(f'curated candidate pool unexpectedly small: {len(cases)}')
 
           kinds = Counter(case.get('selection_kind') for case in cases)
           modes = Counter(case.get('mode') for case in cases)
           negatives = [case for case in cases if case.get('expect_empty')]
           positives = [case for case in cases if not case.get('expect_empty')]
 
-          print(f"candidate cases: {len(cases)}")
+          print(f"raw candidate cases: {len(raw.get('cases') or [])}")
+          print(f"curated cases: {len(cases)}")
           print(f"selection kinds: {dict(sorted(kinds.items()))}")
           print(f"retrieval modes: {dict(sorted(modes.items()))}")
+          print(f"rejection counts: {selection.get('rejection_counts')}")
 
           if len(negatives) != 5:
               raise SystemExit(f'expected five deterministic negative controls, got {len(negatives)}')
           if kinds['lexical_entity_cross'] < 1:
-              raise SystemExit('no cross-evidence lexical phrase candidate was generated')
+              raise SystemExit('no cross-evidence lexical phrase candidate survived curation')
+          if kinds['lexical_entity_unique'] < 1:
+              raise SystemExit('no unique lexical phrase candidate survived curation')
           if modes['lexical'] < 3:
               raise SystemExit('too few lexical benchmark candidates')
           if modes['money'] < 2 or modes['date'] < 2:
               raise SystemExit('structured money/date benchmark coverage is too small')
           if not positives:
               raise SystemExit('candidate pool contains no positive targets')
+
+          banned = {'REQ LEG FOR PURCH', 'MEETING OPEN', 'SUPPORT HER PLANS'}
+          queries = {case.get('query') for case in cases}
+          if banned & queries:
+              raise SystemExit(f'procedural lexical fragments survived curation: {banned & queries}')
 
           for case in positives:
               expected = case.get('expected') or []
@@ -100,7 +125,7 @@ jobs:
                       raise SystemExit(f"target lacks exact artifact sha in {case['case_id']}")
           PY
 
-      - name: Upload unscored candidate pool
+      - name: Upload raw and curated unscored pools
         if: always()
         uses: actions/upload-artifact@v4
         with:
