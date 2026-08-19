@@ -53,6 +53,7 @@ def test_recurrence_clusters_cli_groups_three_related_meeting_occurrences(tmp_pa
     assert payload["similarity_method"] == "token_shingle_jaccard/v1"
     assert payload["candidate_edge_count"] == 3
     assert payload["cluster_count"] == 1
+    assert payload["returned_cluster_count"] == 1
     cluster = payload["clusters"][0]
     assert cluster["occurrence_count"] == 3
     assert cluster["family_count"] == 3
