@@ -12,6 +12,7 @@ from .evaluation import RetrievalEvaluator, load_retrieval_suite
 from .ingest import Ingestor
 from .ocr import PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractor
+from .recurrence import SegmentRecurrenceClusterer
 from .review import preferred_extraction, review_count, review_queue
 from .search import SearchIndex
 from .segment_similarity import SegmentSimilarityIndex
@@ -116,6 +117,19 @@ def _build_parser() -> argparse.ArgumentParser:
     near_parser.add_argument("--rule", dest="rule_name")
     near_parser.add_argument("--type", dest="segment_type")
     near_parser.add_argument("--limit", type=int, default=100)
+
+    recurrence_parser = subparsers.add_parser(
+        "recurrence-clusters",
+        help="Cluster near-duplicate segment occurrences into deterministic recurrence groups",
+    )
+    recurrence_parser.add_argument("--threshold", type=float, default=0.60)
+    recurrence_parser.add_argument("--shingle-size", type=int, default=3)
+    recurrence_parser.add_argument("--min-shared-shingles", type=int, default=3)
+    recurrence_parser.add_argument("--max-shingle-frequency", type=int, default=64)
+    recurrence_parser.add_argument("--rule", dest="rule_name")
+    recurrence_parser.add_argument("--type", dest="segment_type")
+    recurrence_parser.add_argument("--min-occurrences", type=int, default=2)
+    recurrence_parser.add_argument("--limit", type=int, default=100)
 
     search_parser = subparsers.add_parser("search", help="Search preferred evidence with FTS5")
     search_parser.add_argument("query")
@@ -280,6 +294,20 @@ def main(argv: list[str] | None = None) -> int:
             max_shingle_frequency=args.max_shingle_frequency,
             rule_name=args.rule_name,
             segment_type=args.segment_type,
+            limit=args.limit,
+        )
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "recurrence-clusters":
+        result = SegmentRecurrenceClusterer(state_dir).find(
+            threshold=args.threshold,
+            shingle_size=args.shingle_size,
+            min_shared_shingles=args.min_shared_shingles,
+            max_shingle_frequency=args.max_shingle_frequency,
+            rule_name=args.rule_name,
+            segment_type=args.segment_type,
+            min_occurrences=args.min_occurrences,
             limit=args.limit,
         )
         print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
