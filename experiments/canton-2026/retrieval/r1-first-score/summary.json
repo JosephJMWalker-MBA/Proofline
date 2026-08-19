@@ -1,0 +1,76 @@
+{
+  "cases": 33,
+  "expectation_accuracy": 0.8484848484848485,
+  "failure_counts": [
+    {
+      "count": 6,
+      "failure_class": "unresolved_target"
+    }
+  ],
+  "hit_rate_at_k": 0.8214285714285714,
+  "k": 10,
+  "mode_metrics": [
+    {
+      "cases": 7,
+      "expectation_accuracy": 0.42857142857142855,
+      "mean_target_recall": 0.3333333333333333,
+      "mode": "date",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 6,
+      "positive_hit_rate": 0.3333333333333333,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 1,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "identifier",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 0,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 11,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "lexical",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 10,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 7,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "money",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 6,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 7,
+      "expectation_accuracy": 0.8571428571428571,
+      "mean_target_recall": 0.8333333333333334,
+      "mode": "native_identifier",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 6,
+      "positive_hit_rate": 0.8333333333333334,
+      "provenance_validity": 1.0
+    }
+  ],
+  "negative_accuracy": 1.0,
+  "negative_case_count": 5,
+  "provenance_validity": 1.0,
+  "schema": "proofline-retrieval-eval/v2",
+  "suite": "Proofline R1 deterministic real-corpus benchmark candidate pool \u2014 curated",
+  "target_recall_at_k": 1.0,
+  "unresolved_target_count": 10
+}
