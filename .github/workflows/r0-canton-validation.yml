@@ -37,6 +37,7 @@ jobs:
         run: |
           command -v proofline
           proofline --help >/dev/null
+          proofline analyze-versions --help >/dev/null
           python -m proofline.cli --help >/dev/null
 
       - name: Run Canton discovery and sync
@@ -47,7 +48,7 @@ jobs:
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
 
-      - name: Assert live corpus contains substantive Council evidence
+      - name: Assert live corpus contains substantive Council evidence and version analysis
         run: |
           python - <<'PY'
           import json
@@ -63,13 +64,12 @@ jobs:
           print(f'discovered resources: {len(resources)}')
           print(f'CivicClerk Council resources: {len(civicclerk)}')
           print(f'unavailable final resources: {unavailable}')
-          if version_analysis is None:
-              print('version analysis: absent from sync output')
-          else:
-              print(f"version relations: {version_analysis.get('relation_count', 0)}")
-              print(f"version observations created: {version_analysis.get('observations_created', 0)}")
-              print(f"version analysis skipped: {version_analysis.get('skipped', 0)}")
-              print(f"version analysis failed: {version_analysis.get('failed', 0)}")
+          if not isinstance(version_analysis, dict):
+              raise SystemExit('sync output omitted required version_analysis object')
+          print(f"version relations: {version_analysis.get('relation_count', 0)}")
+          print(f"version observations created: {version_analysis.get('observations_created', 0)}")
+          print(f"version analysis skipped: {version_analysis.get('skipped', 0)}")
+          print(f"version analysis failed: {version_analysis.get('failed', 0)}")
 
           if len(resources) < 20:
               raise SystemExit(f'expected at least 20 discovered resources, got {len(resources)}')
@@ -77,7 +77,9 @@ jobs:
               raise SystemExit(f'expected at least 15 CivicClerk Council agendas, got {len(civicclerk)}')
           if unavailable != 0:
               raise SystemExit(f'expected no unavailable final resources, got {unavailable}')
-          if version_analysis is not None and version_analysis.get('failed', 0) != 0:
+          if version_analysis.get('relation_count', 0) < 1:
+              raise SystemExit('expected at least one publisher-backed historical version relation')
+          if version_analysis.get('failed', 0) != 0:
               raise SystemExit(f"version analysis failures: {version_analysis['failed']}")
 
           connection = sqlite3.connect('.r0/proofline.db')

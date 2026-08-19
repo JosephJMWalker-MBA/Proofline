@@ -16,6 +16,7 @@ from .review import preferred_extraction, review_count, review_queue
 from .search import SearchIndex
 from .storage import ProoflineStore
 from .structured import StructuredIndex
+from .version_analysis import VersionObservationRunner
 from .watcher import CorpusWatcher, load_manifest
 from .watch_storage import WatcherStore
 
@@ -47,10 +48,15 @@ def _build_parser() -> argparse.ArgumentParser:
     discover_parser.add_argument("--output")
 
     sync_parser = subparsers.add_parser(
-        "sync", help="Discover current resources and immediately watch the discovered manifest"
+        "sync", help="Discover, watch, analyze publisher-backed versions, and rebuild indexes"
     )
     sync_parser.add_argument("plan")
     sync_parser.add_argument("--manifest-output")
+
+    subparsers.add_parser(
+        "analyze-versions",
+        help="Derive publisher-backed version relations and run deterministic version comparisons",
+    )
 
     watch_parser = subparsers.add_parser("watch", help="Check all resources in a source manifest")
     watch_parser.add_argument("manifest")
@@ -149,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
             state_dir, args.plan, args.manifest_output
         )
         watched = CorpusWatcher(state_dir).run(discovered.manifest)
+        version_analysis = VersionObservationRunner(state_dir).run()
         lexical = SearchIndex(state_dir).rebuild()
         structured = StructuredIndex(state_dir).rebuild()
         print(
@@ -158,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
                     "manifest_path": str(destination),
                     "discovery": discovered.to_dict(),
                     "watch": watched,
+                    "version_analysis": version_analysis.to_dict(),
                     "indexes": {
                         "lexical": lexical.to_dict(),
                         "structured": structured.to_dict(),
@@ -167,7 +175,12 @@ def main(argv: list[str] | None = None) -> int:
                 sort_keys=True,
             )
         )
-        return 0
+        return 0 if version_analysis.failed == 0 else 1
+
+    if args.command == "analyze-versions":
+        result = VersionObservationRunner(state_dir).run()
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0 if result.failed == 0 else 1
 
     if args.command == "watch":
         manifest = load_manifest(args.manifest)
@@ -261,6 +274,9 @@ def main(argv: list[str] | None = None) -> int:
             evidence_id = reference.get("evidence_id")
             if evidence_id:
                 item["preferred_extraction"] = preferred_extraction(store, evidence_id)
+        trace["source_relations"] = VersionObservationRunner(state_dir).relations_for_observation(
+            args.observation_id
+        )
         print(json.dumps(trace, indent=2, sort_keys=True))
         return 0
 
