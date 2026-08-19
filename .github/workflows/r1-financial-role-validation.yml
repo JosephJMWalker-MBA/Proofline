@@ -1,0 +1,270 @@
+name: r1-financial-role-validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-financial-role-validation.yml"
+      - "experiments/canton-2026/financial-role-policy.json"
+      - "experiments/canton-2026/matter-key-policy.json"
+      - "experiments/canton-2026/segment-plan.json"
+      - "src/proofline/financial_roles.py"
+      - "src/proofline/matter_keys.py"
+      - "src/proofline/structured.py"
+      - "src/proofline/segments.py"
+      - "tests/test_financial_roles.py"
+      - "docs/FINANCIAL_ROLES.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Canton evidence and agenda-item segments
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p financial-results
+          proofline --state-dir .financial sync experiments/canton-2026/source-plan.json > financial-results/sync.json
+          proofline --state-dir .financial segment experiments/canton-2026/segment-plan.json > financial-results/segment-first.json
+
+      - name: Assign financial roles and validate comparison populations
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from collections import defaultdict
+          from pathlib import Path
+
+          from proofline.financial_roles import FinancialRoleResolver, load_financial_role_policy
+          from proofline.matter_keys import load_matter_key_policy
+
+          state = Path('.financial')
+          matter_policy = load_matter_key_policy('experiments/canton-2026/matter-key-policy.json')
+          financial_policy = load_financial_role_policy('experiments/canton-2026/financial-role-policy.json')
+          result = FinancialRoleResolver(state).resolve(matter_policy, financial_policy)
+          Path('financial-results/financial-roles-first.json').write_text(
+              json.dumps(result.to_dict(), indent=2, sort_keys=True), encoding='utf-8'
+          )
+
+          role_counts = dict(result.role_counts)
+          print(f"money assignments in resolved matters: {result.assignment_count}")
+          print(f"assigned: {result.assigned_count}")
+          print(f"ambiguous: {result.ambiguous_count}")
+          print(f"unknown: {result.unknown_count}")
+          print(f"roles: {role_counts}")
+          print(f"repeated comparison populations: {result.repeated_population_count}")
+
+          if result.method != 'proofline-financial-role/v1':
+              raise SystemExit(f'unexpected financial-role method: {result.method}')
+          if result.assignment_count < 40:
+              raise SystemExit(f'financial fact coverage unexpectedly low: {result.assignment_count}')
+          if result.assigned_count < 35:
+              raise SystemExit(f'assigned financial-role coverage unexpectedly low: {result.assigned_count}')
+          if result.unknown_count < 1:
+              raise SystemExit('live corpus no longer exercises conservative unknown handling')
+          if result.repeated_population_count < 2:
+              raise SystemExit('expected repeated same-matter/same-role comparison populations')
+          if role_counts.get('change_amount', 0) < 15:
+              raise SystemExit('change_amount coverage unexpectedly low')
+          if role_counts.get('resulting_contract_total', 0) < 15:
+              raise SystemExit('resulting_contract_total coverage unexpectedly low')
+
+          with sqlite3.connect(state / 'proofline.db') as connection:
+              connection.row_factory = sqlite3.Row
+              evidence_text = {
+                  row['evidence_id']: row['extracted_text']
+                  for row in connection.execute(
+                      """
+                      SELECT eu.evidence_id, best.extracted_text
+                      FROM evidence_units eu
+                      JOIN evidence_extractions best ON best.extraction_id = (
+                          SELECT ee.extraction_id FROM evidence_extractions ee
+                          WHERE ee.evidence_id = eu.evidence_id
+                          ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                                   ee.occurred_at DESC,
+                                   ee.rowid DESC
+                          LIMIT 1
+                      )
+                      """
+                  ).fetchall()
+              }
+
+          assigned_ids = set()
+          excluded_ids = set()
+          for assignment in result.assignments:
+              text = evidence_text[assignment.evidence_id]
+              if text[assignment.char_start:assignment.char_end] != assignment.raw_value:
+                  raise SystemExit('financial assignment span does not reproduce its raw money value')
+              if assignment.status.value == 'assigned':
+                  assigned_ids.add(assignment.assignment_id)
+                  if assignment.field_role is None or len(assignment.matched_rule_names) != 1:
+                      raise SystemExit('assigned value lacks exactly one role rule')
+              else:
+                  excluded_ids.add(assignment.assignment_id)
+                  if assignment.field_role is not None:
+                      raise SystemExit('unknown/ambiguous value unexpectedly received a role')
+
+          population_assignment_ids = set()
+          populations_by_matter = defaultdict(set)
+          for population in result.comparison_populations:
+              if population.occurrence_count < 2:
+                  raise SystemExit('comparison population has fewer than two occurrences')
+              if len({item.matter_key for item in population.assignments}) != 1:
+                  raise SystemExit('comparison population crossed matter identity')
+              if len({item.field_role for item in population.assignments}) != 1:
+                  raise SystemExit('comparison population mixed financial roles')
+              if next(iter({item.matter_key for item in population.assignments})) != population.matter_key:
+                  raise SystemExit('comparison population matter-key metadata is inconsistent')
+              if next(iter({item.field_role for item in population.assignments})) != population.field_role:
+                  raise SystemExit('comparison population field-role metadata is inconsistent')
+              populations_by_matter[population.matter_key].add(population.field_role)
+              for item in population.assignments:
+                  population_assignment_ids.add(item.assignment_id)
+                  if item.status.value != 'assigned':
+                      raise SystemExit('non-assigned value entered a comparison population')
+
+          if population_assignment_ids & excluded_ids:
+              raise SystemExit('unknown/ambiguous values leaked into comparison populations')
+          if not population_assignment_ids.issubset(assigned_ids):
+              raise SystemExit('comparison population contains an unknown assignment identity')
+          if not any(len(roles) >= 2 for roles in populations_by_matter.values()):
+              raise SystemExit('live corpus did not exercise separate roles within one matter')
+
+          unknown_examples = [
+              {
+                  'raw_value': item.raw_value,
+                  'normalized_value': item.normalized_value,
+                  'evidence_id': item.evidence_id,
+                  'segment_id': item.segment_id,
+                  'reasons': list(item.reasons),
+              }
+              for item in result.assignments
+              if item.status.value == 'unknown'
+          ]
+          Path('financial-results/profile.json').write_text(
+              json.dumps(
+                  {
+                      'assignment_count': result.assignment_count,
+                      'assigned_count': result.assigned_count,
+                      'ambiguous_count': result.ambiguous_count,
+                      'unknown_count': result.unknown_count,
+                      'role_counts': role_counts,
+                      'repeated_population_count': result.repeated_population_count,
+                      'unknown_examples': unknown_examples,
+                  },
+                  indent=2,
+                  sort_keys=True,
+              ),
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Prove financial assignment/population identities survive disposable rebuilds
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.financial_roles import FinancialRoleResolver, load_financial_role_policy
+          from proofline.matter_keys import load_matter_key_policy
+          from proofline.segments import SegmentIndex, load_segmentation_plan
+          from proofline.structured import StructuredIndex
+
+          state = Path('.financial')
+          matter_policy = load_matter_key_policy('experiments/canton-2026/matter-key-policy.json')
+          financial_policy = load_financial_role_policy('experiments/canton-2026/financial-role-policy.json')
+          first = FinancialRoleResolver(state).resolve(matter_policy, financial_policy)
+          first_assignments = {
+              (
+                  item.evidence_id,
+                  item.char_start,
+                  item.char_end,
+                  item.normalized_value,
+              ): (
+                  item.assignment_id,
+                  item.status.value,
+                  item.field_role,
+                  item.matter_key,
+              )
+              for item in first.assignments
+          }
+          first_populations = {
+              (population.matter_key, population.field_role): population.population_id
+              for population in first.comparison_populations
+          }
+
+          structured_build = StructuredIndex(state).rebuild()
+          segment_build = SegmentIndex(state).rebuild(
+              load_segmentation_plan('experiments/canton-2026/segment-plan.json')
+          )
+          second = FinancialRoleResolver(state).resolve(matter_policy, financial_policy)
+          second_assignments = {
+              (
+                  item.evidence_id,
+                  item.char_start,
+                  item.char_end,
+                  item.normalized_value,
+              ): (
+                  item.assignment_id,
+                  item.status.value,
+                  item.field_role,
+                  item.matter_key,
+              )
+              for item in second.assignments
+          }
+          second_populations = {
+              (population.matter_key, population.field_role): population.population_id
+              for population in second.comparison_populations
+          }
+
+          if first.structured_build_id == structured_build.build_id:
+              raise SystemExit('structured rebuild unexpectedly reused build UUID')
+          if first_assignments != second_assignments:
+              raise SystemExit('financial assignment identities changed across disposable rebuilds')
+          if first_populations != second_populations:
+              raise SystemExit('financial comparison population identities changed across rebuilds')
+
+          Path('financial-results/stability.json').write_text(
+              json.dumps(
+                  {
+                      'first_structured_build_id': first.structured_build_id,
+                      'second_structured_build_id': structured_build.build_id,
+                      'second_segment_build_id': segment_build.build_id,
+                      'assignment_count': len(first_assignments),
+                      'population_count': len(first_populations),
+                      'identities_stable': True,
+                  },
+                  indent=2,
+                  sort_keys=True,
+              ),
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Upload financial-role evidence packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-financial-role-results
+          path: financial-results/
+          if-no-files-found: error
+          retention-days: 14
