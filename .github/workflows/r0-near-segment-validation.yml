@@ -7,10 +7,13 @@ on:
       - "experiments/canton-2026/**"
       - "src/proofline/families.py"
       - "src/proofline/recurrence.py"
+      - "src/proofline/recurrence_packets.py"
       - "src/proofline/segment_similarity.py"
       - "src/proofline/segments.py"
+      - "src/proofline/structured.py"
       - "src/proofline/cli.py"
       - "tests/test_recurrence.py"
+      - "tests/test_recurrence_packets.py"
       - "tests/test_segment_similarity.py"
       - "tests/test_cli_segment_similarity.py"
   workflow_dispatch:
@@ -79,6 +82,29 @@ jobs:
           PY
           test -s near-results/recurrence-board.json
 
+      - name: Enrich recurrence clusters with evidence-local structured facts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.recurrence_packets import RecurrenceEvidencePacketBuilder
+
+          result = RecurrenceEvidencePacketBuilder('.near').find(
+              rule_name='board-ordinance-items',
+              threshold=0.60,
+              shingle_size=3,
+              min_shared_shingles=3,
+              max_shingle_frequency=64,
+              limit=None,
+          )
+          Path('near-results/recurrence-fact-packets.json').write_text(
+              json.dumps(result.to_dict(), indent=2, sort_keys=True),
+              encoding='utf-8',
+          )
+          PY
+          test -s near-results/recurrence-fact-packets.json
+
       - name: Assert candidate generation stays descriptive and bounded
         run: |
           python - <<'PY'
@@ -87,8 +113,27 @@ jobs:
 
           payload = json.loads(Path('near-results/near-board.json').read_text())
           recurrence = json.loads(Path('near-results/recurrence-board.json').read_text())
+          packets = json.loads(Path('near-results/recurrence-fact-packets.json').read_text())
           candidates = payload['candidates']
           clusters = recurrence['clusters']
+          packet_rows = packets['packets']
+
+          packet_fact_count = sum(
+              len(occurrence['facts'])
+              for packet in packet_rows
+              for occurrence in packet['occurrences']
+          )
+          packets_with_facts = sum(
+              1
+              for packet in packet_rows
+              if any(occurrence['facts'] for occurrence in packet['occurrences'])
+          )
+          common_values = sum(
+              len(packet['values_present_in_all_occurrences']) for packet in packet_rows
+          )
+          varying_values = sum(
+              len(packet['values_not_present_in_all_occurrences']) for packet in packet_rows
+          )
 
           print(f"segments: {payload['segment_count']}")
           print(f"source-family occurrences: {payload['occurrence_count']}")
@@ -101,6 +146,10 @@ jobs:
           print(f"common shingle buckets ignored: {payload['common_shingle_buckets_ignored']}")
           print(f"recurrence candidate edges: {recurrence['candidate_edge_count']}")
           print(f"recurrence clusters: {recurrence['cluster_count']}")
+          print(f"recurrence packet facts: {packet_fact_count}")
+          print(f"recurrence packets with facts: {packets_with_facts}")
+          print(f"fact values present in all occurrences: {common_values}")
+          print(f"fact values not present in all occurrences: {varying_values}")
 
           if payload['method'] != 'token_shingle_jaccard/v1':
               raise SystemExit(f"unexpected method: {payload['method']}")
@@ -108,6 +157,10 @@ jobs:
               raise SystemExit(f"unexpected recurrence method: {recurrence['method']}")
           if recurrence['similarity_method'] != payload['method']:
               raise SystemExit('recurrence clusterer did not preserve similarity method provenance')
+          if packets['method'] != 'recurrence_evidence_packet/v1':
+              raise SystemExit(f"unexpected packet method: {packets['method']}")
+          if packets['recurrence_method'] != recurrence['method']:
+              raise SystemExit('packet builder did not preserve recurrence method provenance')
           if payload['segment_count'] < 100:
               raise SystemExit(f"Board segment coverage unexpectedly low: {payload['segment_count']}")
           if payload['occurrence_count'] < payload['segment_count']:
@@ -164,6 +217,36 @@ jobs:
                       raise SystemExit('recurrence occurrence lost evidence identity')
                   if not occurrence['sources']:
                       raise SystemExit('recurrence occurrence lost source-family provenance')
+
+          if packets['cluster_count'] != recurrence['cluster_count']:
+              raise SystemExit('packet result lost total recurrence cluster count')
+          if packets['returned_packet_count'] != len(packet_rows):
+              raise SystemExit('packet result count does not match returned packet rows')
+          if packets['returned_packet_count'] != recurrence['returned_cluster_count']:
+              raise SystemExit('packet builder did not preserve returned recurrence cluster set')
+          recurrence_ids = {cluster['cluster_id'] for cluster in clusters}
+          packet_ids = {packet['cluster']['cluster_id'] for packet in packet_rows}
+          if packet_ids != recurrence_ids:
+              raise SystemExit('packet builder changed recurrence cluster identity')
+
+          for packet in packet_rows:
+              if not packet['limitations'] or 'not a Gold observation' not in packet['limitations'][-1]:
+                  raise SystemExit('packet lost non-Gold semantic limitation')
+              for occurrence_packet in packet['occurrences']:
+                  occurrence = occurrence_packet['occurrence']
+                  segment = occurrence['segment']
+                  for fact in occurrence_packet['facts']:
+                      if fact['evidence_id'] != segment['evidence_id']:
+                          raise SystemExit('packet fact crossed evidence identity')
+                      if not (
+                          segment['char_start'] <= fact['char_start']
+                          < fact['char_end'] <= segment['char_end']
+                      ):
+                          raise SystemExit('packet fact escaped segment span')
+                      if fact['segment_relative_start'] != fact['char_start'] - segment['char_start']:
+                          raise SystemExit('packet fact relative start is inconsistent')
+                      if fact['segment_relative_end'] != fact['char_end'] - segment['char_start']:
+                          raise SystemExit('packet fact relative end is inconsistent')
           PY
 
       - name: Upload near-duplicate evidence packet
