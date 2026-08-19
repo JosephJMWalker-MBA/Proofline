@@ -1,10 +1,11 @@
 # Proofline — Live Status
 
-This file answers three questions that the roadmap and architecture documents do not answer clearly enough:
+This file answers four questions:
 
 1. What is implemented **right now**?
 2. What has actually been **measured or validated**?
-3. What is Proofline trying to prove **next**?
+3. What did the first real-corpus experiment discover?
+4. Where does autonomous machine processing stop and human judgment begin?
 
 ## Implemented
 
@@ -14,7 +15,7 @@ This file answers three questions that the roadmap and architecture documents do
 - stable evidence units with source locators
 - append-only extraction and processing history
 - observation/lead persistence that requires evidence references
-- deterministic trace from derived observation back to source
+- deterministic trace from derived observations back to source evidence
 
 ### Corpus watcher — M1 complete
 
@@ -27,61 +28,126 @@ This file answers three questions that the roadmap and architecture documents do
 - correct `A -> B -> A` reversion semantics
 - explicit sequence-gap primitives
 - bounded indirect fetch strategies for stable publisher APIs that return short-lived transport URLs
-- CivicClerk file acquisition that keeps the stable file API as source identity and never persists signed blob query tokens
+- CivicClerk acquisition that keeps the stable file API as source identity and never persists signed blob query tokens
 
 ### Progressive extraction — M2 complete
 
 - native PDF/text/HTML/JSON/XML extraction
-- visible-text HTML extraction that excludes script/style/template content
+- visible-text HTML extraction excluding script/style/template content
 - stable page/row evidence identities
 - preferred extraction selected by quality without deleting prior attempts
 - optional OCR escalation
 - low-quality review queue
-- streaming CSV and XLSX evidence
+- streaming CSV/XLSX evidence
 - formulas preserved but never locally evaluated
+- shared Unicode-aware substantive-Silver gate before Gold promotion
 
 ### Search & retrieval — M3 complete and real-corpus validated
 
 - disposable SQLite FTS5 index over preferred evidence
-- deterministic lexical query normalization
-- BM25 ranking
+- deterministic lexical normalization + BM25 ranking
 - exact publisher-native identifier lookup
 - versioned retrieval benchmark format
 - hit-rate / target-recall / provenance-validity metrics
-- deterministic structured index for:
+- deterministic structured indexing for:
   - explicit monetary values in prose
   - semantically named monetary spreadsheet fields
   - dates
   - identifiers in semantically named spreadsheet fields
-- range queries for amounts and dates
+- amount/date range queries
 - exact content-identifier lookup
-- semantic/vector retrieval explicitly deferred until a measured lexical/structured failure class justifies it
+- semantic/vector retrieval deferred until measured lexical/structured failure justifies it
 
 ### Source discovery — implemented and live-validated
 
 - versioned `proofline-discovery-plan/v1` plans
-- official discovery pages preserved before link interpretation
-- bounded CivicEngage Agenda Center adapter
-- category/year/format filtering
-- published `Previous Versions` listing discovery
-- publisher-linked `ArchivedAgenda` enumeration
-- bounded official Calendar → CivicClerk discovery adapter
-- stable CivicClerk event/file identities derived from preserved publisher pages and metadata rather than hardcoded IDs
+- official discovery/supporting pages preserved before link interpretation
+- bounded CivicEngage Board of Control adapter
+- publisher `Previous Versions` + `ArchivedAgenda` history
+- bounded official Canton Calendar → CivicClerk City Council adapter
+- stable CivicClerk event/file identities derived from preserved publisher pages/metadata rather than hardcoded IDs
 - deterministic generated watch manifests
 - `proofline discover`
 
 See [docs/DISCOVERY.md](docs/DISCOVERY.md).
 
-### Provenance-gated version analysis — implemented and live-validated
+### Provenance-gated version and watcher analysis — implemented and live-validated
 
-- append-only `historical_version_of` source relations backed by preserved publisher version-listing artifacts
-- chronology-safe latest-artifact resolution, including `A -> B -> A` source reversions
+- append-only `historical_version_of` relations backed by preserved publisher version-listing artifacts
 - deterministic artifact version comparator
-- Gold observation IDs tied to the exact preferred Silver extraction fingerprint used for analysis
-- blank/empty Silver evidence is skipped rather than interpreted as deletion
+- Gold observation identity tied to exact preferred-Silver inputs
+- blank/whitespace-only Silver is skipped rather than interpreted as deletion/change
+- watcher `changed` visits are a second explicit Gold authorization path
+- exact watcher `check_id` retained for source-change observations
+- `A -> B -> A` can produce two directional chronology observations rather than collapsing seen-before bytes
 - `proofline analyze-versions`
-- `proofline sync` = discover → watch/ingest → analyze publisher-backed versions → rebuild indexes
-- `proofline trace` includes both evidence and the source relation that authorized a version observation
+- `proofline analyze-watch-changes`
+- `proofline sync` = discover → watch/ingest → watcher-change analysis → publisher-version analysis → rebuild indexes
+- `proofline trace` exposes evidence plus any authorizing source relation, watcher visit, or detector context
+
+### Agenda-item segmentation and recurrence — implemented and live-validated
+
+- deterministic source-profile segmentation with exact evidence character spans
+- stable segment IDs across identical rebuilds; random build UUID is metadata only
+- publisher-backed version-family connected components
+- inverted token-shingle candidate generation rather than O(n²) all-pairs comparison
+- exact Jaccard scoring for bounded candidates
+- same-version-family suppression before recurrence scoring
+- deterministic single-linkage recurrence clusters
+- stable recurrence cluster IDs across identical rebuilds
+- evidence-local recurrence packets containing only structured facts physically inside each segment span
+- complete fact retrieval without hidden presentation truncation
+- explicit common-vs-varying structured-value sets
+- recurrence packets remain descriptive inspection aids below Gold
+
+### R0.3 candidate observation policy — implemented and live-validated
+
+Detector: `recurrence_fact_variation/v1`.
+
+A recurrence becomes a Gold candidate observation only when it:
+
+- spans multiple publisher-backed source families;
+- spans multiple evidence units;
+- has structured facts in every occurrence;
+- has known preferred-extraction quality at/above the configured threshold;
+- retains at least one structured fact value common to all occurrences;
+- has at least one structured fact value whose presence varies across occurrences.
+
+Additional safeguards:
+
+- recurrence alone is not promoted;
+- no chronology/field-equivalence/causation/materiality inference;
+- no scalar suspiciousness score;
+- possible ordinary explanations are mandatory;
+- questions worth asking are mandatory;
+- exact detector/family/input fingerprint is preserved append-only;
+- immediate reruns are idempotent;
+- `proofline analyze-candidates` exposes the policy.
+
+### R0.4 candidate lead lifecycle — implemented and live-validated
+
+- eligible candidate observations package deterministically into immutable `Lead` packets
+- lead packet retains observation IDs, exact evidence references, questions worth asking, and possible ordinary explanations
+- all editorial/scalar score fields remain unset in R0
+- lead rows, lead→observation links, and lead→evidence links are DB-enforced immutable
+- human review/disposition is represented by append-only `lead_review_events`
+- current disposition is derived from review history; the original packet is never rewritten
+- machine-safe packaging stops at `candidate`
+- live R0 validation creates **zero human review events**
+- `published` is deliberately unavailable through the R0 review API/CLI
+
+Commands:
+
+```bash
+proofline package-leads
+proofline lead <lead-id>
+proofline review-lead <lead-id> \
+  --status triaged|investigating|explained|corroborated|rejected|archived \
+  --reviewer "..." \
+  --rationale "..."
+```
+
+`review-lead` is an explicit human action. The machine-safe pipeline does not call it.
 
 ## Current CLI surface
 
@@ -92,6 +158,7 @@ proofline trace <observation-id>
 
 proofline discover <plan.json>
 proofline sync <plan.json>
+proofline analyze-watch-changes
 proofline analyze-versions
 proofline watch <manifest>
 proofline changes
@@ -106,104 +173,201 @@ proofline amounts --min 250000 --max 500000
 proofline dates --from 2026-01-01 --to 2026-12-31
 proofline identifier C-001
 proofline evaluate <suite.json> --k 5
+
+proofline segment <segment-plan.json>
+proofline segment-anchor <anchor>
+proofline repeated-segments
+proofline near-segments
+proofline recurrence-clusters
+proofline recurrence-packets
+proofline analyze-candidates
+
+proofline package-leads
+proofline lead <lead-id>
+proofline review-lead <lead-id> --status ... --reviewer ... --rationale ...
 ```
 
 ## What is measured
 
 ### Synthetic/integration corpus
 
-The generated difficult corpus gives Proofline known evidence targets across born-digital PDFs, image-only scans, corruption, duplicate bytes, revisions, conflicting CSV records, and a formula-bearing workbook.
+The generated difficult corpus exercises born-digital PDFs, image-only scans, corruption, duplicate bytes, revisions, conflicting structured records, spreadsheet formulas, source reversions, packet span contamination, and lead immutability/review history.
 
-The retrieval test suite asserts 100% hit rate, target recall, and provenance validity for its current lexical sanity cases. Structured-search tests additionally verify that:
+Current tests cover, among other things:
 
-- an `amount` spreadsheet field can be queried numerically even when it contains no currency symbol;
-- prose numbers are not automatically treated as money unless explicit currency syntax is present;
-- recognized source dates normalize to ISO dates;
-- query date ranges require unambiguous `YYYY-MM-DD` boundaries;
-- identifiers are extracted only from semantically identified fields rather than guessed from every token;
-- serialized spreadsheet rows do not create duplicate prose facts from their own JSON representation.
+- extraction/quality escalation;
+- source chronology and `A -> B -> A`;
+- lexical/structured retrieval provenance;
+- stable segment/cluster identities;
+- cross-source byte dedup with distinct publisher contexts;
+- evidence-local recurrence fact containment;
+- selective recurrence Gold promotion;
+- idempotent observation + lead generation;
+- immutable lead packets;
+- append-only human review events;
+- explicit rejection of `published` through the R0 review interface.
 
 ### R0 Canton 2026 live corpus
 
-The August 19, 2026 GitHub Actions validation run rebuilt the corpus from official public sources with no hand-maintained Council file list.
+Validated GitHub Actions runs rebuild the corpus from official public sources without a hand-maintained Council file list.
 
-Measured final-corpus state from that run:
+Measured R0 state has included approximately:
 
 - **61 final discovered meeting resources**
 - **0 unavailable final-resource downloads**
-- **16 City Council Agenda PDFs** discovered through the official Canton Calendar → CivicClerk chain
-- **75 City Council page evidence units, 75/75 nonblank**
+- **16 City Council Agenda PDFs** through official Canton Calendar → CivicClerk
+- **75/75 nonblank City Council page evidence units**
 - roughly **148,000 extracted City Council characters**
-- **174 total evidence units**, of which **172** entered the lexical index
-- **982 structured facts** overall
-- **331 structured City Council facts** (282 money, 49 date)
-- **2 review-queue items**, both Board of Control pages; no City Council page remained in review
-- **0 City Council AgendaCenter wrapper records** in the final corpus
+- **174 total evidence units**, **172** lexical-searchable
+- **982 structured facts**
+- **2 review-queue items**, both Board of Control
+- **0** dead City Council CivicEngage wrappers in the final corpus
 
-The same live sync executed provenance-gated version analysis and produced:
+Version provenance snapshot:
 
-- **11 publisher-backed `historical_version_of` relations**
-- **7 substantive version comparisons**
-- **7 new version-change observations**
-- **4 relations skipped as `same_artifact`**
-- **0 detector failures**
+- **11** publisher-backed `historical_version_of` relations
+- **7** substantive version comparisons
+- **7** version-change observations
+- **4** same-artifact relations skipped
+- **0** deterministic detector failures
 
-These counts are a measured R0 snapshot, not contractual corpus sizes. Public publishers can add, remove, or revise records.
+Agenda-item/recurrence snapshot:
+
+- **553** agenda-item segments
+  - 138 Board
+  - 415 Council
+- **0** evidence-span mismatches
+- Board candidate generation: **9,453 possible pairs → 2,188 exact comparisons**
+- **5** near-duplicate edges
+- **3** recurrence clusters
+- exact segment/cluster IDs stable across identical rebuilds
+
+## First non-preselected machine candidate
+
+The live R0 recurrence detector examined all three Board recurrence clusters and promoted exactly **one** to Gold while leaving the other two below Gold.
+
+### ECDI / Ordinance 60/2023 / $185,000
+
+Common evidence-local structured facts included:
+
+- `$185,000`
+- `2026-07-31`
+
+Varying date facts included:
+
+- `2026-04-13`
+- `2026-10-31`
+
+The source language shows a sequence in which one agenda extends the expenditure deadline from April 13 to July 31 and a later agenda extends it from July 31 to October 31.
+
+Proofline surfaced this pattern without a test or detector naming ECDI.
+
+The Motorola and Versaterm recurrence groups remained below Gold because their evidence-local structured facts did not vary.
+
+### Interpretation
+
+The obvious ordinary explanation is sequential deadline amendments. R0 treats that as a successful outcome: the machine selected the pattern, preserved the evidence, and the evidence itself provides a benign explanation.
+
+The software does not convert that explanation into a human disposition automatically.
+
+## First real candidate lead
+
+The live lead validation produced one deterministic lead for the one eligible candidate observation:
+
+```text
+lead:3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c
+```
+
+Current machine-safe state:
+
+- immutable packet: created
+- evidence/questions/ordinary explanations: retained
+- editorial score fields: unset
+- current disposition: **candidate**
+- human review events: **0**
+
+An immediate packaging rerun produced the same lead ID and created no duplicate.
+
+## Important negative findings / deferred detectors
+
+### Board ordinance numbers are not matter identity
+
+Do **not** infer that the same `Ordinance ###/####` anchor represents the same underlying matter. The real corpus contains the same ordinance anchor across unrelated departments, vendors, transactions, and meetings.
+
+### Project ID alone is not transaction identity
+
+Project identifiers such as `GP####` can span construction, engineering, administration, vendors, and multiple change-order relationships. Even `project ID + change-order number` can be insufficient without counterparty/transaction-role context.
+
+A future conflicting-value detector therefore requires an explicit **matter-key contract** rather than loose identifier equality.
+
+### Arbitrary dollar amounts are not one comparable population
+
+Contract total, annual fee, amendment amount, grant amount, engineering fee, and administrative amount are semantically different fields. A defensible numeric-outlier detector requires field-role normalization and an explicitly comparable population first.
+
+These are epistemic gates discovered from real data, not missing shortcuts.
 
 ## Validation authority
 
-GitHub Actions is currently the execution authority for full repository tests plus live-network R0 validation. The R0 workflow now fails if:
+GitHub Actions is the execution authority for the full repository suite plus live-network R0 gates.
 
-- the Council discovery path falls below a conservative resource floor;
-- a final resource is unavailable;
-- Council page evidence becomes blank/title-only again;
-- extracted Council text or structured facts collapse below conservative floors;
-- the known blank CivicEngage Council wrappers re-enter the final corpus;
-- `sync` omits `version_analysis`;
-- no publisher-backed historical version relation is derived;
-- version analysis reports a deterministic detector failure.
+Current live workflows fail on regressions including:
+
+- Council discovery/content collapse;
+- unavailable final resources;
+- reintroduction of blank City Council wrappers;
+- missing publisher-backed version analysis;
+- deterministic detector failures;
+- unstable segment/cluster identities;
+- recurrence candidate generation regressing toward all-pairs comparison;
+- fact-span leakage;
+- nonselective Gold promotion;
+- duplicate candidate observations;
+- lead packaging that changes IDs on rerun;
+- machine-created human review events;
+- machine lead packaging crossing beyond `candidate`;
+- R0 review CLI exposing `published`.
 
 ## Deliberately deferred
 
 ### Semantic/vector retrieval
 
-Not justified yet.
+Not justified yet. Deterministic lexical/structured retrieval has not shown a repeatable failure class severe enough to justify extra model/index complexity.
 
-The current synthetic and R0 work has not demonstrated a repeatable evidence target that deterministic lexical/structured retrieval consistently misses badly enough to justify the additional index/model complexity.
+### LLM-generated investigative narratives
 
-### LLM-generated answers
+Also deferred. Evidence discovery, comparison, provenance, candidate selection, and human-review discipline come first.
 
-Also deferred.
+### Public lead publication
 
-The immediate problem is reliable evidence discovery, comparison, provenance, and lead triage—not fluent narrative generation.
+Explicitly outside the current machine-safe path.
 
-## Active experiment — R0 Canton 2026
+## R0 result
+
+R0 asked:
+
+> Can Proofline ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected?
+
+**Yes.**
+
+More importantly, it did so while demonstrating that a surfaced pattern can have an ordinary explanation and while preserving the evidence needed to reach that explanation.
 
 See [experiments/canton-2026/README.md](experiments/canton-2026/README.md) and GitHub Issue #5.
 
-Current source policy:
+## Human-input threshold — current state
 
-- **Board of Control** — official CivicEngage Agenda Center PDFs plus publisher `Previous Versions` / `ArchivedAgenda` history.
-- **City Council** — official Canton Calendar event pages → publisher-linked CivicClerk event metadata → published Agenda files.
-- canonical meeting evidence remains page-level PDF evidence; discovery/supporting HTML/JSON is preserved separately as provenance.
+Autonomous implementation may continue for reversible architecture, parser, retrieval, detector, and internal workflow work.
 
-The product-level question remains:
+For the **first real candidate lead**, however, the next state-changing action is now a human review decision.
 
-> Can Proofline ingest this real corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected?
+The software will not decide whether the real lead should be marked:
 
-A successful result does **not** require misconduct. A discrepancy that has a routine explanation is still useful if Proofline can show why it surfaced, preserve the ordinary explanation when found, and provide the exact source evidence a human should inspect.
+- `triaged`
+- `investigating`
+- `explained`
+- `corroborated`
+- `rejected`
+- `archived`
 
-## Human-input threshold
+A review event requires a named reviewer and rationale.
 
-Development should continue without product-owner input while choices are implementation-reversible and governed by the existing architecture.
-
-Explicit human input becomes necessary when a decision materially changes one of these:
-
-- public accusation or publication policy;
-- privacy/redaction policy for real people;
-- source-selection priorities where editorial judgment matters;
-- acceptable false-positive/false-negative tradeoffs for lead surfacing;
-- external deployment, credentials, paid infrastructure, or legal terms;
-- irreversible data publication or outreach to a person/organization.
-
-Until one of those thresholds is reached, implementation can continue autonomously.
+Publication remains a separate, higher threshold and is not available through the R0 review interface.
