@@ -1,7 +1,7 @@
 """CLI for retrieval-blind benchmark pool generation.
 
-Kept separate from the main Proofline CLI for the first R1 experiment so benchmark sampling can
-be validated independently before it becomes part of the stable command surface.
+Kept separate from the main Proofline CLI for the R1 experiment so benchmark sampling can be
+validated independently before it becomes part of the stable command surface.
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .benchmark_sources import load_benchmark_source_policy
 from .benchmarking import RetrievalBenchmarkPoolBuilder
 
 
@@ -19,6 +20,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-per-kind", type=int, default=6)
     parser.add_argument("--max-targets", type=int, default=5)
+    parser.add_argument("--source-policy")
     parser.add_argument(
         "--name",
         default="Proofline R1 deterministic real-corpus benchmark candidate pool",
@@ -28,7 +30,13 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    pool = RetrievalBenchmarkPoolBuilder(args.state_dir).build(
+    source_policy = (
+        load_benchmark_source_policy(args.source_policy) if args.source_policy else None
+    )
+    pool = RetrievalBenchmarkPoolBuilder(
+        args.state_dir,
+        source_policy=source_policy,
+    ).build(
         name=args.name,
         max_per_kind=args.max_per_kind,
         max_targets=args.max_targets,
