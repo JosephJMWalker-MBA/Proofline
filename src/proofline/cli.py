@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from .candidate_analysis import CandidateObservationRunner
 from .discovery import SourceDiscoverer, load_discovery_plan
 from .evaluation import RetrievalEvaluator, load_retrieval_suite
 from .ingest import Ingestor
@@ -25,7 +26,11 @@ from .watcher import CorpusWatcher, load_manifest
 from .watch_storage import WatcherStore
 
 
-def _add_recurrence_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_recurrence_arguments(
+    parser: argparse.ArgumentParser,
+    *,
+    include_limit: bool = True,
+) -> None:
     parser.add_argument("--threshold", type=float, default=0.60)
     parser.add_argument("--shingle-size", type=int, default=3)
     parser.add_argument("--min-shared-shingles", type=int, default=3)
@@ -33,7 +38,8 @@ def _add_recurrence_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--rule", dest="rule_name")
     parser.add_argument("--type", dest="segment_type")
     parser.add_argument("--min-occurrences", type=int, default=2)
-    parser.add_argument("--limit", type=int, default=100)
+    if include_limit:
+        parser.add_argument("--limit", type=int, default=100)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -72,6 +78,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "analyze-versions",
         help="Derive publisher-backed version relations and run deterministic version comparisons",
     )
+
+    candidates_parser = subparsers.add_parser(
+        "analyze-candidates",
+        help="Promote narrowly eligible recurrence fact variations into candidate observations",
+    )
+    _add_recurrence_arguments(candidates_parser, include_limit=False)
+    candidates_parser.add_argument("--min-quality", type=float, default=0.70)
 
     watch_parser = subparsers.add_parser("watch", help="Check all resources in a source manifest")
     watch_parser.add_argument("manifest")
@@ -240,6 +253,20 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
         return 0 if result.failed == 0 else 1
 
+    if args.command == "analyze-candidates":
+        result = CandidateObservationRunner(state_dir).run_recurrence_variations(
+            threshold=args.threshold,
+            shingle_size=args.shingle_size,
+            min_shared_shingles=args.min_shared_shingles,
+            max_shingle_frequency=args.max_shingle_frequency,
+            rule_name=args.rule_name,
+            segment_type=args.segment_type,
+            min_occurrences=args.min_occurrences,
+            min_quality=args.min_quality,
+        )
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0
+
     if args.command == "watch":
         manifest = load_manifest(args.manifest)
         result = CorpusWatcher(state_dir).run(manifest)
@@ -398,6 +425,9 @@ def main(argv: list[str] | None = None) -> int:
             if evidence_id:
                 item["preferred_extraction"] = preferred_extraction(store, evidence_id)
         trace["source_relations"] = VersionObservationRunner(state_dir).relations_for_observation(
+            args.observation_id
+        )
+        trace["detector_contexts"] = CandidateObservationRunner(state_dir).contexts_for_observation(
             args.observation_id
         )
         print(json.dumps(trace, indent=2, sort_keys=True))

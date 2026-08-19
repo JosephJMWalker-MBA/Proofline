@@ -5,6 +5,8 @@ on:
     paths:
       - ".github/workflows/r0-near-segment-validation.yml"
       - "experiments/canton-2026/**"
+      - "src/proofline/candidate_analysis.py"
+      - "src/proofline/detectors/recurrence_variation.py"
       - "src/proofline/families.py"
       - "src/proofline/recurrence.py"
       - "src/proofline/recurrence_packets.py"
@@ -12,6 +14,8 @@ on:
       - "src/proofline/segments.py"
       - "src/proofline/structured.py"
       - "src/proofline/cli.py"
+      - "tests/test_candidate_analysis.py"
+      - "tests/test_cli_candidate_analysis.py"
       - "tests/test_recurrence.py"
       - "tests/test_recurrence_packets.py"
       - "tests/test_segments.py"
@@ -171,16 +175,41 @@ jobs:
           PY
           test -s near-results/recurrence-fact-packets.json
 
-      - name: Assert candidate generation and fact packets remain evidence-local
+      - name: Promote narrowly eligible recurrence fact variations
+        shell: bash
+        run: |
+          set -o pipefail
+          proofline --state-dir .near analyze-candidates \
+            --rule board-ordinance-items \
+            --threshold 0.60 \
+            --shingle-size 3 \
+            --min-shared-shingles 3 \
+            --max-shingle-frequency 64 \
+            --min-quality 0.70 > near-results/candidate-observations.json
+          proofline --state-dir .near analyze-candidates \
+            --rule board-ordinance-items \
+            --threshold 0.60 \
+            --shingle-size 3 \
+            --min-shared-shingles 3 \
+            --max-shingle-frequency 64 \
+            --min-quality 0.70 > near-results/candidate-observations-rerun.json
+          test -s near-results/candidate-observations.json
+          test -s near-results/candidate-observations-rerun.json
+
+      - name: Assert candidate generation and Gold promotion remain evidence-local
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
+          from proofline.candidate_analysis import CandidateObservationRunner
+
           payload = json.loads(Path('near-results/near-board.json').read_text())
           recurrence = json.loads(Path('near-results/recurrence-board.json').read_text())
           stability = json.loads(Path('near-results/identity-stability.json').read_text())
           packets = json.loads(Path('near-results/recurrence-fact-packets.json').read_text())
+          promoted = json.loads(Path('near-results/candidate-observations.json').read_text())
+          rerun = json.loads(Path('near-results/candidate-observations-rerun.json').read_text())
           candidates = payload['candidates']
           clusters = recurrence['clusters']
           packet_rows = packets['packets']
@@ -194,12 +223,6 @@ jobs:
               1 for packet in packet_rows
               if any(occurrence['facts'] for occurrence in packet['occurrences'])
           )
-          common_values = sum(
-              len(packet['values_present_in_all_occurrences']) for packet in packet_rows
-          )
-          varying_values = sum(
-              len(packet['values_not_present_in_all_occurrences']) for packet in packet_rows
-          )
 
           print(f"segments: {payload['segment_count']}")
           print(f"possible all pairs: {payload['possible_all_pairs']}")
@@ -211,8 +234,9 @@ jobs:
           print(f"stable recurrence IDs: {stability['cluster_ids_stable']}")
           print(f"recurrence packet facts: {packet_fact_count}")
           print(f"recurrence packets with facts: {packets_with_facts}")
-          print(f"common fact values: {common_values}")
-          print(f"varying fact values: {varying_values}")
+          print(f"eligible Gold candidates: {promoted['eligible']}")
+          print(f"new Gold observations: {promoted['observations_created']}")
+          print(f"skipped recurrence clusters: {promoted['skipped']}")
 
           if payload['method'] != 'token_shingle_jaccard/v1':
               raise SystemExit(f"unexpected method: {payload['method']}")
@@ -220,6 +244,8 @@ jobs:
               raise SystemExit(f"unexpected recurrence method: {recurrence['method']}")
           if packets['method'] != 'recurrence_evidence_packet/v1':
               raise SystemExit(f"unexpected packet method: {packets['method']}")
+          if promoted['detector_method'] != 'recurrence_fact_variation/v1':
+              raise SystemExit(f"unexpected detector method: {promoted['detector_method']}")
           if packets['recurrence_method'] != recurrence['method']:
               raise SystemExit('packet builder lost recurrence method provenance')
           if not stability['segment_ids_stable'] or not stability['cluster_ids_stable']:
@@ -249,6 +275,57 @@ jobs:
               raise SystemExit('packet builder changed stable recurrence cluster identity')
           if packet_fact_count < 1 or packets_with_facts < 1:
               raise SystemExit('live recurrence packets unexpectedly contain no structured facts')
+
+          if promoted['cluster_count'] != recurrence['cluster_count']:
+              raise SystemExit('candidate detector did not inspect the complete recurrence set')
+          if promoted['eligible'] < 1:
+              raise SystemExit('live R0 produced no narrowly eligible candidate observations')
+          if promoted['eligible'] >= promoted['cluster_count']:
+              raise SystemExit('candidate policy promoted every recurrence cluster; expected selective Gold boundary')
+          if promoted['observations_created'] != promoted['eligible']:
+              raise SystemExit('first candidate pass did not create exactly the eligible observations')
+          if promoted['skipped'] != promoted['cluster_count'] - promoted['eligible']:
+              raise SystemExit('candidate skip accounting is inconsistent')
+
+          observed_ids = []
+          runner = CandidateObservationRunner('.near')
+          for item in promoted['items']:
+              candidate = item.get('candidate')
+              if candidate is None:
+                  if item['status'] != 'skipped' or item['decision']['eligible']:
+                      raise SystemExit('ineligible recurrence did not remain explicitly skipped')
+                  continue
+              if item['status'] != 'observed' or not item['decision']['eligible']:
+                  raise SystemExit('eligible recurrence was not stored as a candidate observation')
+              observation = candidate['observation']
+              if observation.get('score') is not None:
+                  raise SystemExit('R0.3 candidate observation unexpectedly received a scalar score')
+              if not observation.get('evidence_refs'):
+                  raise SystemExit('candidate observation lost evidence references')
+              if not candidate.get('possible_ordinary_explanations'):
+                  raise SystemExit('candidate omitted possible ordinary explanations')
+              if not candidate.get('questions_worth_asking'):
+                  raise SystemExit('candidate omitted questions worth asking')
+              observation_id = item['observation_id']
+              observed_ids.append(observation_id)
+              contexts = runner.contexts_for_observation(observation_id)
+              if len(contexts) != 1:
+                  raise SystemExit('candidate observation lost append-only detector context')
+              details = contexts[0]['details']
+              if details['family_count'] < 2 or details['evidence_count'] < 2:
+                  raise SystemExit('detector context lost independent family/evidence requirements')
+              if not details['possible_ordinary_explanations'] or not details['questions_worth_asking']:
+                  raise SystemExit('detector context lost review safeguards')
+
+          rerun_ids = [item['observation_id'] for item in rerun['items'] if item.get('candidate')]
+          if rerun['eligible'] != promoted['eligible']:
+              raise SystemExit('candidate eligibility changed on immediate rerun')
+          if rerun['observations_created'] != 0:
+              raise SystemExit('candidate rerun created duplicate Gold observations')
+          if rerun['already_observed'] != promoted['eligible']:
+              raise SystemExit('candidate rerun failed idempotent already-observed accounting')
+          if sorted(rerun_ids) != sorted(observed_ids):
+              raise SystemExit('candidate observation IDs changed on immediate rerun')
 
           for packet in packet_rows:
               if not packet['limitations'] or 'not a Gold observation' not in packet['limitations'][-1]:

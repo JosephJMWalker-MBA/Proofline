@@ -1,5 +1,15 @@
 """Proofline public API."""
 
+from .candidate_analysis import (
+    CandidateObservationItem,
+    CandidateObservationRun,
+    CandidateObservationRunner,
+)
+from .detectors.recurrence_variation import (
+    RecurrenceVariationCandidate,
+    RecurrenceVariationDecision,
+    evaluate_recurrence_variation,
+)
 from .discovery import (
     DiscoveryPlan,
     DiscoveryResult,
@@ -104,6 +114,9 @@ from .watcher import (
 
 __all__ = [
     "Artifact",
+    "CandidateObservationItem",
+    "CandidateObservationRun",
+    "CandidateObservationRunner",
     "CorpusWatcher",
     "DiscoveryPlan",
     "DiscoveryResult",
@@ -139,6 +152,8 @@ __all__ = [
     "RecurrenceOccurrencePacket",
     "RecurrencePacketResult",
     "RecurrenceResult",
+    "RecurrenceVariationCandidate",
+    "RecurrenceVariationDecision",
     "RepeatedSegmentGroup",
     "RetrievalCase",
     "RetrievalEvaluator",
@@ -169,6 +184,7 @@ __all__ = [
     "artifact_id_from_sha256",
     "discover_civicengage_resources",
     "evidence_id_from_locator",
+    "evaluate_recurrence_variation",
     "extract_structured_facts",
     "extraction_attempts",
     "load_discovery_plan",
