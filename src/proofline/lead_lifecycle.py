@@ -39,6 +39,31 @@ CREATE TABLE IF NOT EXISTS lead_review_events (
 );
 CREATE INDEX IF NOT EXISTS idx_lead_review_events_lead_time
 ON lead_review_events(lead_id, occurred_at);
+
+CREATE TRIGGER IF NOT EXISTS leads_no_update
+BEFORE UPDATE ON leads BEGIN
+    SELECT RAISE(ABORT, 'lead packets are immutable');
+END;
+CREATE TRIGGER IF NOT EXISTS leads_no_delete
+BEFORE DELETE ON leads BEGIN
+    SELECT RAISE(ABORT, 'lead packets are immutable');
+END;
+CREATE TRIGGER IF NOT EXISTS lead_observations_no_update
+BEFORE UPDATE ON lead_observations BEGIN
+    SELECT RAISE(ABORT, 'lead observation links are immutable');
+END;
+CREATE TRIGGER IF NOT EXISTS lead_observations_no_delete
+BEFORE DELETE ON lead_observations BEGIN
+    SELECT RAISE(ABORT, 'lead observation links are immutable');
+END;
+CREATE TRIGGER IF NOT EXISTS lead_evidence_no_update
+BEFORE UPDATE ON lead_evidence BEGIN
+    SELECT RAISE(ABORT, 'lead evidence links are immutable');
+END;
+CREATE TRIGGER IF NOT EXISTS lead_evidence_no_delete
+BEFORE DELETE ON lead_evidence BEGIN
+    SELECT RAISE(ABORT, 'lead evidence links are immutable');
+END;
 CREATE TRIGGER IF NOT EXISTS lead_review_events_no_update
 BEFORE UPDATE ON lead_review_events BEGIN
     SELECT RAISE(ABORT, 'lead review events are append-only');
