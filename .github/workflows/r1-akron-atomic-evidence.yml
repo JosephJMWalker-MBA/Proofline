@@ -1,0 +1,219 @@
+name: r1-akron-atomic-evidence
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-atomic-evidence.yml"
+      - "experiments/akron-2026/source-policy.json"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "src/proofline/onbase.py"
+      - "src/proofline/onbase_cli.py"
+      - "src/proofline/extractors.py"
+      - "src/proofline/benchmark_sources.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild canonical Akron corpus
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p atomic-results
+          proofline-onbase \
+            --state-dir .atomic \
+            --manifest-out atomic-results/agenda-items.json \
+            experiments/akron-2026/onbase-plan.json > atomic-results/sync.json
+
+      - name: Validate source-role policy and canonical evidence atomicity
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import sqlite3
+          import statistics
+          from collections import Counter
+          from pathlib import Path
+
+          from proofline.benchmark_sources import load_benchmark_source_policy
+
+          state = Path('.atomic')
+          policy = load_benchmark_source_policy('experiments/akron-2026/source-policy.json')
+          sync = json.loads(Path('atomic-results/sync.json').read_text())
+          manifest = json.loads(Path('atomic-results/agenda-items.json').read_text())
+
+          canonical_uris = {resource['source_uri'] for resource in manifest['resources']}
+          if len(canonical_uris) != sync['onbase']['agenda_item_count']:
+              raise SystemExit('canonical manifest/source count mismatch')
+          if not canonical_uris:
+              raise SystemExit('canonical Akron manifest is empty')
+          if any(policy.classify(uri) != 'canonical' for uri in canonical_uris):
+              raise SystemExit('canonical OnBase item URI is not canonical under Akron source policy')
+
+          connection = sqlite3.connect(state / 'proofline.db')
+          connection.row_factory = sqlite3.Row
+          try:
+              source_rows = connection.execute(
+                  'SELECT source_uri FROM sources ORDER BY source_uri'
+              ).fetchall()
+              evidence_rows = connection.execute(
+                  """
+                  SELECT s.source_uri, eu.evidence_id, eu.locator, best.extracted_text,
+                         best.quality_score
+                  FROM sources s
+                  JOIN source_snapshots ss ON ss.source_id = s.source_id
+                  JOIN evidence_units eu ON eu.artifact_id = ss.artifact_id
+                  JOIN evidence_extractions best ON best.extraction_id = (
+                      SELECT ee.extraction_id
+                      FROM evidence_extractions ee
+                      WHERE ee.evidence_id = eu.evidence_id
+                      ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                               ee.occurred_at DESC,
+                               ee.rowid DESC
+                      LIMIT 1
+                  )
+                  ORDER BY s.source_uri, eu.locator
+                  """
+              ).fetchall()
+          finally:
+              connection.close()
+
+          by_uri = {}
+          for row in evidence_rows:
+              if row['source_uri'] in canonical_uris:
+                  by_uri.setdefault(row['source_uri'], []).append(row)
+
+          if set(by_uri) != canonical_uris:
+              missing = sorted(canonical_uris - set(by_uri))[:5]
+              raise SystemExit(f'canonical sources missing Silver evidence: {missing}')
+
+          item_detail_counts = []
+          back_counts = []
+          body_lengths = []
+          total_lengths = []
+          legislation_markers = 0
+          structural_errors = []
+          short_item_bodies = []
+          for uri in sorted(canonical_uris):
+              rows = by_uri[uri]
+              if len(rows) != 1:
+                  structural_errors.append({'source_uri': uri, 'reason': f'{len(rows)} evidence units'})
+                  continue
+              row = rows[0]
+              if row['locator'] != 'record:1':
+                  structural_errors.append({'source_uri': uri, 'reason': f"locator={row['locator']}"})
+                  continue
+              text = row['extracted_text'] or ''
+              item_count = text.count('Item Details')
+              back_count = text.count('Back to Meeting Outline')
+              item_detail_counts.append(item_count)
+              back_counts.append(back_count)
+              total_lengths.append(len(text.strip()))
+              if item_count != 1:
+                  structural_errors.append({'source_uri': uri, 'reason': f'Item Details count={item_count}'})
+                  continue
+              if back_count != 1:
+                  structural_errors.append({'source_uri': uri, 'reason': f'Back to Meeting Outline count={back_count}'})
+                  continue
+              start = text.find('Item Details') + len('Item Details')
+              support = text.find('Supporting Documents', start)
+              back = text.find('Back to Meeting Outline', start)
+              end_candidates = [value for value in (support, back) if value >= 0]
+              end = min(end_candidates) if end_candidates else len(text)
+              body = text[start:end].strip()
+              body_lengths.append(len(body))
+              if not body:
+                  structural_errors.append({'source_uri': uri, 'reason': 'empty publisher item body'})
+                  continue
+              if len(body) < 20:
+                  short_item_bodies.append({'source_uri': uri, 'body': body, 'chars': len(body)})
+              if re.search(r'\b(?:ORDINANCE|RESOLUTION)\b', body, re.I):
+                  legislation_markers += 1
+
+          source_roles = {'canonical': 0, 'support': 0, 'excluded': 0}
+          for row in source_rows:
+              source_roles[policy.classify(row['source_uri'])] += 1
+
+          short_body_values = Counter(item['body'] for item in short_item_bodies)
+          known_utility_labels = {'Meeting Notice', 'Files'}
+          unknown_short_labels = sorted(
+              value for value in short_body_values if value not in known_utility_labels
+          )
+
+          profile = {
+              'canonical_source_count': len(canonical_uris),
+              'canonical_evidence_count': sum(len(rows) for rows in by_uri.values()),
+              'structural_atomicity_error_count': len(structural_errors),
+              'source_roles': source_roles,
+              'item_details_exactly_once': sum(1 for count in item_detail_counts if count == 1),
+              'back_to_outline_exactly_once': sum(1 for count in back_counts if count == 1),
+              'legislation_marker_items': legislation_markers,
+              'short_utility_item_count': len(short_item_bodies),
+              'short_utility_item_values': dict(sorted(short_body_values.items())),
+              'unknown_short_item_labels': unknown_short_labels,
+              'total_text_chars': {
+                  'min': min(total_lengths),
+                  'median': statistics.median(total_lengths),
+                  'max': max(total_lengths),
+              },
+              'item_body_chars': {
+                  'min': min(body_lengths),
+                  'median': statistics.median(body_lengths),
+                  'max': max(body_lengths),
+              },
+              'structural_errors': structural_errors[:50],
+              'short_utility_items': short_item_bodies[:50],
+              'decision': (
+                  'canonical agenda-item source is already the atomic logical evidence unit; '
+                  'short publisher utility items are atomic records, not segmentation failures'
+              ),
+          }
+          Path('atomic-results/atomicity-profile.json').write_text(
+              json.dumps(profile, indent=2, sort_keys=True), encoding='utf-8'
+          )
+          print(json.dumps(profile, indent=2, sort_keys=True))
+
+          if len(canonical_uris) < 1000:
+              raise SystemExit('canonical Akron corpus unexpectedly small for atomicity test')
+          if structural_errors:
+              raise SystemExit(f'canonical structural atomicity errors found: {len(structural_errors)}')
+          if profile['item_details_exactly_once'] != len(canonical_uris):
+              raise SystemExit('not every canonical item has exactly one Item Details boundary')
+          if profile['back_to_outline_exactly_once'] != len(canonical_uris):
+              raise SystemExit('not every canonical item has exactly one Back to Meeting Outline boundary')
+          if unknown_short_labels:
+              raise SystemExit(f'unknown short publisher item classes appeared: {unknown_short_labels}')
+          if source_roles['canonical'] != len(canonical_uris):
+              raise SystemExit('source-role policy canonical count differs from canonical manifest')
+          if source_roles['support'] < 20:
+              raise SystemExit('source-role policy did not preserve expected supporting provenance')
+          PY
+
+      - name: Upload Akron atomic-evidence profile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-atomic-evidence
+          path: atomic-results/
+          if-no-files-found: error
+          retention-days: 14
