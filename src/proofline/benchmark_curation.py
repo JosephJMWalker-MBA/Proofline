@@ -26,6 +26,11 @@ _GENERIC_START = {
     "agenda", "meeting", "posted", "regular", "special", "req", "request",
     "enter", "support", "ordinance", "resolution", "approve", "approval",
 }
+_METADATA_TERMS = {"ordinance", "resolution"}
+_GENERIC_INSTITUTIONAL_PHRASES = {
+    "the building code",
+    "building code fund",
+}
 _PROJECT_TERMS = {
     "project", "water", "main", "replacement", "improvement", "bridge", "street",
     "road", "sewer", "park", "avenue", "ave", "building", "facility",
@@ -43,12 +48,17 @@ def lexical_phrase_quality(query: str) -> tuple[tuple[int, int, int, int] | None
     """
     raw_tokens = [token for token in query.split() if token]
     tokens = _tokens(query)
+    normalized = " ".join(tokens)
     if len(tokens) < 2:
         return None, "too_short"
     if tokens[0] in _GENERIC_START:
         return None, "generic_heading_start"
     if any(token in _MONTHS for token in tokens):
         return None, "calendar_heading"
+    if any(token in _METADATA_TERMS for token in tokens):
+        return None, "record_metadata_fragment"
+    if normalized in _GENERIC_INSTITUTIONAL_PHRASES:
+        return None, "generic_institutional_heading"
     boilerplate_count = sum(token in _BOILERPLATE for token in tokens)
     if boilerplate_count >= 2:
         return None, "procedural_boilerplate"
