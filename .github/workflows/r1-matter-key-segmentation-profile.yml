@@ -1,0 +1,188 @@
+name: r1-matter-key-segmentation-profile
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-matter-key-segmentation-profile.yml"
+      - "experiments/canton-2026/segment-plan.json"
+      - "experiments/canton-2026/source-plan.json"
+      - "src/proofline/segments.py"
+      - "tests/test_canton_segment_plan.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Canton corpus and corrected segment index
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p matter-profile-results
+          proofline --state-dir .matterprofile sync experiments/canton-2026/source-plan.json \
+            > matter-profile-results/sync.json
+          proofline --state-dir .matterprofile segment experiments/canton-2026/segment-plan.json \
+            > matter-profile-results/segment-build.json
+
+      - name: Assert one Board ordinance heading per segment and profile matter-key signals
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import sqlite3
+          from collections import Counter, defaultdict
+          from pathlib import Path
+
+          db = Path('.matterprofile/proofline.db')
+          connection = sqlite3.connect(db)
+          connection.row_factory = sqlite3.Row
+          try:
+              rows = connection.execute(
+                  '''
+                  SELECT segment_id, evidence_id, locator, anchor_text, raw_text
+                  FROM evidence_segments
+                  WHERE rule_name = 'board-ordinance-items'
+                  ORDER BY segment_id
+                  '''
+              ).fetchall()
+          finally:
+              connection.close()
+
+          heading_re = re.compile(r'(?im)^[ \t]*Ordinances?[ \t]+')
+          project_re = re.compile(r'\bGP\s*([0-9]{3,6})\b', re.I)
+          change_order_re = re.compile(r'\bChange Order\.?\s*(?:No\.?\s*)?(\d+)\b', re.I)
+          contract_amendment_re = re.compile(r'\bContract Amendment\s*(?:No\.?\s*)?(\d+)\b', re.I)
+
+          nested = []
+          compound = []
+          project_counts = Counter()
+          project_segments = defaultdict(list)
+          multi_project = []
+          change_order_count = 0
+          contract_amendment_count = 0
+          with_counterparty_phrase = 0
+
+          for row in rows:
+              raw = str(row['raw_text'])
+              heading_count = len(heading_re.findall(raw))
+              if heading_count != 1:
+                  nested.append({
+                      'segment_id': row['segment_id'],
+                      'anchor_text': row['anchor_text'],
+                      'heading_count': heading_count,
+                      'preview': ' '.join(raw.split())[:500],
+                  })
+              if '&' in str(row['anchor_text']):
+                  compound.append({
+                      'segment_id': row['segment_id'],
+                      'anchor_text': row['anchor_text'],
+                      'preview': ' '.join(raw.split())[:350],
+                  })
+
+              project_ids = sorted(set(project_re.findall(raw)))
+              for project_id in project_ids:
+                  project_counts[project_id] += 1
+                  project_segments[project_id].append({
+                      'segment_id': row['segment_id'],
+                      'anchor_text': row['anchor_text'],
+                      'preview': ' '.join(raw.split())[:350],
+                  })
+              if len(project_ids) > 1:
+                  multi_project.append({
+                      'segment_id': row['segment_id'],
+                      'anchor_text': row['anchor_text'],
+                      'project_ids': project_ids,
+                      'preview': ' '.join(raw.split())[:500],
+                  })
+              if change_order_re.search(raw):
+                  change_order_count += 1
+              if contract_amendment_re.search(raw):
+                  contract_amendment_count += 1
+              if re.search(r'\bwith\s+\S', raw, re.I):
+                  with_counterparty_phrase += 1
+
+          repeated_projects = {
+              project_id: occurrences
+              for project_id, occurrences in sorted(project_segments.items())
+              if len(occurrences) > 1
+          }
+          profile = {
+              'method': 'canton-board-matter-key-profile/v1',
+              'board_segment_count': len(rows),
+              'nested_heading_error_count': len(nested),
+              'nested_heading_errors': nested,
+              'compound_anchor_count': len(compound),
+              'compound_anchors': compound,
+              'segments_with_project_id': sum(1 for row in rows if project_re.search(str(row['raw_text']))),
+              'unique_project_id_count': len(project_counts),
+              'project_id_occurrence_counts': dict(sorted(project_counts.items())),
+              'repeated_project_ids': repeated_projects,
+              'multi_project_segment_count': len(multi_project),
+              'multi_project_segments': multi_project,
+              'segments_with_change_order': change_order_count,
+              'segments_with_contract_amendment': contract_amendment_count,
+              'segments_with_with_phrase': with_counterparty_phrase,
+              'limitations': [
+                  'This is structural profiling, not matter resolution.',
+                  'A project ID is not sufficient matter identity.',
+                  'Multiple project IDs inside one correctly bounded segment can be legitimate.',
+                  'The with-phrase count is only evidence that counterparty language is often present; it is not a counterparty parser.',
+              ],
+          }
+          Path('matter-profile-results/matter-key-profile.json').write_text(
+              json.dumps(profile, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+
+          print(json.dumps({
+              key: profile[key]
+              for key in (
+                  'board_segment_count',
+                  'nested_heading_error_count',
+                  'compound_anchor_count',
+                  'segments_with_project_id',
+                  'unique_project_id_count',
+                  'multi_project_segment_count',
+                  'segments_with_change_order',
+                  'segments_with_contract_amendment',
+                  'segments_with_with_phrase',
+              )
+          }, indent=2, sort_keys=True))
+
+          if not rows:
+              raise SystemExit('Board segmentation produced no agenda-item segments')
+          if nested:
+              raise SystemExit(f'Board segmentation still contains {len(nested)} nested/missing ordinance boundaries')
+          if len(compound) < 1:
+              raise SystemExit('live corpus did not exercise compound ordinance anchors')
+          if len(rows) < 138:
+              raise SystemExit(f'Board segment coverage regressed unexpectedly: {len(rows)}')
+          PY
+
+      - name: Upload matter-key prerequisite profile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-matter-key-segmentation-profile
+          path: matter-profile-results/
+          if-no-files-found: error
+          retention-days: 14
