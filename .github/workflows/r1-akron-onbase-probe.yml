@@ -23,10 +23,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Probe bounded official OnBase pages and publisher-linked agendas
+      - name: Probe bounded official OnBase page shells
         run: |
           python experiments/akron-2026/probe_onbase.py akron-probe-results | tee akron-probe-results-summary.json
           test -s akron-probe-results/probe.json
+
+      - name: Probe publisher-declared search, agenda-tree, item, and PDF routes
+        run: |
+          python experiments/akron-2026/probe_onbase_data.py akron-data-probe-results | tee akron-data-probe-results-summary.json
+          test -s akron-data-probe-results/data-probe.json
 
       - name: Upload source-contract evidence
         if: always()
@@ -36,5 +41,7 @@ jobs:
           path: |
             akron-probe-results/
             akron-probe-results-summary.json
+            akron-data-probe-results/
+            akron-data-probe-results-summary.json
           if-no-files-found: error
           retention-days: 14
