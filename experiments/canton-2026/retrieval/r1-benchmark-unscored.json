@@ -1,0 +1,892 @@
+{
+  "cases": [
+    {
+      "case_id": "date-72457913a737",
+      "end": "2026-05-27",
+      "expected": [
+        {
+          "artifact_sha256": "87b3a86b8156ab7b9dcbcfb712fbd812cc0d636b8005b34836e2041b8e941507",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/PreviousVersions/_05262026-1147"
+        },
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        }
+      ],
+      "mode": "date",
+      "selection_kind": "date_exact",
+      "start": "2026-05-27"
+    },
+    {
+      "case_id": "date-215e011e6de2",
+      "end": "2026-01-05",
+      "expected": [
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        },
+        {
+          "artifact_sha256": "5a460e1e95da18ae752a853629d3905de76c7b7993cb3993e8a43168b274116c",
+          "locator": "page:2",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3695,plainText=false)"
+        },
+        {
+          "artifact_sha256": "5a460e1e95da18ae752a853629d3905de76c7b7993cb3993e8a43168b274116c",
+          "locator": "page:1",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3695,plainText=false)"
+        },
+        {
+          "artifact_sha256": "aa76b9d3220bd721a04bc449acba06e0241a527baf49886914ebf7fae3a8e402",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/calendar.aspx?CID=31&month=1&view=list&year=2026"
+        },
+        {
+          "artifact_sha256": "e6a3a36dff2280fbec7fc7b0b3925ae9e8be77263ea9db10ac5a1f7267d038bc",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/Calendar.aspx?EID=2425&month=1&year=2026&day=19&calType=0"
+        }
+      ],
+      "mode": "date",
+      "selection_kind": "date_exact",
+      "start": "2026-01-05"
+    },
+    {
+      "case_id": "date-f295f1f16a04",
+      "end": "2026-05-28",
+      "expected": [
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        }
+      ],
+      "mode": "date",
+      "selection_kind": "date_exact",
+      "start": "2026-05-28"
+    },
+    {
+      "case_id": "date-d4fd47619e31",
+      "end": "2025-01-12",
+      "expected": [
+        {
+          "artifact_sha256": "5a460e1e95da18ae752a853629d3905de76c7b7993cb3993e8a43168b274116c",
+          "locator": "page:5",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3695,plainText=false)"
+        }
+      ],
+      "mode": "date",
+      "selection_kind": "date_exact",
+      "start": "2025-01-12"
+    },
+    {
+      "case_id": "date-578884524b5a",
+      "end": "2026-02-13",
+      "expected": [
+        {
+          "artifact_sha256": "413f592e8c43a5124e719916fc543c56861dda42f5dc30d0a23d8b5c5f5202af",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/PreviousVersions/_02172026-1112"
+        },
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        }
+      ],
+      "mode": "date",
+      "selection_kind": "date_exact",
+      "start": "2026-02-13"
+    },
+    {
+      "case_id": "date-7f2b26ee86b1",
+      "end": "2026-08-25",
+      "expected": [
+        {
+          "artifact_sha256": "d8c5e50cab53eb1b38082485a219db36e169ef5d89573d076cfa6e885320e85b",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/calendar.aspx?CID=31&month=8&view=list&year=2026"
+        }
+      ],
+      "mode": "date",
+      "selection_kind": "date_exact",
+      "start": "2026-08-25"
+    },
+    {
+      "case_id": "lexical-entity-f26b362d5d39",
+      "expected": [
+        {
+          "artifact_sha256": "1b8a7d756897205f6ec275cd680ad1dfc91a652ed871cd93b2831bdc619c562f",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_01132026-1104"
+        },
+        {
+          "artifact_sha256": "ac80e53bfdf1028cb9f5dcd86d0bed181df10e29a830acda18feebeafa415f64",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/ArchivedAgenda/_05182026-1031"
+        },
+        {
+          "artifact_sha256": "7b481ac008bfa120d8848b0e4cf65d8436cda93fd8004f9191624746d9524580",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_03242026-1124"
+        },
+        {
+          "artifact_sha256": "035fb70dae464dbe2c1240e30043055126a4516d754399b0d5517817c55fc2e7",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_05182026-1145"
+        }
+      ],
+      "mode": "lexical",
+      "query": "Sanitary Sewer Replacement Project",
+      "selection_kind": "lexical_entity_cross",
+      "selection_quality": [
+        1,
+        1,
+        4,
+        31
+      ]
+    },
+    {
+      "case_id": "lexical-entity-e66b736e8764",
+      "expected": [
+        {
+          "artifact_sha256": "4cad0df888427b590f6a7b4a82f9093c12f1b5192922b90f897a397a071b7c27",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_06162026-1151"
+        },
+        {
+          "artifact_sha256": "52cb8b17561454b6c21a9ff4506226b7b52d75b1d97e09ac2f1d297c958c5acb",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_02242026-1113"
+        },
+        {
+          "artifact_sha256": "b9a0c6590d96a61ceeecaf5be73b7cd5de31538ac24cb3b2e4a6cb42fd551357",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_06022026-1148"
+        }
+      ],
+      "mode": "lexical",
+      "query": "GPD Group",
+      "selection_kind": "lexical_entity_cross",
+      "selection_quality": [
+        1,
+        0,
+        1,
+        8
+      ]
+    },
+    {
+      "case_id": "lexical-entity-60b1ef606aa0",
+      "expected": [
+        {
+          "artifact_sha256": "31c7f308aadd703d67b0e58d58c6813cff61d48dfdcd0f695fae581adcf60360",
+          "locator": "page:2",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=4840,plainText=false)"
+        },
+        {
+          "artifact_sha256": "28f99333ee3a5b2d591db3654208478aaf5e1ad5021cffec04fec6ac45e9ebb1",
+          "locator": "page:4",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=4872,plainText=false)"
+        }
+      ],
+      "mode": "lexical",
+      "query": "BROOKPARK WATER MAIN REPLACEMENT",
+      "selection_kind": "lexical_entity_cross",
+      "selection_quality": [
+        0,
+        1,
+        3,
+        29
+      ]
+    },
+    {
+      "case_id": "lexical-entity-82225757aafd",
+      "expected": [
+        {
+          "artifact_sha256": "331c3e468dbb1662edbdb035a5f05e93c25967afdcfb64ce35ff49715e78505d",
+          "locator": "page:5",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3705,plainText=false)"
+        },
+        {
+          "artifact_sha256": "5a460e1e95da18ae752a853629d3905de76c7b7993cb3993e8a43168b274116c",
+          "locator": "page:3",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3695,plainText=false)"
+        }
+      ],
+      "mode": "lexical",
+      "query": "GREENTREE AVE",
+      "selection_kind": "lexical_entity_cross",
+      "selection_quality": [
+        0,
+        1,
+        1,
+        12
+      ]
+    },
+    {
+      "case_id": "lexical-entity-255c687a6210",
+      "expected": [
+        {
+          "artifact_sha256": "fbfab02a65ca5ed75cd2a0f85b547c86f8e6dadb0642027af000d05abed0323e",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_04072026-1128"
+        }
+      ],
+      "mode": "lexical",
+      "query": "Traffic Engineering Maintenance Building",
+      "selection_kind": "lexical_entity_unique",
+      "selection_quality": [
+        1,
+        1,
+        4,
+        37
+      ]
+    },
+    {
+      "case_id": "lexical-entity-0290531d5992",
+      "expected": [
+        {
+          "artifact_sha256": "4cad0df888427b590f6a7b4a82f9093c12f1b5192922b90f897a397a071b7c27",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_06162026-1151"
+        }
+      ],
+      "mode": "lexical",
+      "query": "AEP Building Planning Study",
+      "selection_kind": "lexical_entity_unique",
+      "selection_quality": [
+        1,
+        1,
+        3,
+        24
+      ]
+    },
+    {
+      "case_id": "lexical-entity-dfad9e1b4c94",
+      "expected": [
+        {
+          "artifact_sha256": "b9a0c6590d96a61ceeecaf5be73b7cd5de31538ac24cb3b2e4a6cb42fd551357",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_06022026-1148"
+        }
+      ],
+      "mode": "lexical",
+      "query": "Mt. Pleasant Water Main",
+      "selection_kind": "lexical_entity_unique",
+      "selection_quality": [
+        1,
+        1,
+        2,
+        19
+      ]
+    },
+    {
+      "case_id": "lexical-entity-77b68bf78910",
+      "expected": [
+        {
+          "artifact_sha256": "42f0c326e6b1c26d8680c4819fe4756c12fc690a22ba6ef8751f56ea001e5209",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_06302026-1154"
+        }
+      ],
+      "mode": "lexical",
+      "query": "Transportation Cooperative Purchasing Agreement",
+      "selection_kind": "lexical_entity_unique",
+      "selection_quality": [
+        1,
+        0,
+        4,
+        44
+      ]
+    },
+    {
+      "case_id": "lexical-entity-a46577122805",
+      "expected": [
+        {
+          "artifact_sha256": "16308791ced9874fa3feda79ca76e0e544194a167b1533217d2ce7152f6e2760",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_04282026-1139"
+        }
+      ],
+      "mode": "lexical",
+      "query": "Collection Systems Department",
+      "selection_kind": "lexical_entity_unique",
+      "selection_quality": [
+        1,
+        0,
+        3,
+        27
+      ]
+    },
+    {
+      "case_id": "lexical-entity-d8be49f1b255",
+      "expected": [
+        {
+          "artifact_sha256": "52cb8b17561454b6c21a9ff4506226b7b52d75b1d97e09ac2f1d297c958c5acb",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_02242026-1113"
+        }
+      ],
+      "mode": "lexical",
+      "query": "Custodial Cleaning Services",
+      "selection_kind": "lexical_entity_unique",
+      "selection_quality": [
+        1,
+        0,
+        3,
+        25
+      ]
+    },
+    {
+      "case_id": "money-f89d7deb2713",
+      "expected": [
+        {
+          "artifact_sha256": "f0a12ceb9e2516611b63ffadbcd10b8f607e87ec46cdaf763e4f0b2d2f7b8584",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/ArchivedAgenda/_05262026-1032"
+        }
+      ],
+      "maximum": 278593.0,
+      "minimum": 278593.0,
+      "mode": "money",
+      "selection_kind": "money_exact"
+    },
+    {
+      "case_id": "money-2cd54aa92bd0",
+      "expected": [
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:3",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        },
+        {
+          "artifact_sha256": "50ff9cb06f5afba0a1e099f9a2232f63547ee022786ed34e9ed621de774f5862",
+          "locator": "page:5",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=4755,plainText=false)"
+        },
+        {
+          "artifact_sha256": "331c3e468dbb1662edbdb035a5f05e93c25967afdcfb64ce35ff49715e78505d",
+          "locator": "page:3",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3705,plainText=false)"
+        }
+      ],
+      "maximum": 22610.0,
+      "minimum": 22610.0,
+      "mode": "money",
+      "selection_kind": "money_exact"
+    },
+    {
+      "case_id": "money-c1b1aea304e4",
+      "expected": [
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:3",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        },
+        {
+          "artifact_sha256": "50ff9cb06f5afba0a1e099f9a2232f63547ee022786ed34e9ed621de774f5862",
+          "locator": "page:5",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=4755,plainText=false)"
+        }
+      ],
+      "maximum": 12000.0,
+      "minimum": 12000.0,
+      "mode": "money",
+      "selection_kind": "money_exact"
+    },
+    {
+      "case_id": "money-2fb901b95b35",
+      "expected": [
+        {
+          "artifact_sha256": "0156c9107cb11dea77520bfd7abf37e5380bf33df0906235981761247d992f84",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_08132026-1165"
+        }
+      ],
+      "maximum": 11869500.0,
+      "minimum": 11869500.0,
+      "mode": "money",
+      "selection_kind": "money_exact"
+    },
+    {
+      "case_id": "money-4e8ee4f6ac9d",
+      "expected": [
+        {
+          "artifact_sha256": "1347daa1f6660c8685258b9e3267e9f6f2ffa53993f98f3ac2b522dfc5782ec0",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_05122026-1143"
+        }
+      ],
+      "maximum": 1500785.73,
+      "minimum": 1500785.73,
+      "mode": "money",
+      "selection_kind": "money_exact"
+    },
+    {
+      "case_id": "money-8ec60751603a",
+      "expected": [
+        {
+          "artifact_sha256": "b9a0c6590d96a61ceeecaf5be73b7cd5de31538ac24cb3b2e4a6cb42fd551357",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_06022026-1148"
+        }
+      ],
+      "maximum": 344746.46,
+      "minimum": 344746.46,
+      "mode": "money",
+      "selection_kind": "money_exact"
+    },
+    {
+      "case_id": "native-id-3bbb192dac72",
+      "expected": [
+        {
+          "artifact_sha256": "a71a9e5f8b7e0c505dd447a81cccd8cedf2cf3c7aeb79bf4799528602d114b91",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/ArchivedAgenda/_01062026-1017"
+        }
+      ],
+      "mode": "native_identifier",
+      "query": "civicengage-01062026-1017-archived-pdf",
+      "selection_kind": "native_identifier"
+    },
+    {
+      "case_id": "native-id-42da248f7984",
+      "expected": [
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:3",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        },
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:5",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        },
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:1",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        },
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:4",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        },
+        {
+          "artifact_sha256": "f776ff0320ae54cc574cd308f8618d477190cc0db62522faa67e00e71c7d6bdc",
+          "locator": "page:2",
+          "source_uri": "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3726,plainText=false)"
+        }
+      ],
+      "mode": "native_identifier",
+      "query": "civicclerk-cantonoh-file-3726-agenda",
+      "selection_kind": "native_identifier"
+    },
+    {
+      "case_id": "native-id-3ab6e61a60b6",
+      "expected": [
+        {
+          "artifact_sha256": "babbe00bd63df2609fe80c0cda331f20ef31e03e861babf9ab04f9565ec33208",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_03172026-1122"
+        }
+      ],
+      "mode": "native_identifier",
+      "query": "civicengage-03172026-1122-pdf",
+      "selection_kind": "native_identifier"
+    },
+    {
+      "case_id": "native-id-b42fb6cd4b5a",
+      "expected": [
+        {
+          "artifact_sha256": "eb6e8cf7db3a81c7bec1f3c574dcd561616140e907df6033404e93d58c7d2c4e",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_05262026-1147"
+        }
+      ],
+      "mode": "native_identifier",
+      "query": "civicengage-05262026-1147-pdf",
+      "selection_kind": "native_identifier"
+    },
+    {
+      "case_id": "native-id-950dbbbf6c93",
+      "expected": [
+        {
+          "artifact_sha256": "c69cb2f0d86461a40175187cba3fd15e60e62aa0f7e5ab6a9794d1a4ffe7a124",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/Calendar.aspx?EID=2522&month=4&year=2026&day=19&calType=0"
+        }
+      ],
+      "mode": "native_identifier",
+      "query": "calendar-event-2522",
+      "selection_kind": "native_identifier"
+    },
+    {
+      "case_id": "native-id-61ae5934794d",
+      "expected": [
+        {
+          "artifact_sha256": "1347daa1f6660c8685258b9e3267e9f6f2ffa53993f98f3ac2b522dfc5782ec0",
+          "locator": "page:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_05122026-1143"
+        }
+      ],
+      "mode": "native_identifier",
+      "query": "civicengage-05122026-1143-pdf",
+      "selection_kind": "native_identifier"
+    },
+    {
+      "case_id": "negative-date-65b9ca35b580",
+      "end": "2099-12-31",
+      "expect_empty": true,
+      "expected": [],
+      "mode": "date",
+      "selection_kind": "negative_control",
+      "start": "2099-12-31"
+    },
+    {
+      "case_id": "negative-identifier-5aa6e0cd3a82",
+      "expect_empty": true,
+      "expected": [],
+      "mode": "identifier",
+      "query": "__proofline_missing_identifier__",
+      "selection_kind": "negative_control"
+    },
+    {
+      "case_id": "negative-lexical-2291ca975d02",
+      "expect_empty": true,
+      "expected": [],
+      "mode": "lexical",
+      "query": "zzprooflinebenchmarkmissingzz",
+      "selection_kind": "negative_control"
+    },
+    {
+      "case_id": "negative-money-5a26d896a6dc",
+      "expect_empty": true,
+      "expected": [],
+      "maximum": 60012345.67,
+      "minimum": 60012345.67,
+      "mode": "money",
+      "selection_kind": "negative_control"
+    },
+    {
+      "case_id": "negative-native-c51fb4911fe1",
+      "expect_empty": true,
+      "expected": [],
+      "mode": "native_identifier",
+      "query": "__proofline_missing_native_id__",
+      "selection_kind": "negative_control"
+    }
+  ],
+  "name": "Proofline R1 deterministic real-corpus benchmark candidate pool \u2014 curated",
+  "schema": "proofline-retrieval-eval/v2",
+  "selection": {
+    "curated_case_count": 33,
+    "kind_counts": {
+      "date_exact": 6,
+      "lexical_entity_cross": 4,
+      "lexical_entity_unique": 6,
+      "money_exact": 6,
+      "native_identifier": 6,
+      "negative_control": 5
+    },
+    "max_per_kind": 6,
+    "method": "proofline-retrieval-benchmark-curation/v1",
+    "note": "Question-quality curation uses query text only. No retrieval results, rankings, or scores are consulted before the suite is frozen.",
+    "raw_case_count": 155,
+    "rejected_lexical_cases": [
+      {
+        "case_id": "lexical-entity-fa4e858c707a",
+        "query": "AND PLA WAIVER",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-6b01cb857031",
+        "query": "SUPPORT HER PLANS",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-0a89c26bf6eb",
+        "query": "MEETING OPEN",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-a31d9b1191a7",
+        "query": "Regular Meeting November",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-f53061a294e2",
+        "query": "WEDNESDAY STARTING",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-61e1e54f06fc",
+        "query": "REG LEG FOR REAL",
+        "reason": "procedural_boilerplate",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-e5095170e823",
+        "query": "BETTER EXPLAIN IT. KIMBERLY",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-e40d9b4f9d4b",
+        "query": "AND DAN FONTE ALSO",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-d21fea92636a",
+        "query": "SYSTEMS DEPT LARGE DIAMETER",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-c9d243f9470c",
+        "query": "ANNEXATION COMMITTEE PUBLIC SAFETY",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-d3a2ae279790",
+        "query": "VARIOUS APPROPS",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-e70f8e1ec80b",
+        "query": "AUTHORIZE LAW DIR",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-092da3221d68",
+        "query": "CRIMINAL JUSTICE SERVICE",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-fbdba0f52f8c",
+        "query": "M-1 VIOLATION",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-1d3b608e9d2b",
+        "query": "REQ AUTH FOR VACATION",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-4203759842be",
+        "query": "REQ LEG FOR ORD",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-3c5dff1b8336",
+        "query": "VACATION UPON HIRE",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-11ee07140678",
+        "query": "SERVS CONTRACT WITH YATES",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-56c149bcb21d",
+        "query": "THE COUNCIL CHAMBERS. MISCELLANEOUS",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-5cb46dc66c78",
+        "query": "THOSE WHO WOULD",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-281c9a12a210",
+        "query": "ORDINANCE AMENDING CHAPTER",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_unique"
+      },
+      {
+        "case_id": "lexical-entity-20b3272d3774",
+        "query": "REQ LEG FOR PURCH",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-46cf9412318d",
+        "query": "Posted Aug",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-1c433ca86a6a",
+        "query": "ENTER NECESSARY AGMTS",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-3a117c256c73",
+        "query": "BUILDING CODE FUND",
+        "reason": "generic_institutional_heading",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-a3a0e54dae51",
+        "query": "ENTER CONTRACT FOR GOV'T",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-49f961324068",
+        "query": "ENTER CONTRACTS NECESSARY",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-dcee601694c6",
+        "query": "THE BUILDING CODE",
+        "reason": "generic_institutional_heading",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-cdabe866a6f2",
+        "query": "URBAN TIF FUND",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-3279137ffee9",
+        "query": "NIPLE LTD",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-bd2906e824dc",
+        "query": "FINAL APPROP ORDINANCE",
+        "reason": "record_metadata_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-fd0ebd870bcb",
+        "query": "AND SALE",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-28329fa72965",
+        "query": "GLENWOOD INTERMEDIATE SCHOOL",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-8763025cf60f",
+        "query": "TOTAL AMT NOT",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-a157e1758c7d",
+        "query": "INCH EAST SIDE INTERCEPTOR",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-eec9cb317bf6",
+        "query": "PROVIDE LEGAL REPRESENTATION",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-1c0d5493fda4",
+        "query": "HEALTH COMMISSIONER ARCHER",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-f4533ca0988e",
+        "query": "GP1369. Ordinance",
+        "reason": "record_metadata_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-0df43291b60c",
+        "query": "ECONOMIC DEVELOPMENT ZAHIRSKY",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-a99596e2a996",
+        "query": "REQ LEG FOR WATER",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-7556aeab5376",
+        "query": "THE BOARD",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-1d92944a5116",
+        "query": "EMERGENCY. PUB HRG",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-2b1e2814e4e7",
+        "query": "ENTER INTO CONTRACTS FOR",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-d8d56b46057a",
+        "query": "ENTER AGMT FOR SALE",
+        "reason": "generic_heading_start",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-7d6f7ce00538",
+        "query": "FOR NET DEDUCT",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-2be6a4d60023",
+        "query": "DISTRIBUTION MAINTENANCE",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      },
+      {
+        "case_id": "lexical-entity-a75ecdb5138d",
+        "query": "FOR PROJ",
+        "reason": "all_caps_fragment",
+        "selection_kind": "lexical_entity_cross"
+      }
+    ],
+    "rejection_counts": {
+      "all_caps_fragment": 28,
+      "generic_heading_start": 14,
+      "generic_institutional_heading": 2,
+      "procedural_boilerplate": 1,
+      "record_metadata_fragment": 2
+    },
+    "retrieval_results_consulted": false,
+    "upstream_method": "proofline-retrieval-benchmark-pool/v1"
+  }
+}
