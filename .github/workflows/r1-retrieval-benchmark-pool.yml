@@ -12,18 +12,23 @@ on:
       - "tests/test_benchmarking.py"
       - "tests/test_benchmark_curation.py"
       - "experiments/canton-2026/source-plan.json"
+      - "experiments/canton-2026/retrieval/r1-raw-pool.json"
+      - "experiments/canton-2026/retrieval/r1-benchmark-unscored.json"
+      - "experiments/canton-2026/retrieval/R1_FREEZE.md"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-pool:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out repository
+      - name: Check out repository head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -109,10 +114,13 @@ jobs:
           if not positives:
               raise SystemExit('candidate pool contains no positive targets')
 
-          banned = {'REQ LEG FOR PURCH', 'MEETING OPEN', 'SUPPORT HER PLANS'}
+          banned = {
+              'REQ LEG FOR PURCH', 'MEETING OPEN', 'SUPPORT HER PLANS',
+              'GP1369. Ordinance', 'THE BUILDING CODE', 'BUILDING CODE FUND'
+          }
           queries = {case.get('query') for case in cases}
           if banned & queries:
-              raise SystemExit(f'procedural lexical fragments survived curation: {banned & queries}')
+              raise SystemExit(f'non-question lexical fragments survived curation: {banned & queries}')
 
           for case in positives:
               expected = case.get('expected') or []
@@ -123,6 +131,82 @@ jobs:
                       raise SystemExit(f"target lacks source/locator in {case['case_id']}")
                   if len(target.get('artifact_sha256') or '') != 64:
                       raise SystemExit(f"target lacks exact artifact sha in {case['case_id']}")
+          PY
+
+      - name: Freeze exact unscored pools into the PR branch
+        if: github.event_name == 'pull_request'
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          frozen="experiments/canton-2026/retrieval/r1-benchmark-unscored.json"
+          raw_frozen="experiments/canton-2026/retrieval/r1-raw-pool.json"
+          receipt="experiments/canton-2026/retrieval/R1_FREEZE.md"
+
+          if [[ -e "$frozen" ]]; then
+            echo "R1 benchmark already frozen; refusing to overwrite it."
+            exit 0
+          fi
+
+          mkdir -p "$(dirname "$frozen")"
+          cp r1-benchmark-results/candidate-pool.json "$frozen"
+          cp r1-benchmark-results/raw-candidate-pool.json "$raw_frozen"
+          frozen_sha="$(sha256sum "$frozen" | awk '{print $1}')"
+          raw_sha="$(sha256sum "$raw_frozen" | awk '{print $1}')"
+
+          cat > "$receipt" <<EOF
+          # R1 Retrieval Benchmark Freeze Receipt
+
+          This receipt establishes the historical boundary between **benchmark selection** and
+          **benchmark scoring** for Proofline R1.
+
+          The candidate suite was generated and curated without consulting retrieval results.
+          No `proofline evaluate`, search ranking, hit-rate, recall, or semantic retrieval result
+          was used to choose these cases before this freeze commit.
+
+          - Source branch head before freeze: \`$SOURCE_HEAD_SHA\`
+          - Pool workflow run: $WORKFLOW_RUN_URL
+          - Frozen benchmark: \`r1-benchmark-unscored.json\`
+          - Frozen benchmark SHA-256: \`$frozen_sha\`
+          - Preserved broad raw pool: \`r1-raw-pool.json\`
+          - Raw pool SHA-256: \`$raw_sha\`
+          - Evaluation schema: \`proofline-retrieval-eval/v2\`
+          - Selection method: \`proofline-retrieval-benchmark-pool/v1\` → \`proofline-retrieval-benchmark-curation/v1\`
+          - Retrieval results consulted before freeze: **false**
+
+          ## Rule
+
+          Future retrieval evaluation must score this frozen file as written. Retrieval misses are
+          measurements, not reasons to rewrite the suite. Any later benchmark revision must receive
+          a new filename/version and its own pre-score freeze receipt.
+          EOF
+
+          git config user.name "proofline-ci"
+          git config user.email "proofline-ci@users.noreply.github.com"
+          git add "$frozen" "$raw_frozen" "$receipt"
+          git commit -m "Freeze R1 retrieval benchmark before scoring"
+          git push origin "HEAD:$HEAD_BRANCH"
+
+      - name: Validate frozen benchmark if present
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path('experiments/canton-2026/retrieval/r1-benchmark-unscored.json')
+          if not path.exists():
+              print('freeze commit was not part of this checkout yet; validation will run on the next head')
+              raise SystemExit(0)
+          pool = json.loads(path.read_text())
+          if pool.get('schema') != 'proofline-retrieval-eval/v2':
+              raise SystemExit('frozen suite has wrong schema')
+          if (pool.get('selection') or {}).get('retrieval_results_consulted') is not False:
+              raise SystemExit('frozen suite does not preserve retrieval-blind selection metadata')
+          print(f"frozen cases: {len(pool.get('cases') or [])}")
+          print(f"frozen sha256: {hashlib.sha256(path.read_bytes()).hexdigest()}")
           PY
 
       - name: Upload raw and curated unscored pools
