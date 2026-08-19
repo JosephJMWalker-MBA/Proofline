@@ -8,7 +8,7 @@ publisher-family and policy inputs that authorized each observation.
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 from .detectors.recurrence_variation import (
@@ -92,13 +92,6 @@ class CandidateObservationRunner:
         self.packets = RecurrenceEvidencePacketBuilder(self.state_dir)
         with self.store.connection() as connection:
             connection.executescript(_CONTEXT_SCHEMA)
-
-    @staticmethod
-    def _context_details(candidate: RecurrenceVariationCandidate) -> dict:
-        packet_cluster = candidate.observation.observation_id
-        # Source-family context is reconstructed from the candidate's recurrence packet in
-        # _attach_context; this placeholder keeps this helper intentionally data-only.
-        return {"observation_id": packet_cluster}
 
     def _attach_context(self, candidate: RecurrenceVariationCandidate, packet) -> None:
         family_contexts = []
