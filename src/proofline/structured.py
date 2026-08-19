@@ -491,6 +491,48 @@ class StructuredIndex:
             for row in rows
         ]
 
+    def within_span(
+        self,
+        evidence_id: str,
+        char_start: int,
+        char_end: int,
+        *,
+        limit: int = 100,
+    ) -> list[StructuredHit]:
+        """Return current structured facts fully contained in one evidence-text span.
+
+        Facts without explicit character offsets are deliberately excluded. That keeps
+        subrange attribution evidence-local: spreadsheet-derived or other spanless facts
+        cannot be assigned to a segment merely because they share an evidence unit.
+        """
+        if not evidence_id.strip():
+            raise ValueError("evidence_id cannot be empty")
+        if char_start < 0:
+            raise ValueError("char_start cannot be negative")
+        if char_end <= char_start:
+            raise ValueError("char_end must be greater than char_start")
+        if limit < 1:
+            raise ValueError("limit must be positive")
+        build = self.current_build()
+        if build is None:
+            raise RuntimeError("structured index has not been built; run `proofline index` first")
+        with self.store.connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM evidence_facts
+                WHERE build_id = ?
+                  AND evidence_id = ?
+                  AND char_start IS NOT NULL
+                  AND char_end IS NOT NULL
+                  AND char_start >= ?
+                  AND char_end <= ?
+                ORDER BY char_start, char_end, fact_type, fact_id
+                LIMIT ?
+                """,
+                (build["build_id"], evidence_id, char_start, char_end, limit),
+            ).fetchall()
+        return self._hits(rows)
+
     def money(
         self,
         *,
