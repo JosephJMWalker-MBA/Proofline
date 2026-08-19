@@ -37,13 +37,13 @@ The second probe used those publisher-declared routes directly.
 
 Live result:
 
-- **32** 2026 City Council meetings discovered in the bounded custom-date search;
+- **32** 2026 City Council meetings discovered in the bounded Jan 1–Aug 19 custom-date search;
 - **32** reported an available agenda;
 - **3/3** sampled `Documents/ViewAgenda` agenda-tree responses were substantive;
 - **6/6** sampled `Meetings/ViewMeetingAgendaItem` responses were substantive;
 - **0/3** nominal agenda `DownloadFile` samples returned PDF magic bytes.
 
-The nominal agenda downloads returned small HTML responses rather than `%PDF` bytes. That failure is retained as part of the source-contract evidence; the adapter will not weaken transport checks or chase the nominal PDF path.
+The nominal agenda downloads returned small HTML responses rather than `%PDF` bytes. That failure is retained as part of the source-contract evidence; the adapter does not weaken transport checks or chase the nominal PDF path.
 
 ## Publisher contract selected for production
 
@@ -70,24 +70,89 @@ For Akron, the best canonical evidence unit is therefore the **agenda-item HTML 
 
 This is an intentional transfer contrast with Canton. Proofline's evidence model permits a stable logical source unit to be canonical evidence; canonical evidence does not have to be a PDF.
 
-## Promotion rule — satisfied
+## T2 — production acquisition transfer — complete
 
-The publisher exposes a reproducible official chain from a bounded search surface to stable meeting and agenda-item identities. A production OnBase discovery adapter is therefore justified.
+PR #56 promotes the proven source contract into a generic `OnBaseAgendaDiscoverer` and installed `proofline-onbase` CLI. Akron supplies only a source plan:
 
-Canonical source identity must remain the stable OnBase publisher URL/meeting/item identifiers. Session state, cookies, rendered UI state, or transient transport URLs must never become evidence identity.
+`experiments/akron-2026/onbase-plan.json`
+
+The core adapter contains no Akron hostname, City Council text, Canton policy, or guessed meeting/item range.
+
+Workflow: `32295079984`
+
+Artifact: `r1-akron-onbase-production` (`9381183963`)
+
+### Live production result
+
+A clean 2026 full-year discovery/sync produced:
+
+- **33** meetings with available agendas;
+- **33** preserved agenda-tree supporting artifacts;
+- **1** preserved bounded meeting-search artifact;
+- **1,475 canonical agenda-item sources**;
+- **0 unavailable canonical items**;
+- **1,475 / 1,475** canonical items with nonblank Silver text;
+- **1,475 / 1,475** with at least 120 visible-text characters;
+- **1,475 / 1,475** meeting the preferred extraction quality floor.
+
+Together the state contains **1,509 evidence units**: 1 search response + 33 agenda trees + 1,475 canonical item pages.
+
+The ordinary Proofline indexers ran unchanged over the transferred state:
+
+- lexical evidence indexed: **1,509**;
+- structured facts extracted: **1,025**.
+
+No special OnBase evidence database or extraction pipeline was introduced.
+
+### Immediate rerun
+
+The second production run regenerated the same manifest SHA-256:
+
+`375fe1ca8843509adfef9616fc2d7fb65353ee8866e168d1c89218e9e5f8c9d0`
+
+The serialized manifest was byte-identical and the canonical watcher result was:
+
+- new: **0**;
+- changed: **0**;
+- unavailable: **0**;
+- unchanged: **1,475**.
+
+This validates deterministic discovery and stable canonical source identity on the live publisher.
+
+## Transfer conclusions after T2
+
+### Transferred unchanged
+
+- immutable artifact storage;
+- SHA-based artifact identity;
+- source/snapshot chronology;
+- watcher download/change semantics;
+- HTML Silver extraction;
+- preferred extraction quality handling;
+- lexical indexing;
+- structured indexing;
+- canonical logical evidence units.
+
+### New source-specific infrastructure
+
+- bounded OnBase meeting-search contract;
+- embedded `SearchResults` JSON parser;
+- agenda-tree parser for publisher `loadAgendaItem(id, false)` links;
+- stable agenda-item canonical source construction.
+
+### Not transferred yet
+
+Canton-specific:
+
+- agenda-item segmentation rules;
+- matter-key policy;
+- financial-role policy;
+- recurrence/detector configuration.
+
+Those remain unproven on Akron and must not be reused by assumption.
 
 ## Next transfer stage
 
-T2 will add a generic **OnBase Agenda Online** discoverer to Proofline's existing discovery/watcher pipeline. It will initially emit only canonical agenda-item HTML resources and preserve search/agenda-tree responses as supporting provenance.
+T3 should characterize the canonical Akron item text and define the **smallest necessary segmentation policy**. Because each canonical source is already one agenda item, the correct answer may be *no additional segmentation at all*. That should be measured rather than assumed.
 
-The subsequent transfer measurements remain separate:
-
-1. Bronze/source acquisition reuse;
-2. Silver extraction quality;
-3. segmentation portability;
-4. retrieval benchmark portability;
-5. matter-key policy portability;
-6. financial-role policy portability;
-7. detector behavior, including valid zero-result outcomes.
-
-Canton-specific segmentation, matter-key, and financial-role rules are not presumed to apply to Akron.
+After the evidence-unit boundary is settled, the next retrieval benchmark must again be generated/frozen without consulting retrieval results before scoring.
