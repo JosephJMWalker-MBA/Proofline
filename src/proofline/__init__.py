@@ -17,6 +17,7 @@ from .evaluation import (
     RetrievalSuite,
     load_retrieval_suite,
 )
+from .families import SourceFamily, SourceFamilyResolver
 from .hashing import (
     artifact_id_from_sha256,
     evidence_id_from_locator,
@@ -49,6 +50,13 @@ from .review import (
     review_queue,
 )
 from .search import IndexBuildResult, SearchHit, SearchIndex, normalize_lexical_query
+from .segment_similarity import (
+    NearDuplicateCandidate,
+    NearDuplicateResult,
+    SegmentOccurrence,
+    SegmentSimilarityIndex,
+    token_shingles,
+)
 from .segments import (
     EvidenceSegment,
     RepeatedSegmentGroup,
@@ -98,6 +106,8 @@ __all__ = [
     "Lead",
     "LeadStatus",
     "ManifestResource",
+    "NearDuplicateCandidate",
+    "NearDuplicateResult",
     "Observation",
     "ObservationStatus",
     "OcrBackend",
@@ -117,9 +127,13 @@ __all__ = [
     "SegmentBuildResult",
     "SegmentHit",
     "SegmentIndex",
+    "SegmentOccurrence",
+    "SegmentSimilarityIndex",
     "SegmentationPlan",
     "SegmentationRule",
     "SourceDiscoverer",
+    "SourceFamily",
+    "SourceFamilyResolver",
     "SourceManifest",
     "SourceReference",
     "StructuredBuildResult",
@@ -151,4 +165,5 @@ __all__ = [
     "sha256_text",
     "source_id_from_uri",
     "stable_id",
+    "token_shingles",
 ]
