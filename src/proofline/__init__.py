@@ -38,6 +38,7 @@ from .hashing import (
     stable_id,
 )
 from .ingest import IngestResult, Ingestor
+from .lead_lifecycle import LeadLifecycle, LeadPackageResult, LeadReviewEvent
 from .models import (
     Artifact,
     EvidenceReference,
@@ -137,6 +138,9 @@ __all__ = [
     "IngestResult",
     "Ingestor",
     "Lead",
+    "LeadLifecycle",
+    "LeadPackageResult",
+    "LeadReviewEvent",
     "LeadStatus",
     "ManifestResource",
     "NearDuplicateCandidate",

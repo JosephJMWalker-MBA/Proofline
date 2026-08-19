@@ -11,6 +11,7 @@ from .candidate_analysis import CandidateObservationRunner
 from .discovery import SourceDiscoverer, load_discovery_plan
 from .evaluation import RetrievalEvaluator, load_retrieval_suite
 from .ingest import Ingestor
+from .lead_lifecycle import LeadLifecycle
 from .ocr import PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractor
 from .recurrence import SegmentRecurrenceClusterer
@@ -92,6 +93,37 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     _add_recurrence_arguments(candidates_parser, include_limit=False)
     candidates_parser.add_argument("--min-quality", type=float, default=0.70)
+
+    subparsers.add_parser(
+        "package-leads",
+        help="Package eligible recurrence candidate observations into immutable candidate leads",
+    )
+
+    lead_parser = subparsers.add_parser(
+        "lead", help="Show an immutable lead packet and append-only review history"
+    )
+    lead_parser.add_argument("lead_id")
+
+    review_lead_parser = subparsers.add_parser(
+        "review-lead",
+        help="Append an explicit human review/disposition event to an existing lead",
+    )
+    review_lead_parser.add_argument("lead_id")
+    review_lead_parser.add_argument(
+        "--status",
+        required=True,
+        choices=[
+            "triaged",
+            "investigating",
+            "explained",
+            "corroborated",
+            "rejected",
+            "archived",
+        ],
+    )
+    review_lead_parser.add_argument("--reviewer", required=True)
+    review_lead_parser.add_argument("--rationale", required=True)
+    review_lead_parser.add_argument("--note", action="append", default=[])
 
     watch_parser = subparsers.add_parser("watch", help="Check all resources in a source manifest")
     watch_parser.add_argument("manifest")
@@ -279,6 +311,40 @@ def main(argv: list[str] | None = None) -> int:
             min_quality=args.min_quality,
         )
         print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "package-leads":
+        results = LeadLifecycle(state_dir).package_candidate_observations()
+        print(json.dumps([result.to_dict() for result in results], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "lead":
+        packet = LeadLifecycle(state_dir).get(args.lead_id)
+        if packet is None:
+            print(f"lead not found: {args.lead_id}", file=sys.stderr)
+            return 2
+        print(json.dumps(packet, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "review-lead":
+        lifecycle = LeadLifecycle(state_dir)
+        event = lifecycle.review(
+            args.lead_id,
+            status=args.status,
+            reviewer=args.reviewer,
+            rationale=args.rationale,
+            notes=tuple(args.note),
+        )
+        print(
+            json.dumps(
+                {
+                    "event": event.to_dict(),
+                    "lead": lifecycle.get(args.lead_id),
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
 
     if args.command == "watch":
