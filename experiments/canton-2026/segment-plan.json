@@ -1,0 +1,20 @@
+{
+  "schema": "proofline-segmentation-plan/v1",
+  "name": "canton-2026-agenda-items",
+  "rules": [
+    {
+      "name": "board-ordinance-items",
+      "source_name_regex": "^Board of Control",
+      "anchor_regex": "(?i)^[ \\t]*Ordinance[ \\t]+(?P<anchor>(?:TBD(?:/\\d{4})?|\\d{1,4}/\\d{4}))[ \\t]*$",
+      "segment_type": "agenda_item",
+      "min_chars": 50
+    },
+    {
+      "name": "council-numbered-items",
+      "source_name_regex": "^City Council",
+      "anchor_regex": "^[ \\t]*(?P<anchor>\\d{1,3})\\.[ \\t]*$",
+      "segment_type": "agenda_item",
+      "min_chars": 40
+    }
+  ]
+}
