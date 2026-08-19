@@ -102,6 +102,11 @@ from .structured import (
     extract_structured_facts,
     parse_query_date,
 )
+from .watch_analysis import (
+    WatchChangeObservationItem,
+    WatchChangeObservationRun,
+    WatchChangeObservationRunner,
+)
 from .watcher import (
     CorpusWatcher,
     ManifestResource,
@@ -179,6 +184,9 @@ __all__ = [
     "StructuredFact",
     "StructuredHit",
     "StructuredIndex",
+    "WatchChangeObservationItem",
+    "WatchChangeObservationRun",
+    "WatchChangeObservationRunner",
     "WatchResult",
     "WatchState",
     "artifact_id_from_sha256",
