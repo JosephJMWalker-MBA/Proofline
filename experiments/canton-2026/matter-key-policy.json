@@ -1,0 +1,19 @@
+{
+  "schema": "proofline-matter-key-policy/v1",
+  "name": "canton-board-change-order-matters-v1",
+  "segment_rule_name": "board-ordinance-items",
+  "project_id_regex": "(?i)\\bGP\\s*(?P<project_id>\\d{3,5})\\b",
+  "resolvers": [
+    {
+      "name": "board-change-order",
+      "transaction_role": "change_order",
+      "identity_regex": "(?is)\\b(?P<role_anchor>(?:clarification\\s+to\\s+)?change\\s+order\\.?\\s*(?:no\\.?\\s*)?(?P<change_order_number>\\d+)(?:\\s*&\\s*final)?)\\s+with\\s+(?P<counterparty>.+?)(?=\\s+(?:in\\s+the\\s+amount\\s+of|for\\s+a\\s+cost\\s+reduction\\s+in\\s+the\\s+amount\\s+of|for\\s+the\\s+))",
+      "required_components": [
+        "project_id",
+        "transaction_role",
+        "change_order_number",
+        "counterparty"
+      ]
+    }
+  ]
+}
