@@ -4,11 +4,11 @@
 
 Proofline is public-record intelligence infrastructure for provenance-backed investigative leads.
 
-It continuously turns large, messy public archives into stable evidence that can be discovered, watched, searched, compared, and eventually used to surface reproducible leads for human investigators and journalists.
+It continuously turns large, messy public archives into stable evidence that can be discovered, watched, searched, compared, and used to surface reproducible leads for human investigators and journalists.
 
 Proofline does **not** decide that a person or organization did something wrong. It distinguishes source evidence from machine-derived observations and leaves accusation, fairness, newsworthiness, and publication decisions with humans.
 
-> **Looking for what exists today?** Start with [STATUS.md](STATUS.md). The roadmap explains where the system is going; `STATUS.md` distinguishes implemented capabilities, measured behavior, validation status, and the active experiment.
+> **Looking for what exists today?** Start with [STATUS.md](STATUS.md). The roadmap explains where the system is going; `STATUS.md` distinguishes implemented capabilities, measured behavior, validation status, and the active research edge.
 
 ## The problem
 
@@ -48,7 +48,7 @@ Immutable original artifacts and retrieval metadata.
 
 Stable human-inspectable evidence units with append-only extraction attempts.
 
-- page or logical record
+- page, row, or logical record
 - source locator
 - extracted text
 - extraction method/version
@@ -73,30 +73,30 @@ Regenerable interpretation and analysis.
 ## Current pipeline
 
 ```text
-official public indexes / calendars
+official publisher interfaces
     |
     v
-discovery ---> preserved supporting provenance ---> deterministic watch manifest
+discovery/support provenance ---> deterministic source manifests
     |
     v
 watch/acquisition ---> immutable artifact history
     |
     v
-progressive extraction ---> page/row evidence ---> quality review
+progressive extraction ---> stable evidence units ---> quality review
     |
-    +----> publisher-backed source relations ---> deterministic version observations
+    +----> publisher-backed source relations ---> deterministic observations
     |
     v
 lexical + structured indexes
     |
     v
-additional pattern detectors ---> observations ---> corroboration
+source-profile / policy-scoped analysis
     |
     v
-lead desk ---> human investigation
+candidate leads ---> append-only human review
 ```
 
-M0 through M3 are complete and tested. R0 is the first real-public-record experiment and now exercises live discovery, acquisition, extraction, retrieval, publisher-backed version comparison, and CI content-quality assertions. See [ROADMAP.md](ROADMAP.md), [STATUS.md](STATUS.md), and [experiments/canton-2026/README.md](experiments/canton-2026/README.md).
+The evidence core, watcher, progressive extraction, deterministic retrieval, benchmark/evaluation framework, bounded detectors, immutable candidate leads, and human-review receipts are implemented and tested. Real-corpus validation has progressed through **R0 Canton 2026** and **R1 transfer validation in Akron 2026**. See [ROADMAP.md](ROADMAP.md), [STATUS.md](STATUS.md), [experiments/canton-2026/README.md](experiments/canton-2026/README.md), and [experiments/akron-2026/README.md](experiments/akron-2026/README.md).
 
 ## Quick start
 
@@ -121,9 +121,11 @@ proofline sync experiments/canton-2026/source-plan.json
 
 `discover` first preserves the configured publisher discovery pages, then derives a bounded watch manifest through source-specific adapters. `sync` performs discovery, watches/ingests the resulting resources, runs deterministic comparisons only across publisher-backed historical-version relations, and rebuilds retrieval indexes.
 
-For R0, Board of Control comes from CivicEngage Agenda Center PDFs/history, while City Council follows the official Canton Calendar into publisher-linked CivicClerk agenda files. That split exists because the original CivicEngage Council PDFs were non-substantive pointer wrappers, not because Proofline broadly crawls alternate sources.
+For Canton, Board of Control comes from CivicEngage Agenda Center PDFs/history, while City Council follows the official Canton Calendar into publisher-linked CivicClerk agenda files. That split exists because the original CivicEngage Council PDFs were non-substantive pointer wrappers, not because Proofline broadly crawls alternate sources.
 
-See [docs/DISCOVERY.md](docs/DISCOVERY.md).
+Akron uses a separate generic Hyland OnBase Agenda Online adapter because the publisher's canonical evidence boundary is different: individual agenda-item HTML records rather than the PDF/page boundary used in Canton. The adapter follows publisher-exposed meeting search, agenda-tree, and agenda-item relationships without numeric-ID sweeping.
+
+See [docs/DISCOVERY.md](docs/DISCOVERY.md) and [docs/ONBASE_AGENDA_ONLINE.md](docs/ONBASE_AGENDA_ONLINE.md).
 
 ### Analyze publisher-backed versions
 
@@ -177,14 +179,15 @@ proofline identifier C-001
 proofline evaluate tests/retrieval_eval.json --k 5
 ```
 
-`proofline index` builds two disposable derivatives over preferred Silver evidence:
+`proofline index` builds disposable derivatives over preferred Silver evidence, including:
 
 1. SQLite FTS5 lexical evidence search with transparent BM25 ranking;
-2. deterministic structured facts for explicit monetary values/dates in prose and semantically named spreadsheet fields.
+2. publisher-native identifier lookup;
+3. deterministic structured facts for explicit monetary values, dates, and identifiers when source semantics justify them.
 
 Arbitrary digits are **not** assumed to be money. Arbitrary tokens are **not** assumed to be identifiers. Structured meaning must come from explicit syntax or source field semantics.
 
-See [docs/RETRIEVAL.md](docs/RETRIEVAL.md).
+See [docs/RETRIEVAL.md](docs/RETRIEVAL.md) and [docs/RETRIEVAL_EVALUATION.md](docs/RETRIEVAL_EVALUATION.md).
 
 ## Provenance invariant
 
@@ -223,19 +226,56 @@ The stable reference contract is documented in [docs/EVIDENCE_REFERENCE.md](docs
 
 Original bytes are content-addressed. Watcher chronology is stored separately from unique artifact identity, so a public source sequence such as `A -> B -> A` remains temporally visible rather than collapsing back to one remembered object.
 
-## Active experiment: R0 Canton 2026
+## Validated research state
 
-The active product experiment is:
+### R0 Canton 2026 — complete
 
-> **Ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected.**
+R0 asked whether Proofline could ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected.
 
-The August 19, 2026 live validation checkpoint rebuilt **61 final meeting resources with zero unavailable final downloads**, including **16 substantive City Council agenda PDFs**. Those Council agendas produced **75/75 nonblank page evidence units**. The full corpus produced **174 evidence units**, **982 structured facts**, and only **2 review-queue items**. The same sync derived **11 publisher-backed historical-version relations**, created **7 deterministic version-change observations**, skipped **4 same-artifact relations**, and reported **0 detector failures**.
+It did. The first non-preselected candidate was a recurring municipal matter with changing expenditure-deadline facts. Human review found an ordinary administrative explanation and dispositioned the lead `explained`. That benign result was preserved as a successful test of the system's ability to surface a reproducible question without turning anomaly detection into accusation.
 
-These are measured snapshot counts, not promises about future publisher state. See [experiments/canton-2026/README.md](experiments/canton-2026/README.md) for source policy, failure cases, and the current detector phase.
+A later segmentation correction changed the deterministic derivation identity. The prior review did not silently transfer; a new review receipt explicitly re-affirmed the corrected lead while preserving the prior reviewed lead.
 
-Success does not mean finding wrongdoing. A routine discrepancy with a benign explanation is still a successful investigative lead if Proofline identifies it reproducibly and gives a human the exact evidence needed to investigate it.
+### R1 Canton semantic gates — bounded validations complete
 
-Semantic/vector retrieval remains deferred until measured real-corpus retrieval failures justify it.
+Proofline then tightened the comparison boundary before expanding interpretation:
+
+- a frozen canonical retrieval benchmark scored **42/42 expectations met** with **1.0 target recall at 10** and **1.0 provenance validity**;
+- corrected Board segmentation prevented unrelated matters from being silently grouped;
+- matter keys were treated as permission to compare, not universal entity identity;
+- financial values became comparable only after both matter identity and field role were resolved;
+- the first authorized financial-conflict detector emitted **0 conflicts**, and that negative result was accepted without retuning the policy to manufacture a finding.
+
+These are bounded results from frozen corpora and policies, not claims of universal retrieval or semantic completeness.
+
+### R1 Akron 2026 transfer — T1 through T5 complete
+
+Akron tests whether the same evidence/retrieval architecture transfers to a materially different publisher stack.
+
+The generic OnBase path produced **1,475 canonical agenda-item resources with 0 unavailable items and 1,475/1,475 nonblank Silver records**. The publisher already supplied the logical record boundary, so no extra Akron agenda segmentation was added.
+
+A retrieval-blind benchmark was frozen before lexical scoring. Its first score produced:
+
+- **37/37 expectations met**;
+- **32/32 positive cases hit**;
+- **54/54 explicit positive targets recovered**;
+- **5/5 negative controls passed**;
+- **1.0 target recall at 10**;
+- **1.0 provenance validity**;
+- **0 unresolved targets**;
+- **no measured retrieval failure class**.
+
+Semantic/vector retrieval therefore remains deferred. This is a complexity gate, not a claim that lexical/structured retrieval will always be sufficient.
+
+See [STATUS.md](STATUS.md) for the detailed validation record and frozen receipts.
+
+## Current research edge: Akron supporting documents
+
+The current bounded question is whether publisher-declared supporting-document relationships can be acquired without guessing identifiers or broad crawling while preserving exact relationship provenance.
+
+The active work is intentionally narrower than "ingest every attachment": inspect already-acquired canonical item HTML, classify publisher-declared link/transport patterns, follow only a deterministic bounded sample, validate actual response bytes/media types, and decide whether a generic OnBase attachment adapter is justified.
+
+Until that work is promoted through the same evidence and validation discipline as T1–T5, supporting-document acquisition should be treated as an active experiment rather than an established production capability.
 
 ## Design principles
 
