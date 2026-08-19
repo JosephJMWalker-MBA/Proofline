@@ -79,6 +79,7 @@ def test_source_family_resolver_is_transitive_and_singletons_stay_separate(tmp_p
 
     assert len(family_a) == 1
     assert family_a == family_b == family_c
+    assert len(resolver.source_ids_for_family(family_a[0])) == 3
     assert len(family_d) == 1
     assert family_d != family_a
     assert resolver.artifacts_share_family(first.artifact_id, third.artifact_id)
@@ -93,7 +94,7 @@ def test_token_shingles_ignore_punctuation_but_preserve_word_changes() -> None:
     assert first != changed
 
 
-def test_near_duplicate_candidates_skip_version_family_and_find_cross_meeting_variants(
+def test_near_duplicate_candidates_use_source_family_occurrences_not_artifact_labels(
     tmp_path,
 ) -> None:
     state = tmp_path / "state"
@@ -116,11 +117,13 @@ def test_near_duplicate_candidates_skip_version_family_and_find_cross_meeting_va
     current = _ingest_board(
         state, tmp_path, "Jan 27 Current", "https://example.gov/jan27", base
     )
-    archived_result = _ingest_board(
+    _ingest_board(
         state, tmp_path, "Jan 27 Archived", "https://example.gov/jan27-old", archived
     )
-    feb3 = _ingest_board(state, tmp_path, "Feb 3", "https://example.gov/feb3", archived)
-    feb10 = _ingest_board(state, tmp_path, "Feb 10", "https://example.gov/feb10", brincs)
+    # Feb 3 intentionally publishes byte-identical content to the Jan 27 archived artifact.
+    # Bronze/Silver therefore deduplicate the bytes, but the source-family contexts remain distinct.
+    _ingest_board(state, tmp_path, "Feb 3", "https://example.gov/feb3", archived)
+    _ingest_board(state, tmp_path, "Feb 10", "https://example.gov/feb10", brincs)
     _ingest_board(state, tmp_path, "Other", "https://example.gov/other", unrelated)
 
     RelationStore(state).add(
@@ -142,7 +145,10 @@ def test_near_duplicate_candidates_skip_version_family_and_find_cross_meeting_va
         limit=20,
     )
 
-    assert result.segment_count == 5
+    # Byte-identical Jan-27-archived / Feb-3 source contexts collapse to one segment but
+    # expand back to distinct family occurrences for recurrence analysis.
+    assert result.segment_count == 4
+    assert result.occurrence_count == 5
     assert result.possible_all_pairs == 10
     assert result.candidate_pairs_generated < result.possible_all_pairs
     assert result.candidate_pairs_compared <= result.candidate_pairs_generated
@@ -151,26 +157,39 @@ def test_near_duplicate_candidates_skip_version_family_and_find_cross_meeting_va
     pairs = {
         frozenset(
             source["source_uri"]
-            for hit in (candidate.left, candidate.right)
-            for source in hit.sources
+            for occurrence in (candidate.left, candidate.right)
+            for source in occurrence.sources
         )
         for candidate in result.candidates
     }
+
     # The current/archived Jan 27 pair is explicitly version-related and must not surface.
     assert frozenset({"https://example.gov/jan27", "https://example.gov/jan27-old"}) not in pairs
 
-    # Cross-meeting variants do surface, including the semantic-preserving punctuation edit
-    # and the later addition of the word BRINCS.
+    # The same content published under the unrelated Feb 3 source remains visible as a
+    # cross-family occurrence even though it shares one content-addressed artifact with Jan 27.
+    assert frozenset({"https://example.gov/jan27-old", "https://example.gov/feb3"}) in pairs
+
+    # Cross-meeting variants also surface, including the later addition of BRINCS.
     assert any(
         {"https://example.gov/feb3", "https://example.gov/feb10"}.issubset(pair)
         for pair in pairs
     )
     assert any(candidate.similarity > 0.90 for candidate in result.candidates)
+    assert all(candidate.left.family_id != candidate.right.family_id for candidate in result.candidates)
+
+    # All candidates remain evidence-local and each occurrence carries only the sources
+    # belonging to its own family context.
     assert all(
-        set(candidate.left_family_ids).isdisjoint(candidate.right_family_ids)
+        candidate.left.segment.evidence_id and candidate.right.segment.evidence_id
         for candidate in result.candidates
     )
-
-    # All candidates remain evidence-local and carry source provenance through SegmentHit.
-    assert all(candidate.left.evidence_id and candidate.right.evidence_id for candidate in result.candidates)
     assert all(candidate.left.sources and candidate.right.sources for candidate in result.candidates)
+    for candidate in result.candidates:
+        left_family_sources = {
+            source["source_id"] for source in candidate.left.sources
+        }
+        right_family_sources = {
+            source["source_id"] for source in candidate.right.sources
+        }
+        assert left_family_sources.isdisjoint(right_family_sources)
