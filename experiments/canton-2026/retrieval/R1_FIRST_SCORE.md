@@ -18,6 +18,15 @@ frozen before scoring.
 
 The workflow verified the frozen benchmark SHA before and after scoring.
 
+The exact first-score files were subsequently downloaded from artifact `9377585377`, verified
+against the hashes above, and preserved without modification under:
+
+- `r1-first-score/evaluation.json`
+- `r1-first-score/summary.json`
+- `r1-first-score/sync.json`
+
+They are historical measurement records. Future evaluator changes must not rewrite them.
+
 ## Raw evaluator output
 
 The v2 evaluator reported:
