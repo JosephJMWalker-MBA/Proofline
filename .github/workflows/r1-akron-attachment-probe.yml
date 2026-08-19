@@ -83,6 +83,8 @@ jobs:
               raise SystemExit('attachment probe exceeded its declared link bound')
           if policy['max_links'] != 8:
               raise SystemExit('attachment probe network bound changed unexpectedly')
+          if policy['max_bytes_per_response'] != 4 * 1024 * 1024:
+              raise SystemExit('attachment probe byte bound changed unexpectedly')
 
           relation_pairs = set()
           same_instance_uris = set()
@@ -107,13 +109,40 @@ jobs:
                   same_instance_uris.add(resolved)
 
           for sample in report['samples']:
-              if sample['source_uri'] not in same_instance_uris:
+              source_uri = sample['source_uri']
+              if source_uri not in same_instance_uris:
                   raise SystemExit('sample fetch was not authorized by a same-instance discovered relation')
-              if sample.get('captured_bytes', 0) > policy['max_bytes_per_link']:
-                  raise SystemExit('sample fetch exceeded declared byte bound')
-              final_uri = sample.get('final_uri')
-              if final_uri and urlsplit(final_uri).scheme not in {'http', 'https'}:
-                  raise SystemExit('sample redirect resolved outside http/https')
+
+              wrapper = sample.get('wrapper')
+              if wrapper:
+                  if wrapper.get('captured_bytes', 0) > policy['max_bytes_per_response']:
+                      raise SystemExit('wrapper fetch exceeded declared byte bound')
+                  final_uri = wrapper.get('final_uri')
+                  if final_uri and urlsplit(final_uri).scheme not in {'http', 'https'}:
+                      raise SystemExit('wrapper redirect resolved outside http/https')
+
+              bytes_uri = sample.get('bytes_uri')
+              if sample.get('publisher_declared_byte_transport'):
+                  if not bytes_uri:
+                      raise SystemExit('declared byte transport lost its URI')
+                  source_parts = urlsplit(source_uri)
+                  bytes_parts = urlsplit(bytes_uri)
+                  if (
+                      source_parts.scheme != bytes_parts.scheme
+                      or (source_parts.hostname or '').casefold()
+                      != (bytes_parts.hostname or '').casefold()
+                  ):
+                      raise SystemExit('publisher byte transport escaped the discovered source instance')
+                  if '/Documents/DownloadFileBytes/' not in bytes_parts.path:
+                      raise SystemExit('publisher byte transport did not use declared DownloadFileBytes path')
+
+              payload = sample.get('payload')
+              if payload:
+                  if payload.get('captured_bytes', 0) > policy['max_bytes_per_response']:
+                      raise SystemExit('payload fetch exceeded declared byte bound')
+                  final_uri = payload.get('final_uri')
+                  if final_uri and urlsplit(final_uri).scheme not in {'http', 'https'}:
+                      raise SystemExit('payload redirect resolved outside http/https')
 
           if same_instance_uris and report['sample_count'] == 0:
               raise SystemExit('same-instance supporting links existed but bounded sample selected none')
@@ -122,6 +151,8 @@ jobs:
           if canonical.get('unavailable') != 0:
               raise SystemExit('base canonical Akron rebuild had unavailable items')
 
+          wrappers = [sample.get('wrapper') for sample in report['samples'] if sample.get('wrapper')]
+          payloads = [sample.get('payload') for sample in report['samples'] if sample.get('payload')]
           summary = {
               'canonical_item_rows': canonical_rows,
               'items_with_support_marker': profile['items_with_support_marker'],
@@ -131,10 +162,19 @@ jobs:
               'same_instance_unique_uri_count': report['relations']['same_instance_unique_uri_count'],
               'external_unique_uri_count': report['relations']['external_unique_uri_count'],
               'sample_count': report['sample_count'],
-              'sample_magic_media_types': sorted(
-                  sample.get('magic_media_type', 'error') for sample in report['samples']
+              'wrapper_magic_media_types': sorted(
+                  item.get('magic_media_type', 'unknown') for item in wrappers
               ),
-              'sample_errors': sum('error' in sample for sample in report['samples']),
+              'publisher_declared_byte_transport_count': sum(
+                  bool(sample.get('publisher_declared_byte_transport'))
+                  for sample in report['samples']
+              ),
+              'payload_count': len(payloads),
+              'payload_magic_media_types': sorted(
+                  item.get('magic_media_type', 'unknown') for item in payloads
+              ),
+              'wrapper_errors': sum('wrapper_error' in sample for sample in report['samples']),
+              'payload_errors': sum('payload_error' in sample for sample in report['samples']),
               'manifest_sha256': sync.get('manifest_sha256'),
           }
           (root / 'validation-summary.json').write_text(
