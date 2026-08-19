@@ -4,7 +4,7 @@ This receipt establishes the historical boundary between **benchmark selection**
 **benchmark scoring** for Proofline R1.
 
 The candidate suite was generated and curated without consulting retrieval results.
-No , search ranking, hit-rate, recall, or semantic retrieval result
+No retrieval evaluation command, search ranking, hit-rate, recall, or semantic retrieval result
 was used to choose these cases before this freeze commit.
 
 - Source branch head before freeze: `23e03ce2e3d963ce0b7cf793cd9bd39569f485c3`
