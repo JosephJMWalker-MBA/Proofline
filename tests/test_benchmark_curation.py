@@ -27,6 +27,9 @@ def test_phrase_quality_rejects_procedural_fragments_without_retrieval() -> None
         "Posted Aug",
         "SUPPORT HER PLANS",
         "Regular Meeting November",
+        "GP1369. Ordinance",
+        "THE BUILDING CODE",
+        "BUILDING CODE FUND",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is None
@@ -37,6 +40,8 @@ def test_phrase_quality_rejects_procedural_fragments_without_retrieval() -> None
         "GPD Group",
         "Northstar Civic Systems",
         "BROOKPARK WATER MAIN REPLACEMENT",
+        "Sanitary Sewer Replacement Project",
+        "GREENTREE AVE",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is not None
