@@ -5,7 +5,7 @@
     {
       "name": "board-ordinance-items",
       "source_name_regex": "^Board of Control",
-      "anchor_regex": "(?i)^[ \\t]*Ordinance[ \\t]+(?P<anchor>(?:TBD(?:/\\d{4})?|\\d{1,4}/\\d{4}))[ \\t]*$",
+      "anchor_regex": "(?i)^[ \\t]*Ordinances?[ \\t]+(?P<anchor>(?:(?:TBD(?:/\\d{4})?|\\d{1,4}/\\d{4})(?:[ \\t]*&[ \\t]*(?:TBD(?:/\\d{4})?|\\d{1,4}/\\d{4}))*))[ \\t]*$",
       "segment_type": "agenda_item",
       "min_chars": 50
     },

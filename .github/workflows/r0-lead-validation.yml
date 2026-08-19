@@ -138,7 +138,7 @@ jobs:
 
           record = Path(
               'experiments/canton-2026/reviews/'
-              'lead-3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c.json'
+              'lead-ab70a8e49322a7662e31fa1331926d34358a549527b293427c96ade005206a51.json'
           )
           first = apply_review_record('.lead', record)
           second = apply_review_record('.lead', record)
@@ -171,7 +171,7 @@ jobs:
           lead_id = leads[0]['lead_id']
           record_path = Path(
               'experiments/canton-2026/reviews/'
-              'lead-3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c.json'
+              'lead-ab70a8e49322a7662e31fa1331926d34358a549527b293427c96ade005206a51.json'
           )
           record = load_review_record(record_path)
           if record.lead_id != lead_id:
@@ -179,6 +179,12 @@ jobs:
                   'documented review lead identity no longer matches the live deterministic lead; '
                   'human review must not silently transfer to a different lead'
               )
+
+          prior_lead = 'lead:3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c'
+          if not any(prior_lead in note for note in record.notes):
+              raise SystemExit('re-affirmed review record lost explicit prior-lead provenance')
+          if not any('re-affirmed' in note.casefold() for note in record.notes):
+              raise SystemExit('review record does not state that human disposition was re-affirmed')
 
           packet = LeadLifecycle('.lead').get(lead_id)
           if packet is None:
@@ -196,6 +202,8 @@ jobs:
               raise SystemExit('documented review event has the wrong disposition')
           if 'sequential expenditure-deadline amendments' not in event['rationale']:
               raise SystemExit('documented rationale was not preserved')
+          if not any(prior_lead in note for note in event['notes']):
+              raise SystemExit('durable review event lost prior-lead provenance')
 
           Path('lead-results/reviewed-lead.json').write_text(
               json.dumps(packet, indent=2, sort_keys=True)
