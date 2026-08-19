@@ -66,6 +66,7 @@ def test_recurrence_clusters_are_deterministic_connected_components() -> None:
     )
 
     assert first.cluster_count == 2
+    assert first.returned_cluster_count == 2
     assert first.candidate_edge_count == 3
     assert [item.cluster_id for item in first.clusters] == [
         item.cluster_id for item in second.clusters
@@ -112,6 +113,7 @@ def test_recurrence_cluster_limit_and_min_occurrences_are_explicit() -> None:
         min_occurrences=3,
     )
     assert only_three_plus.cluster_count == 1
+    assert only_three_plus.returned_cluster_count == 1
     assert only_three_plus.clusters[0].occurrence_count == 3
 
     limited = SegmentRecurrenceClusterer.from_candidates(
@@ -120,5 +122,6 @@ def test_recurrence_cluster_limit_and_min_occurrences_are_explicit() -> None:
         threshold=0.8,
         limit=1,
     )
-    assert limited.cluster_count == 1
+    assert limited.cluster_count == 2
+    assert limited.returned_cluster_count == 1
     assert len(limited.clusters) == 1
