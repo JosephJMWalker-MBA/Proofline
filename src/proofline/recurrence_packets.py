@@ -158,7 +158,7 @@ class RecurrenceEvidencePacketBuilder:
                 segment.evidence_id,
                 segment.char_start,
                 segment.char_end,
-                limit=1000,
+                limit=None,
             )
             facts = tuple(self._segment_fact(hit, occurrence) for hit in hits)
             occurrence_packets.append(
