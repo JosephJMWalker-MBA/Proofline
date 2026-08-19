@@ -73,10 +73,10 @@ Regenerable interpretation and analysis.
 ## Current pipeline
 
 ```text
-official public index
+official public indexes / calendars
     |
     v
-discovery ---> deterministic watch manifest
+discovery ---> preserved supporting provenance ---> deterministic watch manifest
     |
     v
 watch/acquisition ---> immutable artifact history
@@ -84,17 +84,19 @@ watch/acquisition ---> immutable artifact history
     v
 progressive extraction ---> page/row evidence ---> quality review
     |
+    +----> publisher-backed source relations ---> deterministic version observations
+    |
     v
 lexical + structured indexes
     |
     v
-pattern detectors ---> observations ---> corroboration
+additional pattern detectors ---> observations ---> corroboration
     |
     v
 lead desk ---> human investigation
 ```
 
-M0 through M3 are complete and tested. R0 is the first real-public-record experiment. See [ROADMAP.md](ROADMAP.md), [STATUS.md](STATUS.md), and [experiments/canton-2026/README.md](experiments/canton-2026/README.md).
+M0 through M3 are complete and tested. R0 is the first real-public-record experiment and now exercises live discovery, acquisition, extraction, retrieval, publisher-backed version comparison, and CI content-quality assertions. See [ROADMAP.md](ROADMAP.md), [STATUS.md](STATUS.md), and [experiments/canton-2026/README.md](experiments/canton-2026/README.md).
 
 ## Quick start
 
@@ -110,16 +112,31 @@ proofline status
 
 ### Discover and continuously sync public sources
 
-A static manifest is useful when resource URLs are already known. A discovery plan is used when an official index publishes new record URLs over time.
+A static manifest is useful when resource URLs are already known. A discovery plan is used when official publisher interfaces expose new record URLs over time.
 
 ```bash
 proofline discover experiments/canton-2026/source-plan.json
 proofline sync experiments/canton-2026/source-plan.json
 ```
 
-`discover` first preserves the official index page, then derives a bounded watch manifest from links the index explicitly publishes. `sync` performs discovery, watches/ingests the resulting resources, and rebuilds retrieval indexes in one deterministic cycle.
+`discover` first preserves the configured publisher discovery pages, then derives a bounded watch manifest through source-specific adapters. `sync` performs discovery, watches/ingests the resulting resources, runs deterministic comparisons only across publisher-backed historical-version relations, and rebuilds retrieval indexes.
+
+For R0, Board of Control comes from CivicEngage Agenda Center PDFs/history, while City Council follows the official Canton Calendar into publisher-linked CivicClerk agenda files. That split exists because the original CivicEngage Council PDFs were non-substantive pointer wrappers, not because Proofline broadly crawls alternate sources.
 
 See [docs/DISCOVERY.md](docs/DISCOVERY.md).
+
+### Analyze publisher-backed versions
+
+```bash
+proofline analyze-versions
+proofline trace <observation-id>
+```
+
+Version comparison is provenance-gated. Proofline does not decide that two similarly named documents are versions of one another. A preserved publisher artifact must first establish a `historical_version_of` source relation.
+
+A comparison can report exact text/value changes and descriptive arithmetic context, but it does not assign motive, suspiciousness, or materiality. Blank/empty Silver evidence is skipped rather than interpreted as deletion.
+
+`trace` returns the evidence used for an observation and the publisher-backed source relation that authorized the comparison.
 
 ### Watch an existing manifest
 
@@ -128,7 +145,9 @@ proofline watch examples/source-manifest.json
 proofline changes
 ```
 
-Each visit is recorded independently as `new`, `unchanged`, `changed`, or `unavailable`. `changed` means the bytes differ from the immediately prior successful observation. It does not explain motive or significance.
+Each visit is recorded independently as `new`, `unchanged`, `changed`, or `unavailable`. `changed` means the final acquired bytes differ from the immediately prior successful observation. It does not explain motive or significance.
+
+Some publishers expose a stable file API that returns a short-lived signed transport URL. Proofline keeps the stable publisher URI as source identity and uses the temporary transport only in-memory, so token rotation does not create false source changes.
 
 See [docs/SOURCE_MANIFEST.md](docs/SOURCE_MANIFEST.md).
 
@@ -179,7 +198,15 @@ Lead
               -> observed public source
 ```
 
-An LLM is never required to traverse this chain.
+For version observations there is an additional authorization path:
+
+```text
+Observation
+  -> publisher-backed source relation
+      -> preserved version-listing artifact
+```
+
+An LLM is never required to traverse either chain.
 
 The stable reference contract is documented in [docs/EVIDENCE_REFERENCE.md](docs/EVIDENCE_REFERENCE.md).
 
@@ -198,13 +225,13 @@ Original bytes are content-addressed. Watcher chronology is stored separately fr
 
 ## Active experiment: R0 Canton 2026
 
-Proofline has enough infrastructure to stop proving only synthetic architectural cases.
-
 The active product experiment is:
 
 > **Ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected.**
 
-The initial corpus is scoped in [experiments/canton-2026](experiments/canton-2026/README.md). PDF meeting records are used as canonical page-level evidence; the official Agenda Center and published revision-list pages are preserved as discovery/longitudinal evidence.
+The August 19, 2026 live validation checkpoint rebuilt **61 final meeting resources with zero unavailable final downloads**, including **16 substantive City Council agenda PDFs**. Those Council agendas produced **75/75 nonblank page evidence units**. The full corpus produced **174 evidence units**, **982 structured facts**, and only **2 review-queue items**. The same sync derived **11 publisher-backed historical-version relations**, created **7 deterministic version-change observations**, skipped **4 same-artifact relations**, and reported **0 detector failures**.
+
+These are measured snapshot counts, not promises about future publisher state. See [experiments/canton-2026/README.md](experiments/canton-2026/README.md) for source policy, failure cases, and the current detector phase.
 
 Success does not mean finding wrongdoing. A routine discrepancy with a benign explanation is still a successful investigative lead if Proofline identifies it reproducibly and gives a human the exact evidence needed to investigate it.
 
