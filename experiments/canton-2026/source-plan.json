@@ -6,8 +6,7 @@
       "type": "civicengage_agenda_center",
       "source_uri": "https://cantonohio.gov/AgendaCenter",
       "categories": [
-        "Board of Control",
-        "City Council"
+        "Board of Control"
       ],
       "years": [
         2026
@@ -16,6 +15,17 @@
         "pdf"
       ],
       "include_previous_versions": true
+    },
+    {
+      "type": "civicclerk_calendar",
+      "source_uri": "https://www.cantonohio.gov/calendar.aspx?CID=31",
+      "years": [
+        2026
+      ],
+      "event_text": "City Council Regular Meeting Agenda (PDF)",
+      "file_types": [
+        "Agenda"
+      ]
     }
   ]
 }
