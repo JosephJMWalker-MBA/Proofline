@@ -30,6 +30,14 @@ def test_phrase_quality_rejects_procedural_fragments_without_retrieval() -> None
         "GP1369. Ordinance",
         "THE BUILDING CODE",
         "BUILDING CODE FUND",
+        "Contact Item Details D-13",
+        "Unimproved Street Resurfacing Supporting",
+        "TANGO VENTURES LLC FOR",
+        "Hearing Regarding",
+        "WEST LONG STREET Back",
+        "Walton Hills Supporting Documents",
+        "West Market Street Ward",
+        "Diamond Akron LLC Diamond",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is None
@@ -42,10 +50,38 @@ def test_phrase_quality_rejects_procedural_fragments_without_retrieval() -> None
         "BROOKPARK WATER MAIN REPLACEMENT",
         "Sanitary Sewer Replacement Project",
         "GREENTREE AVE",
+        "Fund Balance Projections",
+        "Wastewater Treatment Plant",
+        "Brown Street PC-2026-18-CU",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is not None
         assert reason is None
+
+
+def test_publisher_ui_and_trailing_fragments_have_specific_reasons() -> None:
+    assert lexical_phrase_quality("Contact Item Details D-82") == (
+        None,
+        "publisher_ui_fragment",
+    )
+    assert lexical_phrase_quality("Walton Hills Supporting Documents") == (
+        None,
+        "publisher_ui_fragment",
+    )
+    for query in (
+        "Unimproved Street Resurfacing Supporting",
+        "TANGO VENTURES LLC FOR",
+        "Hearing Regarding",
+        "WEST LONG STREET Back",
+        "West Market Street Ward",
+    ):
+        quality, reason = lexical_phrase_quality(query)
+        assert quality is None
+        assert reason == "trailing_incomplete_phrase"
+    assert lexical_phrase_quality("Diamond Akron LLC Diamond") == (
+        None,
+        "repeated_edge_token",
+    )
 
 
 def test_curation_preserves_raw_rejections_and_never_claims_retrieval_use() -> None:
@@ -59,6 +95,8 @@ def test_curation_preserves_raw_rejections_and_never_claims_retrieval_use() -> N
         "cases": [
             _case("junk-1", "REQ LEG FOR PURCH", "lexical_entity_unique"),
             _case("junk-2", "MEETING OPEN", "lexical_entity_cross", targets=2),
+            _case("junk-3", "Contact Item Details D-13", "lexical_entity_unique"),
+            _case("junk-4", "Hearing Regarding", "lexical_entity_cross", targets=2),
             _case("good-1", "Schauer Group", "lexical_entity_unique"),
             _case("good-2", "Northstar Civic Systems", "lexical_entity_cross", targets=2),
             _case("good-3", "GPD Group", "lexical_entity_cross", targets=3),
@@ -89,17 +127,24 @@ def test_curation_preserves_raw_rejections_and_never_claims_retrieval_use() -> N
 
     curated = curate_benchmark_pool(pool, max_per_kind=2)
     assert curated["selection"]["retrieval_results_consulted"] is False
-    assert curated["selection"]["raw_case_count"] == 7
+    assert curated["selection"]["raw_case_count"] == 9
     assert curated["selection"]["curated_case_count"] == 5
     assert curated["selection"]["rejection_counts"]
 
     queries = {case.get("query") for case in curated["cases"]}
     assert "REQ LEG FOR PURCH" not in queries
     assert "MEETING OPEN" not in queries
+    assert "Contact Item Details D-13" not in queries
+    assert "Hearing Regarding" not in queries
     assert "Schauer Group" in queries
     assert "Northstar Civic Systems" in queries or "GPD Group" in queries
 
     rejected_queries = {
         item["query"] for item in curated["selection"]["rejected_lexical_cases"]
     }
-    assert {"REQ LEG FOR PURCH", "MEETING OPEN"} <= rejected_queries
+    assert {
+        "REQ LEG FOR PURCH",
+        "MEETING OPEN",
+        "Contact Item Details D-13",
+        "Hearing Regarding",
+    } <= rejected_queries

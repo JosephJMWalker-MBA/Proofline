@@ -31,6 +31,20 @@ _GENERIC_INSTITUTIONAL_PHRASES = {
     "the building code",
     "building code fund",
 }
+_UI_PHRASE_PREFIXES = {
+    "contact item details",
+}
+_UI_PHRASE_FRAGMENTS = {
+    "supporting documents",
+}
+_TRAILING_INCOMPLETE_TOKENS = {
+    "back",
+    "documents",
+    "for",
+    "regarding",
+    "supporting",
+    "ward",
+}
 _PROJECT_TERMS = {
     "project", "water", "main", "replacement", "improvement", "bridge", "street",
     "road", "sewer", "park", "avenue", "ave", "building", "facility",
@@ -51,6 +65,17 @@ def lexical_phrase_quality(query: str) -> tuple[tuple[int, int, int, int] | None
     normalized = " ".join(tokens)
     if len(tokens) < 2:
         return None, "too_short"
+    if any(
+        normalized == prefix or normalized.startswith(prefix + " ")
+        for prefix in _UI_PHRASE_PREFIXES
+    ):
+        return None, "publisher_ui_fragment"
+    if any(fragment in normalized for fragment in _UI_PHRASE_FRAGMENTS):
+        return None, "publisher_ui_fragment"
+    if tokens[-1] in _TRAILING_INCOMPLETE_TOKENS:
+        return None, "trailing_incomplete_phrase"
+    if tokens[0] == tokens[-1]:
+        return None, "repeated_edge_token"
     if tokens[0] in _GENERIC_START:
         return None, "generic_heading_start"
     if any(token in _MONTHS for token in tokens):

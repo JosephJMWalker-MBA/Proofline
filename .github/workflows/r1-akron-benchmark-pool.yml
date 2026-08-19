@@ -1,0 +1,321 @@
+name: r1-akron-benchmark-pool
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-benchmark-pool.yml"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "experiments/akron-2026/source-policy.json"
+      - "src/proofline/benchmarking.py"
+      - "src/proofline/benchmark_curation.py"
+      - "src/proofline/benchmark_sources.py"
+      - "src/proofline/onbase.py"
+      - "src/proofline/onbase_cli.py"
+      - "src/proofline/structured.py"
+      - "tests/test_benchmark_curation.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-pool:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Akron evidence without lexical retrieval index
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p akron-benchmark-results
+          proofline-onbase \
+            --state-dir .akron-benchmark \
+            --manifest-out akron-benchmark-results/agenda-items.json \
+            experiments/akron-2026/onbase-plan.json > akron-benchmark-results/sync.json
+          python - <<'PY' > akron-benchmark-results/structured-index.json
+          import json
+          from proofline.structured import StructuredIndex
+          print(json.dumps(StructuredIndex('.akron-benchmark').rebuild().to_dict(), indent=2, sort_keys=True))
+          PY
+
+      - name: Profile structured facts before benchmark selection
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import sqlite3
+          from pathlib import Path
+
+          connection = sqlite3.connect(Path('.akron-benchmark') / 'proofline.db')
+          connection.row_factory = sqlite3.Row
+          try:
+              fact_counts = {
+                  row['fact_type']: row['count']
+                  for row in connection.execute(
+                      "SELECT fact_type, COUNT(*) AS count FROM evidence_facts GROUP BY fact_type ORDER BY fact_type"
+                  ).fetchall()
+              }
+              rows = connection.execute(
+                  """
+                  SELECT DISTINCT s.source_uri, eu.evidence_id, best.extracted_text
+                  FROM sources s
+                  JOIN source_snapshots ss ON ss.source_id = s.source_id
+                  JOIN evidence_units eu ON eu.artifact_id = ss.artifact_id
+                  JOIN evidence_extractions best ON best.extraction_id = (
+                      SELECT ee.extraction_id FROM evidence_extractions ee
+                      WHERE ee.evidence_id = eu.evidence_id
+                      ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                               ee.occurred_at DESC, ee.rowid DESC LIMIT 1
+                  )
+                  WHERE s.source_uri LIKE '%/Meetings/ViewMeetingAgendaItem?%'
+                  ORDER BY s.source_uri
+                  """
+              ).fetchall()
+          finally:
+              connection.close()
+
+          bare_amount = re.compile(r'(?<!\d)\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?(?!\d)')
+          amount_phrase = re.compile(
+              r'(?i).{0,80}(?:\$|\bUSD\b|\bdollars?\b|\bamount\b|\bcost\b|\bprice\b).{0,120}'
+          )
+          canonical_with_dollar = canonical_with_usd = canonical_with_dollar_word = 0
+          canonical_with_bare_amount = bare_amount_occurrences = 0
+          samples = []
+          for row in rows:
+              text = row['extracted_text'] or ''
+              canonical_with_dollar += int('$' in text)
+              canonical_with_usd += int(bool(re.search(r'(?i)\bUSD\b', text)))
+              canonical_with_dollar_word += int(bool(re.search(r'(?i)\bdollars?\b', text)))
+              bare = bare_amount.findall(text)
+              if bare:
+                  canonical_with_bare_amount += 1
+                  bare_amount_occurrences += len(bare)
+              if len(samples) < 20 and (
+                  '$' in text or re.search(r'(?i)\b(?:USD|dollars?|amount|cost|price)\b', text) or bare
+              ):
+                  match = amount_phrase.search(text)
+                  samples.append({
+                      'source_uri': row['source_uri'],
+                      'evidence_id': row['evidence_id'],
+                      'snippet': ' '.join((match.group(0) if match else text[:500]).split()),
+                      'bare_amounts': bare[:10],
+                  })
+
+          profile = {
+              'fact_counts': fact_counts,
+              'canonical_evidence_count': len(rows),
+              'canonical_with_dollar_symbol': canonical_with_dollar,
+              'canonical_with_usd_token': canonical_with_usd,
+              'canonical_with_dollar_word': canonical_with_dollar_word,
+              'canonical_with_bare_comma_amount': canonical_with_bare_amount,
+              'bare_comma_amount_occurrences': bare_amount_occurrences,
+              'samples': samples,
+          }
+          Path('akron-benchmark-results/structured-profile.json').write_text(
+              json.dumps(profile, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(profile, indent=2, sort_keys=True))
+          PY
+
+      - name: Prove benchmark selection has no lexical search index available
+        run: |
+          python - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          connection = sqlite3.connect(Path('.akron-benchmark') / 'proofline.db')
+          try:
+              tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+              if 'search_index_builds' in tables:
+                  count = connection.execute('SELECT COUNT(*) FROM search_index_builds').fetchone()[0]
+                  if count != 0:
+                      raise SystemExit('retrieval-blind benchmark selection unexpectedly has a search index build')
+          finally:
+              connection.close()
+          PY
+
+      - name: Generate broad retrieval-blind candidate pool twice
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m proofline.benchmark_cli \
+            --state-dir .akron-benchmark \
+            --name akron-r1-transfer-retrieval-broad-v1 \
+            --max-per-kind 60 \
+            --source-policy experiments/akron-2026/source-policy.json \
+            --output akron-benchmark-results/raw-pool.json > akron-benchmark-results/raw-summary.json
+          python -m proofline.benchmark_cli \
+            --state-dir .akron-benchmark \
+            --name akron-r1-transfer-retrieval-broad-v1 \
+            --max-per-kind 60 \
+            --source-policy experiments/akron-2026/source-policy.json \
+            --output akron-benchmark-results/raw-pool-rerun.json > akron-benchmark-results/raw-summary-rerun.json
+          cmp akron-benchmark-results/raw-pool.json akron-benchmark-results/raw-pool-rerun.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          first = json.loads(Path('akron-benchmark-results/raw-summary.json').read_text())
+          second = json.loads(Path('akron-benchmark-results/raw-summary-rerun.json').read_text())
+          if first['cases'] != second['cases'] or first['selection'] != second['selection']:
+              raise SystemExit('benchmark summary semantics changed across identical generation')
+          PY
+
+      - name: Curate by deterministic question-quality rules without retrieval
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from proofline.benchmark_curation import curate_benchmark_pool
+
+          pool = json.loads(Path('akron-benchmark-results/raw-pool.json').read_text())
+          curated = curate_benchmark_pool(pool, max_per_kind=8)
+          curated['name'] = 'akron-r1-transfer-retrieval-v1 — curated'
+          Path('akron-benchmark-results/curated-unscored.json').write_text(
+              json.dumps(curated, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          Path('akron-benchmark-results/curation.json').write_text(
+              json.dumps(curated['selection'], indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Assert unscored breadth and canonical record targets
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from collections import Counter
+          from pathlib import Path
+          from proofline.benchmark_sources import load_benchmark_source_policy
+
+          raw = json.loads(Path('akron-benchmark-results/raw-pool.json').read_text())
+          suite = json.loads(Path('akron-benchmark-results/curated-unscored.json').read_text())
+          curation = json.loads(Path('akron-benchmark-results/curation.json').read_text())
+          structured_profile = json.loads(Path('akron-benchmark-results/structured-profile.json').read_text())
+          policy = load_benchmark_source_policy('experiments/akron-2026/source-policy.json')
+
+          if raw['selection']['method'] != 'proofline-retrieval-benchmark-pool/v2':
+              raise SystemExit(f"unexpected Akron pool method: {raw['selection']['method']}")
+          if raw['selection'].get('retrieval_results_consulted') is not False:
+              raise SystemExit('Akron raw pool claims retrieval consultation')
+          if len(raw['cases']) < 100:
+              raise SystemExit(f"raw Akron pool unexpectedly small: {len(raw['cases'])}")
+          if curation.get('retrieval_results_consulted') is not False:
+              raise SystemExit('Akron curation claims retrieval consultation')
+          if not curation.get('rejected_lexical_cases'):
+              raise SystemExit('Akron curation did not exercise question-quality rejection')
+
+          cases = suite['cases']
+          if len(cases) < 25:
+              raise SystemExit(f"curated Akron suite unexpectedly small: {len(cases)}")
+          if len({case['case_id'] for case in cases}) != len(cases):
+              raise SystemExit('curated Akron suite contains duplicate case IDs')
+
+          kinds = Counter(case.get('selection_kind') for case in cases)
+          modes = Counter(case['mode'] for case in cases)
+          positive_kinds = Counter(
+              case.get('selection_kind') for case in cases if not case.get('expect_empty', False)
+          )
+          required_positive_kinds = {
+              'lexical_entity_unique', 'lexical_entity_cross', 'native_identifier', 'date_exact'
+          }
+          missing_kinds = required_positive_kinds - set(positive_kinds)
+          if missing_kinds:
+              raise SystemExit(f'curated Akron suite missing positive kinds: {sorted(missing_kinds)}')
+          if kinds.get('negative_control', 0) < 5:
+              raise SystemExit('Akron negative controls unexpectedly missing')
+
+          positive_targets = 0
+          for case in cases:
+              expected = case.get('expected') or []
+              if case.get('expect_empty', False):
+                  if expected:
+                      raise SystemExit('negative Akron control unexpectedly has positive targets')
+                  continue
+              if not expected:
+                  raise SystemExit('positive Akron benchmark case has no explicit target')
+              positive_targets += len(expected)
+              for target in expected:
+                  uri = target['source_uri']
+                  if policy.classify(uri) != 'canonical':
+                      raise SystemExit(f'Akron support source leaked into positive target: {uri}')
+                  if '/Meetings/ViewMeetingAgendaItem?' not in uri:
+                      raise SystemExit(f'non-item Akron source entered positive target: {uri}')
+                  if target['locator'] != 'record:1':
+                      raise SystemExit(f"Akron positive target is not atomic record:1: {target['locator']}")
+                  if not target.get('artifact_sha256'):
+                      raise SystemExit('Akron positive target lost exact artifact SHA-256')
+          if positive_targets < 20:
+              raise SystemExit(f'Akron explicit-target coverage unexpectedly low: {positive_targets}')
+
+          # Money absence is an evidence-layer result, not a benchmark failure. Canonical Akron
+          # agenda-item text contains no explicit currency marker. Bare comma numbers include
+          # physical quantities such as "1,200 feet" and must not be promoted to money.
+          money_positive = positive_kinds.get('money_exact', 0)
+          explicit_money_markers = (
+              structured_profile['canonical_with_dollar_symbol']
+              + structured_profile['canonical_with_usd_token']
+              + structured_profile['canonical_with_dollar_word']
+          )
+          if money_positive != 0:
+              raise SystemExit('Akron unexpectedly produced positive money benchmark cases')
+          if structured_profile['fact_counts'].get('money', 0) != 0:
+              raise SystemExit('Akron structured index unexpectedly contains money facts')
+          if explicit_money_markers != 0:
+              raise SystemExit('Akron canonical text now contains explicit money markers; revisit benchmark coverage')
+          if structured_profile['canonical_with_bare_comma_amount'] < 1:
+              raise SystemExit('Akron transfer no longer exercises bare-number money false-positive guard')
+
+          connection = sqlite3.connect(Path('.akron-benchmark') / 'proofline.db')
+          try:
+              tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+              if 'search_index_builds' in tables:
+                  count = connection.execute('SELECT COUNT(*) FROM search_index_builds').fetchone()[0]
+                  if count:
+                      raise SystemExit('Akron benchmark pool was selected after lexical search indexing')
+          finally:
+              connection.close()
+
+          summary = {
+              'raw_candidate_count': len(raw['cases']),
+              'raw_kind_counts': raw['selection']['kind_counts'],
+              'curated_case_count': len(cases),
+              'curated_kind_counts': dict(sorted(kinds.items())),
+              'curated_mode_counts': dict(sorted(modes.items())),
+              'positive_target_count': positive_targets,
+              'rejection_counts': curation.get('rejection_counts', {}),
+              'source_policy': raw['selection'].get('source_policy'),
+              'selection_consulted_retrieval': False,
+              'positive_money_case_count': money_positive,
+              'money_absence_explanation': (
+                  'canonical Akron agenda-item text contains no explicit currency marker; '
+                  'bare comma-formatted quantities are not treated as money'
+              ),
+          }
+          Path('akron-benchmark-results/pool-summary.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload unscored Akron benchmark pool
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-benchmark-pool-unscored
+          path: akron-benchmark-results/
+          if-no-files-found: error
+          retention-days: 14
