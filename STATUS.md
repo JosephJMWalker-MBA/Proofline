@@ -2,36 +2,42 @@
 
 This file is the current implementation and validation record for Proofline.
 
-## Current milestone state
+## Current state
 
-Proofline now has a validated end-to-end public-record path:
+Proofline has now validated two related claims:
+
+1. **R0 Canton 2026:** a real public-record corpus can be acquired, normalized into reproducible evidence, analyzed deterministically, promoted selectively into a candidate lead, and dispositioned by a human without rewarding suspicious-sounding output.
+2. **R1 transfer validation:** the evidence and retrieval architecture transfers to a second municipal publisher stack with a materially different canonical evidence boundary.
+
+The current end-to-end architecture is:
 
 ```text
-official publisher sources
+official publisher interfaces
+→ preserved discovery/support provenance
 → immutable Bronze artifacts
-→ page-level Silver evidence
-→ lexical + structured retrieval
-→ deterministic source/version analysis
-→ stable agenda-item segments
-→ bounded recurrence candidates
-→ evidence-local recurrence packets
-→ selective Gold candidate observations
-→ immutable candidate leads
-→ explicit append-only human review
-→ durable version-controlled review receipts
+→ stable Silver evidence units
+→ deterministic lexical + structured retrieval
+→ source-profile-specific segmentation only when required
+→ policy-scoped matter identity / field semantics
+→ deterministic observations and candidate leads
+→ append-only human review
+→ durable version-controlled receipts
 ```
 
-The first real-corpus experiment, **R0 Canton 2026**, has met its success criterion.
+**Gold may be wrong. Silver must be reproducible. Bronze must remain immutable.**
 
-## Implemented
+Semantic/vector retrieval remains deferred because neither frozen real-corpus benchmark has exposed a deterministic retrieval failure class that justifies it.
+
+## Implemented platform capabilities
 
 ### Evidence core
 
-- immutable SHA-256 source artifacts
+- immutable SHA-256 artifact identity
 - stable evidence units with human-inspectable locators
 - append-only extraction and processing history
 - deterministic observation/evidence traceability
 - evidence-backed immutable lead packets
+- content-addressed local artifact storage
 
 ### Watcher and source provenance
 
@@ -42,125 +48,277 @@ The first real-corpus experiment, **R0 Canton 2026**, has met its success criter
 - prior-byte preservation
 - exact watcher `check_id` provenance for watcher-authorized observations
 - publisher-backed `historical_version_of` relations
-- rotating signed transport URLs separated from canonical source identity
+- stable source identity separated from temporary/signed transport URLs
 
 ### Extraction and retrieval
 
 - native PDF/text/HTML/JSON/XML extraction
-- page/row evidence identities
+- page/row/logical-record evidence identities
 - progressive OCR escalation
 - extraction quality measurement and review queue
 - Unicode-aware substantive-Silver gate before Gold promotion
 - SQLite FTS5 lexical retrieval
-- deterministic structured indexing for money, dates, and explicit identifiers
+- publisher-native identifier lookup
+- deterministic structured indexing for explicit money, dates, and identifiers
 - amount/date range queries
-- retrieval evaluation harness with provenance checks
+- retrieval evaluation with exact source URI + locator + optional artifact SHA targets
+- scorable reporting that separates target drift from retrieval failure
 
-Semantic/vector retrieval remains deferred until measured lexical/structured misses justify it.
+### Public-source adapters now validated
 
-### Canton discovery
+Canton:
 
-Board of Control:
-
-- official CivicEngage Agenda Center
-- `Previous Versions` pages
-- publisher-linked `ArchivedAgenda` files
-
-City Council:
-
+- CivicEngage Agenda Center
+- CivicEngage `Previous Versions` / `ArchivedAgenda`
 - official Canton Calendar
-- CivicClerk event metadata
-- stable CivicClerk meeting-file source URI
-- publisher-signed blob used only as temporary transport
+- CivicClerk event metadata and meeting-file transport
 
-Canonical meeting evidence remains page-level PDF evidence. Discovery HTML/JSON is preserved separately as provenance rather than counted as independent corroboration.
+Akron:
 
-### Version and watcher analysis
+- generic Hyland OnBase Agenda Online bounded meeting search
+- embedded first-party `SearchResults` JSON
+- `Documents/ViewAgenda` agenda trees
+- publisher-linked `loadAgendaItem(id, false)` discovery
+- canonical `Meetings/ViewMeetingAgendaItem` HTML evidence
+- installed `proofline-onbase` CLI
 
-- deterministic version comparator
-- publisher-version and watcher-chronology authorization paths kept distinct
-- same-artifact pairs do not manufacture changes
-- blank/whitespace-only Silver cannot masquerade as a substantive deletion/change
-- observation identities bind to the exact evidence/extraction inputs used
-- `proofline analyze-versions`
-- `proofline analyze-watch-changes`
-- `proofline trace` exposes evidence plus source relations, watcher visits, and detector context
+The OnBase adapter contains no Akron hostname, Canton semantic policy, or numeric-ID sweep.
 
-### Agenda-item recurrence
+## R0 Canton 2026 — complete
 
-- deterministic source-profile segmentation with exact character spans
-- stable segment IDs across rebuilds
-- version-family suppression before recurrence scoring
-- inverted token-shingle candidate generation rather than O(n²) all-pairs comparison
-- exact Jaccard scoring for bounded candidates
-- deterministic recurrence clusters with stable IDs
-- recurrence evidence packets containing only structured facts inside the exact segment span
-- explicit common-vs-varying fact sets
+R0 asked:
 
-Recurrence packets remain descriptive below Gold unless a detector policy explicitly promotes them.
+> Can Proofline ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected?
 
-### R0.3 Gold candidate policy
+**Yes.**
 
-Detector: `recurrence_fact_variation/v1`.
+The first non-preselected machine candidate was the recurring ECDI / Ordinance 60/2023 / `$185,000` CDBG matter with changing expenditure-deadline facts. Human review found an ordinary administrative explanation and dispositioned the lead `explained`; Proofline did not reinterpret that benign explanation as failure.
 
-Promotion requires:
+A later segmentation correction changed the deterministic derivation identity. The prior human review did **not** silently transfer. A new review receipt explicitly re-affirmed the corrected lead, while the prior reviewed lead remained preserved.
 
-- multiple publisher-backed source families;
-- multiple evidence units;
-- structured facts in every occurrence;
-- known preferred-extraction quality at/above threshold;
-- at least one structured value common to all occurrences;
-- at least one structured value whose presence varies across occurrences.
+See [experiments/canton-2026/README.md](experiments/canton-2026/README.md) and [docs/REVIEW_RECORDS.md](docs/REVIEW_RECORDS.md).
 
-Safeguards:
+## R1 Canton semantic gates — complete for the first bounded policies
 
-- recurrence alone is insufficient;
-- missing/low-quality extraction cannot masquerade as a change;
-- no chronology, causation, materiality, suspiciousness, or field-equivalence inference;
-- possible ordinary explanations are mandatory;
-- questions worth asking are mandatory;
-- immediate reruns are idempotent.
+### Canonical retrieval benchmark
 
-### R0.4 lead lifecycle
+The second Canton retrieval suite restricted positive targets to canonical evidence before scoring.
 
-- eligible candidate observations package deterministically into immutable `Lead` packets
-- packet retains exact observation/evidence references, questions, and possible ordinary explanations
-- editorial/scalar scores remain unset in R0
-- lead rows and lead→observation/evidence links are DB-enforced immutable
-- human disposition is append-only `lead_review_events`
-- current status is derived from review history; the original lead packet is not rewritten
-- `published` is excluded from the R0 review interface
-- version-controlled review receipts use schema `proofline-lead-review/v1`
-- applying the same review receipt is idempotent
-- a review receipt is bound to the exact deterministic lead ID and must not silently transfer to a different future lead
+Frozen suite:
 
-See [docs/REVIEW_RECORDS.md](docs/REVIEW_RECORDS.md).
+- **42 cases**
+- **37 positive / 5 negative controls**
+- **42/42 expectation met**
+- positive hit rate at 10: **1.0**
+- target recall at 10: **1.0**
+- negative accuracy: **1.0**
+- provenance validity: **1.0**
+- unresolved targets: **0**
+
+See `experiments/canton-2026/retrieval/R1_CANONICAL_V2_SCORE.md`.
+
+### Corrected Board segmentation
+
+The live Board source profile now produces:
+
+- **144** agenda-item segments
+- **6** recovered compound-ordinance anchors
+- **0** nested ordinance-heading errors
+
+This correction was required before matter identity because the prior rule could place unrelated matters inside one segment.
+
+### Matter-key contract
+
+The first conservative Board policy treats a matter key as **permission to compare**, not a universal entity identity.
+
+Live result:
+
+- **144** matter candidates
+- **22 resolved**
+- **2 ambiguous**
+- **120 insufficient identity**
+- **2 repeated resolved matter keys**
+
+The policy correctly separates a live same-project/same-change-order counterparty collision rather than manufacturing a false join.
+
+### Financial field-role policy
+
+Money values become comparable only after both matter identity and field role are resolved.
+
+Live result:
+
+- **46** money facts inside resolved matters
+- **41 assigned**
+- **5 unknown**
+- **0 ambiguous**
+- **3** repeated same-matter/same-role comparison populations
+
+Unknown values remain unknown rather than being forced into a taxonomy.
+
+### Conflicting-value detector
+
+The first financial conflict detector compares only:
+
+```text
+same resolved matter key + same assigned financial role
+```
+
+Live Canton result:
+
+- **3** authorized repeated populations inspected
+- **0** conflicts emitted
+
+That negative result is accepted. The detector was not tuned to manufacture a finding.
+
+## R1 Akron 2026 transfer experiment — T1 through T5 complete
+
+Akron is intentionally different from Canton. Its official source is Hyland **OnBase Agenda Online**, and the publisher supplies individual agenda-item HTML resources rather than the PDF/page boundary used in Canton.
+
+See [experiments/akron-2026/README.md](experiments/akron-2026/README.md).
+
+### T1 — source-contract probe
+
+The bounded probe established that:
+
+- raw meeting shells are not substantive canonical evidence;
+- the visible Agenda anchor is not a direct agenda PDF;
+- nominal agenda `DownloadFile` samples did not return PDF bytes;
+- the promotable publisher chain is meeting search → agenda tree → publisher-linked agenda item.
+
+No numeric meeting/item IDs are guessed or swept.
+
+### T2 — generic production adapter
+
+A clean live run produced:
+
+- **33** meetings with available agendas
+- **1** preserved bounded search artifact
+- **33** preserved agenda-tree support artifacts
+- **1,475** canonical agenda-item resources
+- **0 unavailable** canonical items
+- **1,475/1,475** canonical items with nonblank Silver text
+
+The ordinary Proofline watcher, HTML extractor, lexical indexer, and structured indexer were reused unchanged.
+
+Immediate rediscovery reproduced the same manifest identity:
+
+`375fe1ca8843509adfef9616fc2d7fb65353ee8866e168d1c89218e9e5f8c9d0`
+
+### T3 — atomic evidence validation
+
+Across all **1,475** canonical items:
+
+- **1,475/1,475** locator `record:1`
+- **0** structural atomicity errors
+- exactly one `Item Details` boundary per item
+- exactly one return-to-outline boundary per item
+- **3** legitimate short utility items (`Meeting Notice` ×2, `Files` ×1)
+- **0** unknown short-item classes
+
+**Decision:** no additional Akron agenda segmentation is justified. The publisher already supplies the logical record boundary.
+
+### T4 — retrieval-blind benchmark freeze
+
+The benchmark was generated and curated before any lexical retrieval index was available.
+
+Frozen suite:
+
+- **233** raw candidates
+- **37** curated unscored cases
+- **54** explicit positive evidence targets
+- 8 cross-record lexical cases
+- 8 unique lexical cases
+- 8 exact-date cases
+- 8 publisher-native identifier cases
+- 5 deterministic negative controls
+
+Every positive target is canonical `record:1` evidence bound to an exact artifact SHA-256.
+
+The canonical item text contained **0 explicit money facts**. Three comma-formatted `1,200` values describe physical quantities such as `1,200 feet`; Proofline correctly did not reinterpret them as currency.
+
+Freeze receipt:
+
+`experiments/akron-2026/retrieval/R1_TRANSFER_V1_FREEZE.md`
+
+### T5 — first frozen retrieval score
+
+First score workflow: `32302508603`.
+
+The clean scoring rebuild independently reproduced:
+
+- **33** meetings
+- **1,475** canonical items
+- exact manifest identity `375fe1ca8843509adfef9616fc2d7fb65353ee8866e168d1c89218e9e5f8c9d0`
+- **1,509** indexed evidence units including support provenance
+- **1,025** structured facts
+
+Result:
+
+- **37/37** expectations met
+- **32/32** positive cases hit
+- **54/54** explicit positive targets recovered
+- **5/5** negative controls passed
+- target recall at 10: **1.0**
+- provenance validity: **1.0**
+- unresolved targets: **0**
+- retrieval failure classes: **none**
+
+The final PR head immediately reproduced the same semantic summary in a second clean scoring run.
+
+Score receipt:
+
+`experiments/akron-2026/retrieval/R1_TRANSFER_V1_SCORE.md`
+
+## Current retrieval conclusion
+
+Two write-once real-corpus canonical benchmarks now exist:
+
+| Corpus | Cases | Positive cases | Negative controls | Target recall @10 | Unresolved targets | Retrieval failures |
+|---|---:|---:|---:|---:|---:|---:|
+| Canton canonical v2 | 42 | 37 | 5 | 1.0 | 0 | 0 |
+| Akron transfer v1 | 37 | 32 | 5 | 1.0 | 0 | 0 |
+
+**Semantic/vector retrieval is still not justified by measured evidence.** This is not a claim of universal completeness; it is a complexity gate.
 
 ## Current CLI surface
+
+Core:
 
 ```bash
 proofline ingest <path>
 proofline status
 proofline trace <observation-id>
-
-proofline discover <plan.json>
-proofline sync <plan.json>
-proofline analyze-watch-changes
-proofline analyze-versions
-proofline watch <manifest>
-proofline changes
-
 proofline review
 proofline extract <artifact-id> --ocr tesseract
+```
 
+Discovery/watch:
+
+```bash
+proofline discover <plan.json>
+proofline sync <plan.json>
+proofline watch <manifest>
+proofline changes
+proofline analyze-watch-changes
+proofline analyze-versions
+proofline-onbase <plan.json>
+```
+
+Retrieval/evaluation:
+
+```bash
 proofline index
 proofline search "terms"
 proofline lookup <publisher-native-id>
 proofline amounts --min 250000 --max 500000
 proofline dates --from 2026-01-01 --to 2026-12-31
 proofline identifier <identifier>
-proofline evaluate <suite.json> --k 5
+proofline evaluate <suite.json> --k 10
+```
 
+Analysis/review:
+
+```bash
 proofline segment <segment-plan.json>
 proofline segment-anchor <anchor>
 proofline repeated-segments
@@ -168,7 +326,6 @@ proofline near-segments
 proofline recurrence-clusters
 proofline recurrence-packets
 proofline analyze-candidates
-
 proofline package-leads
 proofline lead <lead-id>
 proofline review-lead <lead-id> \
@@ -177,146 +334,44 @@ proofline review-lead <lead-id> \
   --rationale "..."
 ```
 
-Durable review receipts are loaded/applied through `proofline.review_records`; the R0 live workflow uses that module to reconstruct the approved human review on every clean validation build.
-
-## R0 Canton 2026 — measured snapshot
-
-Validated live runs have produced approximately:
-
-- **61 final discovered meeting resources**
-- **0 unavailable final-resource downloads**
-- **16 City Council Agenda PDFs**
-- **75/75 nonblank City Council page evidence units**
-- roughly **148,000 City Council extracted characters**
-- **174 evidence units**, **172** lexical-searchable
-- **982 structured facts**
-- **2 review-queue items**, both Board of Control
-- **0** dead City Council CivicEngage wrapper records in the final corpus
-
-Version-analysis snapshot:
-
-- **11** publisher-backed `historical_version_of` relations
-- **7** substantive comparisons
-- **7** version-change observations
-- **4** same-artifact relations skipped
-- **0** deterministic detector failures
-
-Agenda-item/recurrence snapshot:
-
-- **553** agenda-item segments
-  - 138 Board of Control
-  - 415 City Council
-- **0** evidence-span mismatches
-- Board recurrence search: **9,453 possible pairs → 2,188 exact comparisons**
-- **5** near-duplicate edges
-- **3** recurrence clusters
-- stable segment and recurrence identities across identical rebuilds
-
-These counts are measured snapshots, not contractual corpus sizes.
-
-## First non-preselected machine candidate
-
-The live recurrence detector examined all three Board recurrence clusters and promoted exactly **one** while leaving the other two below Gold.
-
-### ECDI / Ordinance 60/2023 / $185,000 CDBG funds
-
-Common evidence-local structured facts included:
-
-- `$185,000`
-- `2026-07-31`
-
-Varying date facts included:
-
-- `2026-04-13`
-- `2026-10-31`
-
-One public record extends the expenditure deadline from **April 13 → July 31, 2026**; a later record extends it from **July 31 → October 31, 2026**.
-
-Proofline surfaced the pattern without a detector or CI assertion naming ECDI.
-
-The Motorola and Versaterm recurrence groups remained below Gold because their evidence-local structured facts were unchanged.
-
-## First real lead — human disposition recorded
-
-Deterministic lead:
-
-```text
-lead:3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c
-```
-
-Human review:
-
-- reviewer: **Joseph Walker**
-- disposition: **explained**
-- review time: **2026-08-19T17:14:00+00:00**
-- immutable packet status: `candidate`
-- derived current status: `explained`
-
-Rationale:
-
-> The underlying Board of Control records describe sequential expenditure-deadline amendments. The recurring $185,000 amount and July 31 handoff are consistent with continuity of the same administrative matter; the evidence currently provides an ordinary explanation for why Proofline surfaced the changing dates. No evidence of misconduct is inferred.
-
-Durable review receipt:
-
-`experiments/canton-2026/reviews/lead-3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c.json`
-
-The live validation workflow rebuilds the corpus from official sources, regenerates this exact lead ID, first proves machine-only state remains `candidate`, applies the version-controlled human receipt, and then proves the derived disposition is `explained`. Reapplying the receipt creates no duplicate event.
-
-## Important negative findings
-
-### Board ordinance numbers are not matter identity
-
-The same `Ordinance ###/####` anchor can occur across unrelated departments, vendors, transactions, and meetings. It is not safe as a matter key.
-
-### Project ID alone is not transaction identity
-
-A project can contain construction, engineering, administration, multiple counterparties, and multiple change-order relationships. A future conflicting-value detector needs an explicit **matter-key contract** rather than loose identifier equality.
-
-### Arbitrary dollar amounts are not one comparable population
-
-Contract total, annual fee, amendment amount, grant amount, engineering fee, and administrative amount are semantically distinct. Numeric outlier detection requires field-role normalization and an explicitly comparable population first.
-
-These are epistemic gates discovered from real records, not implementation shortcuts.
-
 ## Validation authority
 
-GitHub Actions is the execution authority for the full repository suite and live-network R0 gates.
+GitHub Actions is the execution authority for the full repository suite and live-network experiment gates.
 
-Current regression gates cover:
+Current live gates cover, among other things:
 
-- official-source acquisition and substantive Council evidence;
-- source/version provenance;
-- stable segment/recurrence identity;
-- bounded candidate generation;
-- fact-span containment;
-- selective Gold promotion;
-- candidate/lead idempotence;
-- immutable lead packets;
-- machine processing stopping before human disposition;
-- durable human review reconstruction;
-- exact lead-ID binding for a review receipt;
-- no duplicate event on review-receipt reapplication;
-- `published` remaining unavailable through R0 review.
+- official-source acquisition and media validation
+- source/version provenance
+- extraction quality
+- stable segment and recurrence identity
+- bounded candidate generation
+- fact-span containment
+- candidate/lead idempotence
+- immutable lead packets
+- explicit human-review reconstruction
+- conservative matter identity
+- financial-role assignment boundaries
+- authorized financial conflict populations
+- generic OnBase source transfer
+- Akron atomic evidence
+- retrieval-blind benchmark creation
+- exact frozen benchmark scoring
 
-## R0 result
+## Next development edge
 
-R0 asked:
+The Akron transfer has now proven acquisition, Silver evidence, atomic evidence identity, deterministic indexing, and frozen retrieval evaluation.
 
-> Can Proofline ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was not manually preselected?
+The next bounded question is **supporting-document acquisition**.
 
-**Yes.**
+Canonical Akron agenda-item summaries contain almost no explicit financial values, but the publisher exposes supporting-document links from some items. The next experiment should therefore:
 
-It also demonstrated the more important epistemic behavior: a machine-selected pattern can be investigated and **explained by ordinary public-record context** rather than rewarded for sounding suspicious.
+1. inspect already-acquired canonical item HTML for publisher-declared supporting links;
+2. classify link/transport patterns without guessing document IDs;
+3. follow only a small deterministic bounded sample;
+4. validate actual response bytes/media types rather than trusting link labels or extensions;
+5. decide whether a generic OnBase attachment adapter is justified;
+6. keep attachment source identity and agenda-item relationship provenance explicit.
 
-See [experiments/canton-2026/README.md](experiments/canton-2026/README.md) and GitHub Issue #5.
-
-## Next work
-
-R0 is complete. Future detector work should proceed only after the required identity/comparison semantics are defined:
-
-- explicit matter-key contract for conflicting-value analysis;
-- financial field-role normalization before numeric outlier analysis;
-- broader real-corpus retrieval benchmark coverage;
-- semantic retrieval only if deterministic retrieval demonstrates a measured failure class.
+Only after richer evidence is acquired should Akron matter-key, financial-role, recurrence, or detector policies be considered. Canton semantic rules must not be transferred by assumption.
 
 Public accusation, outreach, publication, privacy-policy changes affecting real people, paid external deployment, or irreversible publication remain explicit human/product-owner decisions.
