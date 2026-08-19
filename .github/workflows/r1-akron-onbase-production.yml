@@ -1,0 +1,197 @@
+name: r1-akron-onbase-production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-onbase-production.yml"
+      - "src/proofline/onbase.py"
+      - "src/proofline/onbase_cli.py"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "tests/test_onbase.py"
+      - "docs/ONBASE_AGENDA_ONLINE.md"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Verify installed OnBase CLI boundary
+        run: proofline-onbase --help >/dev/null
+
+      - name: Discover and sync canonical Akron agenda items
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p akron-results
+          proofline-onbase \
+            --state-dir .akron \
+            --manifest-out akron-results/agenda-items.json \
+            experiments/akron-2026/onbase-plan.json > akron-results/first-sync.json
+          test -s akron-results/agenda-items.json
+          test -s akron-results/first-sync.json
+
+      - name: Build ordinary Proofline indexes over transferred evidence
+        shell: bash
+        run: |
+          set -o pipefail
+          proofline --state-dir .akron index > akron-results/index.json
+          proofline --state-dir .akron status > akron-results/status.json
+          test -s akron-results/index.json
+
+      - name: Measure canonical evidence and source-role separation
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+
+          first = json.loads(Path('akron-results/first-sync.json').read_text())
+          manifest = json.loads(Path('akron-results/agenda-items.json').read_text())
+          canonical = first['canonical_sync']
+          resources = manifest['resources']
+          onbase = first['onbase']
+
+          if onbase['meeting_count'] < 20:
+              raise SystemExit(f"OnBase meeting discovery unexpectedly small: {onbase['meeting_count']}")
+          if onbase['agenda_tree_count'] != onbase['meeting_count']:
+              raise SystemExit('not every discovered meeting produced a preserved agenda tree')
+          if onbase['agenda_item_count'] != len(resources):
+              raise SystemExit('reported agenda-item count differs from canonical manifest')
+          if len(resources) < 100:
+              raise SystemExit(f"canonical agenda-item corpus unexpectedly small: {len(resources)}")
+          if canonical['counts']['unavailable'] != 0:
+              raise SystemExit(f"canonical OnBase items unavailable: {canonical['counts']['unavailable']}")
+          if canonical['counts']['new'] != len(resources):
+              raise SystemExit('fresh canonical sync did not ingest every derived item as new')
+          if len(first['index_artifact_ids']) < 1:
+              raise SystemExit('OnBase search provenance was not preserved')
+          if len(first['supporting_artifact_ids']) < 20:
+              raise SystemExit('OnBase agenda-tree provenance coverage unexpectedly low')
+
+          for resource in resources:
+              uri = resource['source_uri']
+              if '/Meetings/ViewMeetingAgendaItem?' not in uri:
+                  raise SystemExit(f'non-item URI entered canonical OnBase manifest: {uri}')
+              if resource.get('expected_media_type') != 'text/html':
+                  raise SystemExit('canonical OnBase item is not declared as HTML')
+              native = resource.get('native_identifier') or ''
+              if '-meeting-' not in native or '-item-' not in native:
+                  raise SystemExit('canonical OnBase item lost stable meeting/item native identity')
+
+          connection = sqlite3.connect('.akron/proofline.db')
+          connection.row_factory = sqlite3.Row
+          try:
+              rows = connection.execute(
+                  """
+                  SELECT DISTINCT s.source_uri, eu.evidence_id, best.extracted_text, best.quality_score
+                  FROM sources s
+                  JOIN source_snapshots ss ON ss.source_id = s.source_id
+                  JOIN evidence_units eu ON eu.artifact_id = ss.artifact_id
+                  JOIN evidence_extractions best ON best.extraction_id = (
+                      SELECT ee.extraction_id
+                      FROM evidence_extractions ee
+                      WHERE ee.evidence_id = eu.evidence_id
+                      ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                               ee.occurred_at DESC,
+                               ee.rowid DESC
+                      LIMIT 1
+                  )
+                  WHERE s.source_uri LIKE '%/Meetings/ViewMeetingAgendaItem?%'
+                  """
+              ).fetchall()
+          finally:
+              connection.close()
+
+          if len(rows) < len(resources):
+              raise SystemExit(
+                  f'canonical Silver coverage lower than canonical resources: {len(rows)} < {len(resources)}'
+              )
+          nonblank = [row for row in rows if (row['extracted_text'] or '').strip()]
+          substantive = [row for row in nonblank if len((row['extracted_text'] or '').strip()) >= 120]
+          high_quality = [row for row in rows if float(row['quality_score'] or 0.0) >= 0.70]
+          if len(nonblank) / len(rows) < 0.95:
+              raise SystemExit('fewer than 95% of canonical OnBase items have nonblank Silver text')
+          if len(substantive) / len(rows) < 0.90:
+              raise SystemExit('fewer than 90% of canonical OnBase items have substantive Silver text')
+          if len(high_quality) / len(rows) < 0.95:
+              raise SystemExit('fewer than 95% of canonical OnBase items meet preferred extraction quality floor')
+
+          profile = {
+              'meeting_count': onbase['meeting_count'],
+              'agenda_tree_count': onbase['agenda_tree_count'],
+              'canonical_item_count': len(resources),
+              'index_artifact_count': len(first['index_artifact_ids']),
+              'supporting_artifact_count': len(first['supporting_artifact_ids']),
+              'canonical_unavailable': canonical['counts']['unavailable'],
+              'canonical_evidence_rows': len(rows),
+              'nonblank_evidence_rows': len(nonblank),
+              'substantive_evidence_rows': len(substantive),
+              'high_quality_evidence_rows': len(high_quality),
+              'manifest_sha256': first['manifest_sha256'],
+          }
+          Path('akron-results/profile.json').write_text(
+              json.dumps(profile, indent=2, sort_keys=True), encoding='utf-8'
+          )
+          print(json.dumps(profile, indent=2, sort_keys=True))
+          PY
+
+      - name: Prove deterministic discovery and unchanged canonical rerun
+        shell: bash
+        run: |
+          set -o pipefail
+          proofline-onbase \
+            --state-dir .akron \
+            --manifest-out akron-results/agenda-items-rerun.json \
+            experiments/akron-2026/onbase-plan.json > akron-results/second-sync.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          first = json.loads(Path('akron-results/first-sync.json').read_text())
+          second = json.loads(Path('akron-results/second-sync.json').read_text())
+          first_manifest = Path('akron-results/agenda-items.json').read_bytes()
+          second_manifest = Path('akron-results/agenda-items-rerun.json').read_bytes()
+
+          if first['manifest_sha256'] != second['manifest_sha256']:
+              raise SystemExit('OnBase canonical manifest identity changed on immediate rerun')
+          if first_manifest != second_manifest:
+              raise SystemExit('OnBase canonical manifest bytes changed on immediate rerun')
+          counts = second['canonical_sync']['counts']
+          if counts['unavailable'] != 0:
+              raise SystemExit('canonical OnBase rerun produced unavailable resources')
+          if counts['changed'] != 0 or counts['new'] != 0:
+              raise SystemExit(
+                  f"canonical OnBase rerun unexpectedly changed/new: {counts['changed']}/{counts['new']}"
+              )
+          if counts['unchanged'] != second['onbase']['agenda_item_count']:
+              raise SystemExit('not every canonical OnBase item was unchanged on immediate rerun')
+          PY
+
+      - name: Upload Akron production-transfer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-onbase-production
+          path: akron-results/
+          if-no-files-found: error
+          retention-days: 14
