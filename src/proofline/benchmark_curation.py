@@ -128,23 +128,31 @@ def curate_benchmark_pool(pool: dict, *, max_per_kind: int = 6) -> dict:
 
     kind_counts = Counter(str(case.get("selection_kind")) for case in selected)
     rejection_counts = Counter(str(item.get("reason")) for item in rejected)
+    curated_selection = {
+        "method": _CURATION_METHOD,
+        "upstream_method": selection.get("method"),
+        "retrieval_results_consulted": False,
+        "raw_case_count": len(pool.get("cases") or []),
+        "curated_case_count": len(selected),
+        "max_per_kind": max_per_kind,
+        "kind_counts": dict(sorted(kind_counts.items())),
+        "rejection_counts": dict(sorted(rejection_counts.items())),
+        "rejected_lexical_cases": rejected,
+        "note": (
+            "Question-quality curation uses query text only. No retrieval results, rankings, "
+            "or scores are consulted before the suite is frozen."
+        ),
+    }
+    # Source-role constraints are part of benchmark selection provenance. Preserve them through
+    # the text-quality curation step so a frozen suite can explain why every target was eligible.
+    if selection.get("source_policy") is not None:
+        curated_selection["source_policy"] = selection["source_policy"]
+    if selection.get("target_source_role") is not None:
+        curated_selection["target_source_role"] = selection["target_source_role"]
+
     return {
         "schema": pool["schema"],
         "name": pool.get("name", "Proofline R1 retrieval benchmark") + " — curated",
-        "selection": {
-            "method": _CURATION_METHOD,
-            "upstream_method": selection.get("method"),
-            "retrieval_results_consulted": False,
-            "raw_case_count": len(pool.get("cases") or []),
-            "curated_case_count": len(selected),
-            "max_per_kind": max_per_kind,
-            "kind_counts": dict(sorted(kind_counts.items())),
-            "rejection_counts": dict(sorted(rejection_counts.items())),
-            "rejected_lexical_cases": rejected,
-            "note": (
-                "Question-quality curation uses query text only. No retrieval results, rankings, "
-                "or scores are consulted before the suite is frozen."
-            ),
-        },
+        "selection": curated_selection,
         "cases": selected,
     }
