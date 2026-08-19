@@ -1,0 +1,136 @@
+name: r0-lead-validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r0-lead-validation.yml"
+      - "experiments/canton-2026/**"
+      - "src/proofline/lead_lifecycle.py"
+      - "src/proofline/candidate_analysis.py"
+      - "src/proofline/cli.py"
+      - "src/proofline/__init__.py"
+      - "tests/test_lead_lifecycle.py"
+      - "tests/test_cli_lead_lifecycle.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify installed lead CLI boundary
+        run: |
+          proofline package-leads --help >/dev/null
+          proofline lead --help >/dev/null
+          proofline review-lead --help >/dev/null
+          if proofline review-lead --help | grep -q 'published'; then
+            echo 'published must not be an R0 review status' >&2
+            exit 1
+          fi
+
+      - name: Build R0 evidence, segments, and machine candidate observations
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p lead-results
+          proofline --state-dir .lead sync experiments/canton-2026/source-plan.json > lead-results/sync.json
+          proofline --state-dir .lead segment experiments/canton-2026/segment-plan.json > lead-results/segment.json
+          proofline --state-dir .lead analyze-candidates \
+            --rule board-ordinance-items \
+            --threshold 0.60 \
+            --shingle-size 3 \
+            --min-shared-shingles 3 \
+            --max-shingle-frequency 64 \
+            --min-quality 0.70 > lead-results/candidates.json
+
+      - name: Package candidate leads twice without human review
+        shell: bash
+        run: |
+          set -o pipefail
+          proofline --state-dir .lead package-leads > lead-results/leads-first.json
+          proofline --state-dir .lead package-leads > lead-results/leads-rerun.json
+
+      - name: Assert machine-safe packaging stops at candidate status
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+
+          from proofline.lead_lifecycle import LeadLifecycle
+
+          candidates = json.loads(Path('lead-results/candidates.json').read_text())
+          first = json.loads(Path('lead-results/leads-first.json').read_text())
+          rerun = json.loads(Path('lead-results/leads-rerun.json').read_text())
+
+          print(f"eligible candidate observations: {candidates['eligible']}")
+          print(f"candidate leads packaged: {len(first)}")
+
+          if candidates['eligible'] < 1:
+              raise SystemExit('R0 unexpectedly produced no eligible candidate observations')
+          if len(first) != candidates['eligible']:
+              raise SystemExit('lead packaging did not map one eligible recurrence observation to one lead')
+          if not all(item['created'] for item in first):
+              raise SystemExit('first lead packaging pass failed to create every candidate lead')
+          if any(item['created'] for item in rerun):
+              raise SystemExit('lead packaging rerun created duplicate leads')
+          if [item['lead_id'] for item in first] != [item['lead_id'] for item in rerun]:
+              raise SystemExit('lead IDs changed on immediate rerun')
+
+          lifecycle = LeadLifecycle('.lead')
+          for row in first:
+              packet = lifecycle.get(row['lead_id'])
+              if packet is None:
+                  raise SystemExit('packaged lead cannot be read back')
+              if packet['lead']['status'] != 'candidate' or packet['current_status'] != 'candidate':
+                  raise SystemExit('machine packaging crossed the human disposition boundary')
+              if packet['review_history']:
+                  raise SystemExit('machine packaging invented a human review event')
+              if len(packet['observation_ids']) != 1:
+                  raise SystemExit('R0 recurrence lead should retain exactly one source observation')
+              if not packet['evidence']:
+                  raise SystemExit('lead lost evidence references')
+              lead = packet['lead']
+              if any(lead[field] is not None for field in (
+                  'novelty', 'anomaly_strength', 'corroboration', 'source_quality', 'uncertainty'
+              )):
+                  raise SystemExit('R0 lead unexpectedly received scalar editorial scores')
+              if not json.loads(lead['questions_json']):
+                  raise SystemExit('lead lost questions worth asking')
+              if not json.loads(lead['benign_explanations_json']):
+                  raise SystemExit('lead lost possible ordinary explanations')
+
+          connection = sqlite3.connect('.lead/proofline.db')
+          try:
+              review_events = connection.execute(
+                  'SELECT COUNT(*) FROM lead_review_events'
+              ).fetchone()[0]
+          finally:
+              connection.close()
+          if review_events != 0:
+              raise SystemExit(f'machine-safe workflow created {review_events} review events')
+          PY
+
+      - name: Upload R0 lead packets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r0-lead-results
+          path: lead-results/
+          if-no-files-found: error
+          retention-days: 7
