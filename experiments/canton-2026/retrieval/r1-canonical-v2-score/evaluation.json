@@ -1,0 +1,907 @@
+{
+  "build_id": "index:3fd459ee-4b3e-4704-ab89-cc9819cb10c4",
+  "case_results": [
+    {
+      "case_id": "date-215e011e6de2",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:d301f19d0dd180ac1d46af28d15261c7e84f4f8f8b2a6a650f1f25de649b763c",
+        "evidence:d4b5956e11bf62497cd8e422fec7454e0ccf08bee64145c50b0bd4b1ee3bacf3"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-01-05', end='2026-01-05')",
+      "returned_evidence_ids": [
+        "evidence:0ca427b0851736f060d4f326ff599b19dd9b91ffd0c6cbf6f932c35c791ab4e7",
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d",
+        "evidence:d301f19d0dd180ac1d46af28d15261c7e84f4f8f8b2a6a650f1f25de649b763c",
+        "evidence:d4b5956e11bf62497cd8e422fec7454e0ccf08bee64145c50b0bd4b1ee3bacf3",
+        "evidence:e1744223539865f090706bcd6b042be63f9455107e9ce432eae8763624db4d31"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-f41eed6b1dcb",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:64ba74c2133d62027e893858c7ff3febe859c12c64cface7ebb781c7fd510448"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-07-07', end='2026-07-07')",
+      "returned_evidence_ids": [
+        "evidence:64ba74c2133d62027e893858c7ff3febe859c12c64cface7ebb781c7fd510448",
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-2a6933ea6209",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2c1d208dcf87deee78a5d16730e5ebf7befe7a377abb0295707de1e5a30110f8",
+        "evidence:712825cb87fe79448c28d46ff4587dbfa5c57cc2b8bd8de548cbb65cc57ea102",
+        "evidence:ddc702894083380cb77f944648eeb7ee02a9c55b4bff00079f12e6ac7025ab42"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-06-29', end='2026-06-29')",
+      "returned_evidence_ids": [
+        "evidence:2c1d208dcf87deee78a5d16730e5ebf7befe7a377abb0295707de1e5a30110f8",
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d",
+        "evidence:712825cb87fe79448c28d46ff4587dbfa5c57cc2b8bd8de548cbb65cc57ea102",
+        "evidence:c6807e6799840e29711f86f1ba47aa4fd51dd42c7ab839529b8d4fdf9a8960d1",
+        "evidence:dd59f51f9500cb3e613b0c6894cf782827778d0c16f8e112a271892b641bdc39",
+        "evidence:ddc702894083380cb77f944648eeb7ee02a9c55b4bff00079f12e6ac7025ab42"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-b910317efe12",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:80e6e919fe868fe2d67d93d3aaefa7839d244f177359080d5e2ded6ca52d4f19"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-07-14', end='2026-07-14')",
+      "returned_evidence_ids": [
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d",
+        "evidence:80e6e919fe868fe2d67d93d3aaefa7839d244f177359080d5e2ded6ca52d4f19",
+        "evidence:b680f06b91e62d7de8dd294ab4715a90cbf5019fc1bd21ed3de5447f00cfd5ab"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-d4fd47619e31",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:c645c5de3befb1d4a8638df75bc197272c4b3693fe512ff0e7297773cbe799bc"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2025-01-12', end='2025-01-12')",
+      "returned_evidence_ids": [
+        "evidence:c645c5de3befb1d4a8638df75bc197272c4b3693fe512ff0e7297773cbe799bc"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-ce5d596d1b39",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:ad5d773b4336deee80bcd6e7299d6cee4350954a37a8be0e3308d2c8a379951e"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-02-27', end='2026-02-27')",
+      "returned_evidence_ids": [
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d",
+        "evidence:ad5d773b4336deee80bcd6e7299d6cee4350954a37a8be0e3308d2c8a379951e"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-5065d724de94",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:f8b8820aa55ba4be82e6be29115e3932f1ec40f05b2d9b3a41e3b68013ea1aa0"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-08-24', end='2026-08-24')",
+      "returned_evidence_ids": [
+        "evidence:2ba8d208007797886ea28ae1eea63b00778867d930294a630dfdaf6eeb7e50de",
+        "evidence:b800a69d0a87fd6b480680fd01b285f49f894ffa314c972ffb6247ff45b5bea7",
+        "evidence:f8b8820aa55ba4be82e6be29115e3932f1ec40f05b2d9b3a41e3b68013ea1aa0"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-7c6ee496aeda",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:0acf4bcd49aedb5dc98503555a499e5fa260f839a1f6daca707812d0512c843e",
+        "evidence:61c96adf00afc88efe2a18d3d399e38fdf8766ca56c9f027763aca52734b8177",
+        "evidence:a8fbb057a4e30ca602e7c59d6fd0d298f8e45f884d26cf0d25b19eb20098d4f9"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-03-31', end='2026-03-31')",
+      "returned_evidence_ids": [
+        "evidence:0acf4bcd49aedb5dc98503555a499e5fa260f839a1f6daca707812d0512c843e",
+        "evidence:61c96adf00afc88efe2a18d3d399e38fdf8766ca56c9f027763aca52734b8177",
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d",
+        "evidence:a67415438efbdcf360adb71e9325d81254458fcfd477e2f290de2798ae2635b5",
+        "evidence:a8fbb057a4e30ca602e7c59d6fd0d298f8e45f884d26cf0d25b19eb20098d4f9"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-f26b362d5d39",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:0b4409b596d14edb6c128fe5adea931ca75e0cdcd2bfa2931fae11836c803ec5",
+        "evidence:a542f86d86c33b280ce2ad4b9721de62ffdc092deeed98342776c7a135615d22",
+        "evidence:c9e71baac1292c2fef4cbfd86e9f6c37fc7333bff8244822f8dfbac2abdabd10",
+        "evidence:d75985dfb2225f9d6f62580730219ab19123e8bb8e2decc2995da549835d5a58"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Sanitary Sewer Replacement Project",
+      "returned_evidence_ids": [
+        "evidence:a542f86d86c33b280ce2ad4b9721de62ffdc092deeed98342776c7a135615d22",
+        "evidence:d75985dfb2225f9d6f62580730219ab19123e8bb8e2decc2995da549835d5a58",
+        "evidence:c9e71baac1292c2fef4cbfd86e9f6c37fc7333bff8244822f8dfbac2abdabd10",
+        "evidence:0b4409b596d14edb6c128fe5adea931ca75e0cdcd2bfa2931fae11836c803ec5",
+        "evidence:c1f8d03a6763fb7b41da08662e288756e83d134e1d3859656c0dc3d00dd9e460",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0",
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:96a4b074d4847379cb111e54345f1bf160bf67e9dfc241c2156b164207fadab9",
+        "evidence:80e6e919fe868fe2d67d93d3aaefa7839d244f177359080d5e2ded6ca52d4f19",
+        "evidence:0def223df9cdc80ac8bf9661b4ff8f22b60541ffc4abf0036947e815b8ee8de1"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-e66b736e8764",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907",
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d",
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "GPD Group",
+      "returned_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907",
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d",
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-60b1ef606aa0",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:c92d5fb9b7db3eb4ec6ec3e90c397c4e3aafb78135f623620f11fa8f001c285d",
+        "evidence:ed9e4129d23b6133abec870a5e8b3f79f49187aef34d2b9a7cfeee76f309c39c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "BROOKPARK WATER MAIN REPLACEMENT",
+      "returned_evidence_ids": [
+        "evidence:ed9e4129d23b6133abec870a5e8b3f79f49187aef34d2b9a7cfeee76f309c39c",
+        "evidence:c92d5fb9b7db3eb4ec6ec3e90c397c4e3aafb78135f623620f11fa8f001c285d",
+        "evidence:71fb0dc14eabfaa7e530b11d3e2f0653fae7d32ebe4b9968df3e10532dee7fe3",
+        "evidence:1a8904b3c1d4a54be847b845cc29b623bf22b1b501759af330af1dc0a257584d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-82225757aafd",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:1b1ed4523b77c85bae584f5dc046089db9cb088a13fb085a6e538ad569ef58f2",
+        "evidence:d77d6f81ad0ccdb5a1f8438bd2bf8a2a4d23fdc1b06c1e7f8cf790ac20b8ecb0"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "GREENTREE AVE",
+      "returned_evidence_ids": [
+        "evidence:1b1ed4523b77c85bae584f5dc046089db9cb088a13fb085a6e538ad569ef58f2",
+        "evidence:d77d6f81ad0ccdb5a1f8438bd2bf8a2a4d23fdc1b06c1e7f8cf790ac20b8ecb0"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-d3c0c55cf726",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:3eae76357b2b98a86937865b88ec0e2dd531ed44d245d4d4de18d575e2d86dcc",
+        "evidence:b4b8c80e921b4ea439f38887ce93f0a367125323ba6979d0b6448f1501952a8c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "ALLEN AVE",
+      "returned_evidence_ids": [
+        "evidence:b4b8c80e921b4ea439f38887ce93f0a367125323ba6979d0b6448f1501952a8c",
+        "evidence:3eae76357b2b98a86937865b88ec0e2dd531ed44d245d4d4de18d575e2d86dcc"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-255c687a6210",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:bc1f49910758e8dccc559e3dadbc02f3564392ec02f308e4ba52cbb128723a50"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Traffic Engineering Maintenance Building",
+      "returned_evidence_ids": [
+        "evidence:bc1f49910758e8dccc559e3dadbc02f3564392ec02f308e4ba52cbb128723a50"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-0290531d5992",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "AEP Building Planning Study",
+      "returned_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907",
+        "evidence:b3e6d63814841179fcc8b96eb7403f99d9caa62f343636672d30f672d462e1a4",
+        "evidence:2c1d208dcf87deee78a5d16730e5ebf7befe7a377abb0295707de1e5a30110f8",
+        "evidence:537e8be107b3c744dc51982e6e57077d9af916a078db08a9a600621aab7dfd5d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-dfad9e1b4c94",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Mt. Pleasant Water Main",
+      "returned_evidence_ids": [
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-77b68bf78910",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:d0e2fc9d39a56c85421551980ddbd5f81b0b1d9177588e220f09de87a4f90429"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Transportation Cooperative Purchasing Agreement",
+      "returned_evidence_ids": [
+        "evidence:d0e2fc9d39a56c85421551980ddbd5f81b0b1d9177588e220f09de87a4f90429"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-a46577122805",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:f91d3cdc5dee6ab280ea48f19813870f1cc28592721a45be9bb562d47309c785"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Collection Systems Department",
+      "returned_evidence_ids": [
+        "evidence:f91d3cdc5dee6ab280ea48f19813870f1cc28592721a45be9bb562d47309c785",
+        "evidence:8e30872560409746c0e6b77bed9ef530001250fade04ee01c5f3d3a4f9bdbfce",
+        "evidence:d0620176cca2c6c40e56c43b260639713948dbc4c7a1f5bfc03c54dadc148b0e",
+        "evidence:af50817841b5766484af7cd65137b0b6422e88f9cd15c3da929507ecbca5e139",
+        "evidence:52d2527bc4192f5212f6555c23a4cc1ee80d3ec4cf62bfbf791c7d054d50e915",
+        "evidence:1693611cceeac7df3a2dda0d9f0858290462407386407ea97b1f2786d57c8982",
+        "evidence:223bea7ac249df004296bb6353c365f448ce22143ecdbefda3170ba6d1dbc17d",
+        "evidence:5068a3359c06ac2ceee9117025f9fea5821b3fe5c297a359dea400deb6524a12",
+        "evidence:a89e63613bc360598176ba92351d1506d6b9084fe63dff32492d4abedc9bc935",
+        "evidence:18fb6315a0024ae26de89f4f359aa6b73f797325b032a8e073e7f6377eb398d9"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-d8be49f1b255",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Custodial Cleaning Services",
+      "returned_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543",
+        "evidence:b7710be559f375a3ee9962b6a99b98b8eaad18a07a3878bb5b2335bc144ba74b",
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-194df992447e",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:c009aa51f5e88f413db2d56fc7a22d420aa52d85e3a5206512e37a014aeddb5c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Western Star Trucks",
+      "returned_evidence_ids": [
+        "evidence:c009aa51f5e88f413db2d56fc7a22d420aa52d85e3a5206512e37a014aeddb5c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-404853da8017",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:8205f4c9a99dfab7f162a4240a1df2758f28de4f21abebd084cc374ad4db3e99"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Learning Programs",
+      "returned_evidence_ids": [
+        "evidence:8205f4c9a99dfab7f162a4240a1df2758f28de4f21abebd084cc374ad4db3e99",
+        "evidence:52d2527bc4192f5212f6555c23a4cc1ee80d3ec4cf62bfbf791c7d054d50e915",
+        "evidence:1693611cceeac7df3a2dda0d9f0858290462407386407ea97b1f2786d57c8982",
+        "evidence:223bea7ac249df004296bb6353c365f448ce22143ecdbefda3170ba6d1dbc17d",
+        "evidence:5068a3359c06ac2ceee9117025f9fea5821b3fe5c297a359dea400deb6524a12",
+        "evidence:a89e63613bc360598176ba92351d1506d6b9084fe63dff32492d4abedc9bc935",
+        "evidence:18fb6315a0024ae26de89f4f359aa6b73f797325b032a8e073e7f6377eb398d9",
+        "evidence:8176f644570e3a875cf8522999a6b7f38bc12e5535fa03767bc742dd65d29394",
+        "evidence:7068c81e1248dd6ed9c83dcb9f6262db79413cd234c459b9f96769b44f2a605d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-e533bdca5b3d",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:215dd3fd975358858cd2de0a04ad27b97301f49a88db47013f0b433f45fdadab"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=99769.0, max=99769.0)",
+      "returned_evidence_ids": [
+        "evidence:215dd3fd975358858cd2de0a04ad27b97301f49a88db47013f0b433f45fdadab"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-f89d7deb2713",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:b7710be559f375a3ee9962b6a99b98b8eaad18a07a3878bb5b2335bc144ba74b"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=278593.0, max=278593.0)",
+      "returned_evidence_ids": [
+        "evidence:b7710be559f375a3ee9962b6a99b98b8eaad18a07a3878bb5b2335bc144ba74b"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-2cd54aa92bd0",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0",
+        "evidence:d19174d849430ed972cbcf16c9999c88def05f6bf501ae33f912fa85dd84ba7c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=22610.0, max=22610.0)",
+      "returned_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0",
+        "evidence:d19174d849430ed972cbcf16c9999c88def05f6bf501ae33f912fa85dd84ba7c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-6ad081fedbd2",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:127504d0cb67be6502245065a221502faa840a0823a52209bb67708bb5796215"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=3201.0, max=3201.0)",
+      "returned_evidence_ids": [
+        "evidence:127504d0cb67be6502245065a221502faa840a0823a52209bb67708bb5796215"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-c1b1aea304e4",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=12000.0, max=12000.0)",
+      "returned_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-66e2da75d019",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:22332a685219688f9d9c556c743d9219444f216428b1238d061f7834c50d0a55",
+        "evidence:2c1d208dcf87deee78a5d16730e5ebf7befe7a377abb0295707de1e5a30110f8",
+        "evidence:4842c4dd73cb8a24f2031411fa88f90c82a711c49a9cd15cce0df14f8f9f49ee",
+        "evidence:537e8be107b3c744dc51982e6e57077d9af916a078db08a9a600621aab7dfd5d"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=44144.9, max=44144.9)",
+      "returned_evidence_ids": [
+        "evidence:22332a685219688f9d9c556c743d9219444f216428b1238d061f7834c50d0a55",
+        "evidence:2c1d208dcf87deee78a5d16730e5ebf7befe7a377abb0295707de1e5a30110f8",
+        "evidence:4842c4dd73cb8a24f2031411fa88f90c82a711c49a9cd15cce0df14f8f9f49ee",
+        "evidence:537e8be107b3c744dc51982e6e57077d9af916a078db08a9a600621aab7dfd5d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-90a4d98605b7",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:f64c2ded3d01ffa69ad209f67788e7f7ec3df6b221a43cd26fd97454c7c1d7ce"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=66200.0, max=66200.0)",
+      "returned_evidence_ids": [
+        "evidence:f64c2ded3d01ffa69ad209f67788e7f7ec3df6b221a43cd26fd97454c7c1d7ce"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-16f50bfc264c",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=196032.0, max=196032.0)",
+      "returned_evidence_ids": [
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-3bbb192dac72",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:d153686ce3bc07ac0d355e006beebf2f9583edc80cfba850b9947f4ecb2fa3ef"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-01062026-1017-archived-pdf",
+      "returned_evidence_ids": [
+        "evidence:d153686ce3bc07ac0d355e006beebf2f9583edc80cfba850b9947f4ecb2fa3ef"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-42da248f7984",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:603ce8f3b7d61bb10f9f65ecf37d2f42b0e55d44386c2c370ded2919e2f1163a",
+        "evidence:8ffce5ca14c206e040b863e588b6535c6dd739a1d425664052ca4e8ebb40c987",
+        "evidence:a8225c3ed842ce04b8929dcb295c67ae1e62ffc1e994a98fefd309a1372d0727",
+        "evidence:d382837b1f63ac0142eebd4ef6876582f0fca2cec9fa4c58b8af5cb1050142ff"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicclerk-cantonoh-file-3726-agenda",
+      "returned_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:603ce8f3b7d61bb10f9f65ecf37d2f42b0e55d44386c2c370ded2919e2f1163a",
+        "evidence:8ffce5ca14c206e040b863e588b6535c6dd739a1d425664052ca4e8ebb40c987",
+        "evidence:a8225c3ed842ce04b8929dcb295c67ae1e62ffc1e994a98fefd309a1372d0727",
+        "evidence:d382837b1f63ac0142eebd4ef6876582f0fca2cec9fa4c58b8af5cb1050142ff"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-10b4425c5e08",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:5986664714651ad202809ec6309dabbca69812e6907911c1710e787c2ab9ba2c",
+        "evidence:da51de9c846a178de2c85e5e0d8cfeb196f57fec8947e6aa7cf4d71293c3620b",
+        "evidence:edcbcafb16a46a435aafe64166b6ee737e0460608d9da83d684a4a744fe6beaf"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicclerk-cantonoh-file-4828-agenda",
+      "returned_evidence_ids": [
+        "evidence:5986664714651ad202809ec6309dabbca69812e6907911c1710e787c2ab9ba2c",
+        "evidence:da51de9c846a178de2c85e5e0d8cfeb196f57fec8947e6aa7cf4d71293c3620b",
+        "evidence:edcbcafb16a46a435aafe64166b6ee737e0460608d9da83d684a4a744fe6beaf"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-05a261fa98b0",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:5b5b9b9efa965c317d8ede8e63a63c3eda328cca60c740356165adbd812545c4"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-07172026-1159-pdf",
+      "returned_evidence_ids": [
+        "evidence:5b5b9b9efa965c317d8ede8e63a63c3eda328cca60c740356165adbd812545c4"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-ff8c7192c518",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-05262026-1034-archived-pdf",
+      "returned_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-3ab6e61a60b6",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:0acf4bcd49aedb5dc98503555a499e5fa260f839a1f6daca707812d0512c843e"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-03172026-1122-pdf",
+      "returned_evidence_ids": [
+        "evidence:0acf4bcd49aedb5dc98503555a499e5fa260f839a1f6daca707812d0512c843e"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-b42fb6cd4b5a",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-05262026-1147-pdf",
+      "returned_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-7652fd68fd12",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:b23ec20e664bf436bd476d558b884dd9618f30925e8d9e4778bbc3ce867b599b",
+        "evidence:f91d3cdc5dee6ab280ea48f19813870f1cc28592721a45be9bb562d47309c785"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-04282026-1139-pdf",
+      "returned_evidence_ids": [
+        "evidence:b23ec20e664bf436bd476d558b884dd9618f30925e8d9e4778bbc3ce867b599b",
+        "evidence:f91d3cdc5dee6ab280ea48f19813870f1cc28592721a45be9bb562d47309c785"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-date-65b9ca35b580",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2099-12-31', end='2099-12-31')",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-identifier-5aa6e0cd3a82",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "identifier",
+      "provenance_validity": 1.0,
+      "query": "__proofline_missing_identifier__",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-lexical-2291ca975d02",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "zzprooflinebenchmarkmissingzz",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-money-5a26d896a6dc",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=60012345.67, max=60012345.67)",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-native-c51fb4911fe1",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "__proofline_missing_native_id__",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    }
+  ],
+  "cases": 42,
+  "expectation_accuracy": 1.0,
+  "failure_counts": [],
+  "hit_rate_at_k": 1.0,
+  "k": 10,
+  "mode_metrics": [
+    {
+      "cases": 9,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "date",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 8,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 1,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "identifier",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 0,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 14,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "lexical",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 13,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 9,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "money",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 8,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 9,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "native_identifier",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 8,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    }
+  ],
+  "negative_accuracy": 1.0,
+  "negative_case_count": 5,
+  "provenance_validity": 1.0,
+  "schema": "proofline-retrieval-eval/v2",
+  "structured_build_id": "structured:6c82dde2-180b-4ab2-b72f-3f88bd0e99b8",
+  "suite": "Proofline R1 Canton canonical-evidence retrieval benchmark \u2014 curated",
+  "target_recall_at_k": 1.0,
+  "unresolved_target_count": 0
+}
