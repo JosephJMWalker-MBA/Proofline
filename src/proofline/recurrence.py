@@ -231,8 +231,6 @@ class SegmentRecurrenceClusterer:
         min_occurrences: int = 2,
         limit: int | None = 100,
     ) -> RecurrenceResult:
-        # Request a deliberately very high result ceiling so clustering sees every matched edge.
-        # SegmentSimilarityIndex remains responsible for non-quadratic candidate generation.
         similarity = self.similarity.find(
             threshold=threshold,
             shingle_size=shingle_size,
@@ -240,7 +238,7 @@ class SegmentRecurrenceClusterer:
             max_shingle_frequency=max_shingle_frequency,
             rule_name=rule_name,
             segment_type=segment_type,
-            limit=1_000_000_000,
+            limit=None,
         )
         return self.from_candidates(
             similarity.candidates,
