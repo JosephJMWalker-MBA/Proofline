@@ -1,0 +1,60 @@
+name: r1-preserve-canonical-score
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-preserve-canonical-score.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Download exact canonical-score artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/9378612471/zip" > /tmp/r1-canonical-score.zip
+          mkdir -p /tmp/r1-canonical-score
+          unzip -q /tmp/r1-canonical-score.zip -d /tmp/r1-canonical-score
+
+      - name: Verify canonical-score artifact identities
+        run: |
+          set -euo pipefail
+          cd /tmp/r1-canonical-score
+          echo "09a2a40fd86a7b66be8f87487fa45ff015b24826cde73ac40b964852c79ebe17  evaluation.json" | sha256sum -c -
+          echo "5a0b8a7e773fdc75fbb74eb8fb0a4b34a8d632070419f9bb5aa199a69fd8e97d  scorable-report.json" | sha256sum -c -
+          echo "26dfaba3ae44a527829666da4c69fe86e70efda90fd0711965ec8ea03d2f55eb  summary.json" | sha256sum -c -
+          echo "02d66d49c5c28e4b60889dd263b3138547452515f8b0761c384e3abdb12a9b72  sync.json" | sha256sum -c -
+
+      - name: Commit exact canonical score once
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          destination="experiments/canton-2026/retrieval/r1-canonical-v2-score"
+          if [[ -e "$destination/evaluation.json" ]]; then
+            echo "Canonical score already preserved; refusing to overwrite it."
+            exit 0
+          fi
+          mkdir -p "$destination"
+          cp /tmp/r1-canonical-score/evaluation.json "$destination/evaluation.json"
+          cp /tmp/r1-canonical-score/scorable-report.json "$destination/scorable-report.json"
+          cp /tmp/r1-canonical-score/summary.json "$destination/summary.json"
+          cp /tmp/r1-canonical-score/sync.json "$destination/sync.json"
+          git config user.name "proofline-ci"
+          git config user.email "proofline-ci@users.noreply.github.com"
+          git add "$destination"
+          git commit -m "Preserve exact canonical R1 retrieval score"
+          git push origin "HEAD:$HEAD_BRANCH"
