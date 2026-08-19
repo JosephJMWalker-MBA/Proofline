@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
 from proofline import Ingestor
+from proofline.benchmark_curation import curate_benchmark_pool
 from proofline.benchmark_sources import (
     BenchmarkSourcePolicy,
     BenchmarkSourceRule,
@@ -70,6 +72,33 @@ def test_policy_loader_and_ambiguous_role_guard(tmp_path) -> None:
     )
     with pytest.raises(ValueError, match="ambiguous benchmark source roles"):
         ambiguous.classify("https://example.gov/a")
+
+
+def test_canton_policy_declares_canonical_and_support_families() -> None:
+    policy = load_benchmark_source_policy(
+        Path("experiments/canton-2026/retrieval/source-policy.json")
+    )
+    assert policy.classify(
+        "https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/_01132026-1104"
+    ) == "canonical"
+    assert policy.classify(
+        "https://cantonohio.gov/AgendaCenter/ViewFile/ArchivedAgenda/_05182026-1031"
+    ) == "canonical"
+    assert policy.classify(
+        "https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(fileId=3695,plainText=false)"
+    ) == "canonical"
+
+    assert policy.classify("https://cantonohio.gov/AgendaCenter") == "support"
+    assert policy.classify(
+        "https://cantonohio.gov/AgendaCenter/PreviousVersions/_05262026-1147"
+    ) == "support"
+    assert policy.classify(
+        "https://www.cantonohio.gov/calendar.aspx?CID=31&month=1&view=list&year=2026"
+    ) == "support"
+    assert policy.classify(
+        "https://www.cantonohio.gov/Calendar.aspx?EID=2425&month=1&year=2026&day=19&calType=0"
+    ) == "support"
+    assert policy.classify("https://unrelated.example/document") == "excluded"
 
 
 def test_benchmark_uses_canonical_context_and_excludes_support_only_evidence(tmp_path) -> None:
@@ -139,3 +168,7 @@ def test_benchmark_uses_canonical_context_and_excludes_support_only_evidence(tmp
     assert "CANON-SHARED" in native_queries
     assert "SUPPORT-ONLY" not in native_queries
     assert "SUPPORT-SHARED" not in native_queries
+
+    curated = curate_benchmark_pool(pool, max_per_kind=20)
+    assert curated["selection"]["target_source_role"] == "canonical"
+    assert curated["selection"]["source_policy"] == pool["selection"]["source_policy"]
