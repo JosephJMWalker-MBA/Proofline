@@ -1,0 +1,22 @@
+{
+  "schema": "proofline-benchmark-source-policy/v1",
+  "name": "akron-onbase-2026",
+  "default_role": "excluded",
+  "rules": [
+    {
+      "name": "canonical-agenda-item",
+      "role": "canonical",
+      "source_uri_regex": "^https://onlinedocs\\.akronohio\\.gov/OnBaseAgendaOnline/Meetings/ViewMeetingAgendaItem\\?"
+    },
+    {
+      "name": "support-meeting-search",
+      "role": "support",
+      "source_uri_regex": "^https://onlinedocs\\.akronohio\\.gov/OnBaseAgendaOnline/Meetings/Search\\?"
+    },
+    {
+      "name": "support-agenda-tree",
+      "role": "support",
+      "source_uri_regex": "^https://onlinedocs\\.akronohio\\.gov/OnBaseAgendaOnline/Documents/ViewAgenda\\?"
+    }
+  ]
+}
