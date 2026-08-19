@@ -1,0 +1,40 @@
+name: r1-akron-onbase-probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-onbase-probe.yml"
+      - "experiments/akron-2026/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe bounded official OnBase pages and publisher-linked agendas
+        run: |
+          python experiments/akron-2026/probe_onbase.py akron-probe-results | tee akron-probe-results-summary.json
+          test -s akron-probe-results/probe.json
+
+      - name: Upload source-contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-onbase-probe
+          path: |
+            akron-probe-results/
+            akron-probe-results-summary.json
+          if-no-files-found: error
+          retention-days: 14
