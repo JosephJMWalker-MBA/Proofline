@@ -4,9 +4,11 @@
 
 Can Proofline ingest a real public-record corpus and surface at least one reproducible anomaly, contradiction, unexplained change, or cross-record pattern that was **not manually preselected**?
 
-A successful result does not require misconduct. A discrepancy with an ordinary explanation is still a successful lead if Proofline can explain why it surfaced and provide the exact public evidence a human should inspect next.
+**Result: yes.**
 
-## Current source scope
+R0 also demonstrated a more important property: a machine-selected pattern can be inspected and **explained by ordinary public-record context** without the system upgrading it into a claim of wrongdoing.
+
+## Scope
 
 Year:
 
@@ -17,9 +19,9 @@ Meeting families:
 - Board of Control
 - City Council
 
-The experiment intentionally stays narrow enough to inspect manually while containing longitudinal variation, contracts, amendments, public meeting context, dollar amounts, identifiers, and publisher revision history.
+The corpus is deliberately narrow enough for human audit while still containing longitudinal records, contracts, amendments, public meeting context, monetary values, dates, identifiers, and publisher revision history.
 
-The two meeting families now use different official discovery paths because the publisher exposes substantively usable evidence differently.
+## Official source paths
 
 ### Board of Control
 
@@ -39,12 +41,11 @@ Canonical meeting evidence:
 Discovery/provenance:
 
 1. official Canton Calendar month listings;
-2. exact `City Council Regular Meeting Agenda (PDF)` events on the official Canton host;
-3. the event page's explicit link to a CivicClerk event;
-4. preserved CivicClerk event metadata;
-5. the metadata's published `Agenda` file record;
-6. stable CivicClerk `Meetings/GetMeetingFile(fileId=...)` source URI;
-7. publisher-issued short-lived blob transport used only to retrieve the PDF bytes.
+2. exact City Council agenda events on the official Canton host;
+3. publisher-linked CivicClerk event metadata;
+4. published `Agenda` file record;
+5. stable CivicClerk meeting-file source URI;
+6. short-lived publisher-signed blob used only as transport.
 
 Canonical meeting evidence:
 
@@ -58,56 +59,60 @@ No CivicClerk event ID or file ID is hand-maintained in the production discovery
 
 PDF meeting records are the primary evidentiary representation because they preserve page-level locators.
 
-Proofline does **not** ingest HTML, PDF, and Packet renderings of the same meeting as independent evidence merely because all three are publicly linked. Doing so before explicit duplicate/corroboration semantics could make one underlying public record look like independent support.
+HTML, PDF, Packet, or other renderings of the same underlying meeting are **not** counted as independent corroboration merely because they have different URLs.
 
 ### Discovery/supporting evidence
 
-Discovery pages and public metadata are preserved separately as Bronze provenance before their links/fields are interpreted.
+Discovery pages and publisher metadata are preserved separately as Bronze provenance before their links/fields are interpreted.
 
 Examples:
 
 - Agenda Center index
 - `Previous Versions` listing pages
-- official Calendar month listings
-- official Calendar event pages
+- Canton Calendar month listings
+- Canton Calendar event pages
 - CivicClerk event metadata
 
-These supporting artifacts can establish **why Proofline collected a record** without masquerading as another copy of the meeting evidence.
+These artifacts establish why Proofline collected a record without masquerading as another copy of the meeting evidence.
 
-### Revision evidence
+### Revision and chronology evidence
 
-A publisher `Previous Versions` page can establish:
+Publisher `Previous Versions` pages can establish explicit `historical_version_of` relations.
 
-```text
-archived source --historical_version_of--> current source
-```
+Watcher chronology provides a separate source-change authorization path. A stable source URI can therefore preserve `A → B → A` as two chronological change events instead of collapsing the final A because those bytes were seen before.
 
-That relation authorizes deterministic comparison. It does **not** establish that a difference is suspicious, material, intentional, or improper.
+Neither path establishes suspiciousness, motive, materiality, or impropriety.
 
-Blank/empty evidence is not treated as a substantive deletion. A version pair is skipped when either side lacks usable Silver text.
+Blank/whitespace-only Silver is never interpreted as a substantive deletion/change.
 
 ## Procedure
 
+Core acquisition/index cycle:
+
 ```bash
 proofline sync experiments/canton-2026/source-plan.json
+proofline segment experiments/canton-2026/segment-plan.json
 ```
 
-`sync` performs one deterministic cycle:
+R0 candidate generation:
 
-1. preserve the configured official discovery pages;
-2. derive in-scope public records through bounded source-specific adapters;
-3. preserve intermediate publisher pages/metadata used to derive final file sources;
-4. write the generated final watch manifest under the Proofline state directory;
-5. watch and ingest the final meeting resources;
-6. derive publisher-backed historical source relations;
-7. run deterministic version comparisons only across those relations;
-8. rebuild lexical and structured retrieval indexes.
+```bash
+proofline analyze-candidates \
+  --rule board-ordinance-items \
+  --threshold 0.60 \
+  --shingle-size 3 \
+  --min-shared-shingles 3 \
+  --max-shingle-frequency 64 \
+  --min-quality 0.70
 
-A later run repeats the same procedure. New resources, changed bytes, reverted bytes, and publisher-added historical versions become longitudinal evidence rather than silently replacing prior state.
+proofline package-leads
+```
 
-## Measured checkpoint — August 19, 2026
+Human review remains a distinct explicit action. The approved first R0 review is persisted as a version-controlled review receipt rather than embedded in acquisition logic.
 
-GitHub Actions rebuilt R0 from official public sources after the Calendar→CivicClerk path and sync-time version analysis were productionized.
+## Measured live snapshot — August 19, 2026
+
+Validated GitHub Actions runs have produced approximately:
 
 ### Final meeting corpus
 
@@ -115,23 +120,16 @@ GitHub Actions rebuilt R0 from official public sources after the Calendar→Civi
 - **0 unavailable final-resource downloads**
 - **16 City Council Agenda PDFs**
 - **75 City Council page evidence units, 75/75 nonblank**
-- roughly **148,000 City Council extracted characters**
+- roughly **148,000 extracted City Council characters**
 - **174 evidence units overall**
 - **172 evidence units in the lexical index**
 - **982 structured facts overall**
-- **331 City Council structured facts** (282 money, 49 date)
 - **2 low-quality review items**, both Board of Control pages
-- **0 City Council CivicEngage pointer-wrapper records** in the final corpus
+- **0 dead City Council CivicEngage pointer-wrapper records** in the final corpus
 
-The discovery chain preserved additional supporting artifacts, including twelve 2026 Calendar month listings, seventeen official Calendar event pages, and seventeen CivicClerk event metadata records.
-
-One of the seventeen Calendar events did not currently expose a published Agenda file in its CivicClerk metadata, so the final Council corpus contained sixteen agendas. Proofline did not fabricate a URL to fill that gap; a later sync can acquire the agenda if the publisher adds one.
-
-These are measured snapshot counts, not contractual corpus sizes.
+These are measured snapshots, not contractual corpus sizes.
 
 ### Version analysis
-
-The same live `sync` produced:
 
 - **11 publisher-backed `historical_version_of` relations**
 - **7 substantive comparisons**
@@ -139,110 +137,167 @@ The same live `sync` produced:
 - **4 `same_artifact` skips**
 - **0 detector failures**
 
-A `same_artifact` relation means the publisher linked a historical/current record pair whose final bytes are identical. Proofline records the relation but does not manufacture a content change.
+### Agenda-item recurrence
+
+- **553 agenda-item segments**
+  - 138 Board of Control
+  - 415 City Council
+- **0 segment/evidence span mismatches**
+- Board recurrence candidate population: **9,453 possible pairs**
+- inverted-shingle filtering reduced this to **2,188 exact comparisons**
+- **5 near-duplicate edges**
+- **3 deterministic recurrence clusters**
+- segment and recurrence identities remained stable across identical rebuilds
+
+## First machine-selected candidate
+
+The live detector evaluated all three Board recurrence clusters and promoted exactly **one** to Gold while leaving the other two below Gold.
+
+The selected pattern was not named in CI.
+
+### ECDI / Ordinance 60/2023 / $185,000 CDBG funds
+
+Common evidence-local structured facts included:
+
+- `$185,000`
+- `2026-07-31`
+
+Varying dates included:
+
+- `2026-04-13`
+- `2026-10-31`
+
+The source language describes sequential expenditure-deadline amendments:
+
+1. one occurrence extends **April 13 → July 31, 2026**;
+2. a later occurrence extends **July 31 → October 31, 2026**.
+
+Proofline surfaced the recurrence because stable structured anchors remained while date facts varied. It did not infer chronology, causation, materiality, suspiciousness, or wrongdoing from the fact variation itself.
+
+The Motorola and Versaterm recurrence groups remained below Gold because their evidence-local structured facts were unchanged.
+
+## First real lead
+
+Deterministic lead ID:
+
+```text
+lead:3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c
+```
+
+Machine-created state before human review:
+
+- immutable packet status: `candidate`
+- evidence/questions/ordinary explanations retained
+- editorial score fields unset
+- review events: `0`
+
+### Human review
+
+Reviewer:
+
+- **Joseph Walker**
+
+Disposition:
+
+- **explained**
+
+Review time:
+
+- `2026-08-19T17:14:00+00:00`
+
+Rationale:
+
+> The underlying Board of Control records describe sequential expenditure-deadline amendments. The recurring $185,000 amount and July 31 handoff are consistent with continuity of the same administrative matter; the evidence currently provides an ordinary explanation for why Proofline surfaced the changing dates. No evidence of misconduct is inferred.
+
+Durable review receipt:
+
+`reviews/lead-3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c.json`
+
+The lead packet itself remains immutable with stored status `candidate`. Its **derived current status is `explained`** because of the append-only human review event.
+
+The live R0 lead workflow rebuilds the corpus from official sources, regenerates the exact deterministic lead ID, proves machine-only processing still stops at `candidate`, applies the version-controlled human review receipt, and proves the derived state is `explained`. Applying the same receipt twice creates only one event.
+
+## Review-record invariant
+
+A human review receipt is bound to the exact deterministic lead ID.
+
+If future detector/evidence changes cause the lead identity to change, validation fails rather than silently transferring the old human judgment to a new evidence packet.
+
+See `docs/REVIEW_RECORDS.md`.
 
 ## Real-corpus failures that improved the architecture
 
-R0 has already produced several useful engineering failures:
-
 ### Blank City Council CivicEngage PDF wrappers
 
-The original City Council PDFs were one-page, zero-text pointer wrappers rather than meeting evidence. OCR would have been the wrong response.
+The initial CivicEngage City Council PDFs were one-page, zero-text pointer wrappers rather than scans. Blind OCR would have been the wrong response.
 
 ### Stale UUID pointer target
 
-The wrapper contained a machine-readable same-domain UUID URI, but all tested direct UUID targets returned 404. Proofline did not loosen crawling rules to chase arbitrary alternatives.
+The wrapper exposed a machine-readable UUID target, but the direct target was stale/404. Proofline did not loosen crawling rules to invent alternatives.
 
-### Title-only HTML
+### Title-only HTML / empty packet rendering
 
-The CivicEngage HTML representation transported successfully but was largely only a meeting title. A high “searchable resource” count briefly looked like an improvement until content quality was measured. This became the reason R0 CI now asserts substantive Council page/text/fact floors rather than HTTP success alone.
-
-### Empty Packet representation
-
-The publisher's Packet representation was also non-substantive for the sampled Council records.
+Alternative CivicEngage renderings transported successfully but were non-substantive. R0 CI therefore measures evidence content, not just HTTP success.
 
 ### Legacy archive TLS failure
 
-A separate official archive failed strict certificate validation from GitHub Actions. Proofline did not disable TLS verification; it found the verified official Calendar→CivicClerk chain instead.
+A separate official archive failed strict certificate validation. Proofline did not disable TLS verification; it found a verified official Calendar→CivicClerk source path instead.
 
-### Temporary download URL versus canonical source identity
+### Rotating signed download URL
 
-CivicClerk's stable file API returns a JSON envelope with a rotating signed Azure blob URL. Treating the signed URL as source identity would create false change events whenever the token rotated.
+CivicClerk returns rotating signed blob URLs. Treating those tokens as source identity would create false change events. Proofline keeps the stable publisher file API as canonical source identity and uses signed URLs only as transport.
 
-Proofline now keeps the stable file API as canonical source and uses the signed blob only as in-memory transport. Identical PDF bytes behind a fresh token remain `unchanged`.
+### Library capability without orchestration
 
-### Library capability existed without CLI orchestration
+An earlier version-analysis implementation existed as a library but was not actually wired into `sync`. This became a regression lesson: live CI now validates installed CLI boundaries, not just internal modules.
 
-The version-analysis runner was implemented and tested, but an earlier integration claim did not actually modify `cli.py`; live CI also treated a missing `version_analysis` field as an empty result. CLI-boundary tests and the live R0 workflow now require `sync` to emit and execute version analysis explicitly.
+### Whitespace-only Silver gate bug
 
-## R0 phases
+SQLite's default `TRIM()` does not remove every Unicode/line whitespace case. A chronology fixture exposed the possibility that tab/newline-only extraction could pass a Gold gate. Proofline now uses a shared Unicode-aware substantive-Silver predicate before Gold comparison.
 
-### R0.1 — Corpus integrity
+## Negative findings that block naïve future detectors
 
-Substantially achieved for the current scope. Continue measuring:
+### Ordinance number is not matter identity
 
-- discovered resources
-- successful vs unavailable retrievals
-- unique artifacts
-- page/evidence count
-- extraction quality distribution
-- low-confidence/review backlog
-- exact duplicate prevalence
-- revision-list coverage
-- discovery-supporting artifact coverage
+The same Board `Ordinance ###/####` anchor appears across unrelated departments, vendors, contracts, and meetings. A conflicting-value detector cannot safely join records on ordinance number alone.
 
-### R0.2 — Retrieval sanity
+### Project ID is not transaction identity
 
-Continue building real-corpus questions without selecting a desired conclusion, for example:
+A project can include construction, engineering, administration, multiple counterparties, and multiple change-order relationships. Even project ID + change-order number can be insufficient without transaction-role/counterparty semantics.
 
-- find a named ordinance or contract identifier;
-- find records containing amounts above a threshold;
-- find meetings in a date range;
-- retrieve the exact page behind a selected result.
+A future conflicting-value detector needs an explicit **matter-key contract**.
 
-### R0.3 — Detector baseline
+### Agenda dollar amounts are not one comparable population
 
-Now active.
+Contract totals, annual fees, amendment amounts, grant amounts, engineering fees, and administrative amounts are semantically different fields.
 
-Current deterministic detector capability includes publisher-backed version comparison. Next useful detector classes include:
-
-- conflicting normalized values tied to the same explicit identifier;
-- repeated item/identifier appearance across meetings;
-- unusually large numeric changes relative to comparable records;
-- document/version appearance or disappearance where publisher semantics justify the comparison.
-
-Each detector must emit evidence references and limitations. It must not assign motive or wrongdoing.
-
-### R0.4 — Human lead packet
-
-Only after a machine observation survives provenance checks should Proofline package it as a candidate lead with:
-
-- why it surfaced;
-- exact evidence;
-- uncertainty;
-- possible benign explanations;
-- questions worth asking.
-
-Publication is out of scope.
-
-## First non-preselected pattern behavior
-
-R0 has already shown the desired workflow on a repeated public-safety drone contract item that appeared across consecutive Board of Control agendas. Repetition alone was not treated as suspicious. The surrounding public record supplied an ordinary procedural explanation, so the pattern remains an **explained candidate**, not a finding of wrongdoing.
-
-The same principle applies to version observations: a changed amount can be surfaced deterministically while an arithmetic relationship or surrounding source text is presented as possible benign context rather than upgraded into causation.
+A future numeric-outlier detector needs field-role normalization and a documented comparison population before it can make a defensible comparison.
 
 ## Success criteria
 
-R0 succeeds if all of the following are true:
+R0 required that:
 
 1. the corpus can be regenerated from official publisher interfaces without a hand-maintained final URL list;
-2. every search result or observation resolves to stable evidence and original source lineage;
+2. derived observations resolve to stable evidence and source lineage;
 3. at least one non-preselected pattern is surfaced reproducibly;
-4. a human can inspect that pattern without trusting an LLM-generated narrative;
-5. the system makes clear when the apparent pattern has a plausible ordinary explanation.
+4. a human can inspect the pattern without trusting an LLM-generated narrative;
+5. the system preserves plausible ordinary explanations;
+6. machine processing stops before human disposition;
+7. human disposition is explicit, attributable, append-only, and reproducible.
 
-The current checkpoint satisfies much of this definition; R0 remains active because detector/lead-packet behavior still needs broader real-corpus evaluation.
+**R0 meets these criteria.**
 
-## Failure is useful
+## Disposition
 
-R0 is successful as an engineering experiment when the real corpus exposes a broken assumption. Those failures become fixtures, trust boundaries, and CI assertions before Proofline expands to a larger corpus.
+R0 is complete.
+
+The first real lead is **explained**, not corroborated wrongdoing, and the explanation is publicly documented with its provenance boundary intact.
+
+Future work should move to separate issues for:
+
+- explicit matter-key semantics;
+- financial field-role normalization/comparable populations;
+- broader real-corpus retrieval benchmarks;
+- semantic retrieval only if deterministic retrieval exposes a measured failure class.
+
+Publication, public accusation, external outreach, privacy-policy changes affecting real people, and irreversible publication remain explicit human/product-owner decisions.
