@@ -1,0 +1,117 @@
+name: r1-financial-conflict-validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-financial-conflict-validation.yml"
+      - "src/proofline/detectors/financial_conflict.py"
+      - "src/proofline/financial_roles.py"
+      - "src/proofline/matter_keys.py"
+      - "experiments/canton-2026/financial-role-policy.json"
+      - "experiments/canton-2026/matter-key-policy.json"
+      - "experiments/canton-2026/segment-plan.json"
+      - "tests/test_financial_conflict.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Canton comparison state
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p conflict-results
+          proofline --state-dir .conflict sync experiments/canton-2026/source-plan.json > conflict-results/sync.json
+          proofline --state-dir .conflict segment experiments/canton-2026/segment-plan.json > conflict-results/segment.json
+
+      - name: Detect only conflicts inside authorized populations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.detectors.financial_conflict import detect_financial_conflicts
+          from proofline.financial_roles import FinancialRoleResolver, load_financial_role_policy
+          from proofline.matter_keys import load_matter_key_policy
+
+          state = Path('.conflict')
+          matter_policy = load_matter_key_policy('experiments/canton-2026/matter-key-policy.json')
+          financial_policy = load_financial_role_policy('experiments/canton-2026/financial-role-policy.json')
+          financial = FinancialRoleResolver(state).resolve(matter_policy, financial_policy)
+          detected = detect_financial_conflicts(financial)
+
+          Path('conflict-results/financial-roles.json').write_text(
+              json.dumps(financial.to_dict(), indent=2, sort_keys=True), encoding='utf-8'
+          )
+          Path('conflict-results/financial-conflicts.json').write_text(
+              json.dumps(detected.to_dict(), indent=2, sort_keys=True), encoding='utf-8'
+          )
+
+          print(f"authorized repeated populations: {detected.inspected_population_count}")
+          print(f"conflict candidates: {detected.candidate_count}")
+
+          if detected.method != 'same_matter_financial_value_conflict/v1':
+              raise SystemExit(f'unexpected detector method: {detected.method}')
+          if detected.inspected_population_count < 2:
+              raise SystemExit('live detector did not exercise repeated authorized populations')
+          if detected.candidate_count > detected.inspected_population_count:
+              raise SystemExit('detector emitted more candidates than inspected populations')
+
+          population_by_id = {
+              population.population_id: population
+              for population in financial.comparison_populations
+          }
+          for candidate in detected.candidates:
+              population = population_by_id.get(candidate.population_id)
+              if population is None:
+                  raise SystemExit('financial conflict candidate escaped authorized populations')
+              if candidate.population != population:
+                  raise SystemExit('financial conflict candidate did not retain the complete population')
+              if candidate.matter_key != population.matter_key or candidate.field_role != population.field_role:
+                  raise SystemExit('financial conflict candidate changed matter/field comparison boundary')
+              if len(candidate.normalized_values) < 2:
+                  raise SystemExit('candidate lacks conflicting normalized values')
+              if len(set(candidate.normalized_values)) != len(candidate.normalized_values):
+                  raise SystemExit('candidate normalized values are not unique')
+              if not candidate.possible_ordinary_explanations or not candidate.questions_worth_asking:
+                  raise SystemExit('candidate lost review safeguards')
+              if 'wrongdoing' not in ' '.join(candidate.limitations).casefold():
+                  raise SystemExit('candidate lost no-wrongdoing inference limitation')
+
+          for population in financial.comparison_populations:
+              values = {item.normalized_value for item in population.assignments}
+              has_candidate = any(item.population_id == population.population_id for item in detected.candidates)
+              if len(values) == 1 and has_candidate:
+                  raise SystemExit('equal repeated values incorrectly emitted a conflict candidate')
+              if len(values) > 1 and not has_candidate:
+                  raise SystemExit('authorized conflicting values were silently dropped')
+          PY
+
+      - name: Upload financial conflict evidence packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-financial-conflict-results
+          path: conflict-results/
+          if-no-files-found: error
+          retention-days: 14
