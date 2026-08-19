@@ -163,8 +163,8 @@ jobs:
           **benchmark scoring** for Proofline R1.
 
           The candidate suite was generated and curated without consulting retrieval results.
-          No `proofline evaluate`, search ranking, hit-rate, recall, or semantic retrieval result
-          was used to choose these cases before this freeze commit.
+          No retrieval evaluation command, search ranking, hit-rate, recall, or semantic retrieval
+          result was used to choose these cases before this freeze commit.
 
           - Source branch head before freeze: \`$SOURCE_HEAD_SHA\`
           - Pool workflow run: $WORKFLOW_RUN_URL
