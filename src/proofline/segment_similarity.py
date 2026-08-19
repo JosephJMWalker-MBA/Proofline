@@ -2,8 +2,8 @@
 
 Candidate generation uses an inverted token-shingle index with a maximum document-frequency
 bucket size. It therefore never constructs an all-pairs similarity matrix. Exact Jaccard is
-computed only for pairs that share enough non-ubiquitous shingles and belong to distinct
-publisher-backed source families.
+computed only for pairs that share enough non-ubiquitous shingles and occur in distinct
+publisher-backed source-family contexts.
 """
 
 from __future__ import annotations
@@ -22,22 +22,37 @@ _TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 
 
 @dataclass(frozen=True, slots=True)
+class SegmentOccurrence:
+    """One segment observed in one publisher-backed source-family context."""
+
+    family_id: str
+    sources: tuple[dict, ...]
+    segment: SegmentHit
+
+    def to_dict(self) -> dict:
+        return {
+            "family_id": self.family_id,
+            "sources": list(self.sources),
+            "segment": self.segment.to_dict(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class NearDuplicateCandidate:
     similarity: float
     shared_shingles: int
-    left_family_ids: tuple[str, ...]
-    right_family_ids: tuple[str, ...]
-    left: SegmentHit
-    right: SegmentHit
+    left: SegmentOccurrence
+    right: SegmentOccurrence
     method: str = _METHOD
 
     def to_dict(self) -> dict:
-        data = asdict(self)
-        data["left_family_ids"] = list(self.left_family_ids)
-        data["right_family_ids"] = list(self.right_family_ids)
-        data["left"] = self.left.to_dict()
-        data["right"] = self.right.to_dict()
-        return data
+        return {
+            "similarity": self.similarity,
+            "shared_shingles": self.shared_shingles,
+            "left": self.left.to_dict(),
+            "right": self.right.to_dict(),
+            "method": self.method,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +62,7 @@ class NearDuplicateResult:
     rule_name: str | None
     segment_type: str | None
     segment_count: int
+    occurrence_count: int
     possible_all_pairs: int
     candidate_pairs_generated: int
     candidate_pairs_compared: int
@@ -121,6 +137,28 @@ class SegmentSimilarityIndex:
             sources=self._sources_for_artifact(row["artifact_id"]),
         )
 
+    def _occurrences(self, hits: list[SegmentHit]) -> list[SegmentOccurrence]:
+        occurrences: list[SegmentOccurrence] = []
+        for hit in hits:
+            for family_id in self.families.family_ids_for_artifact(hit.artifact_id):
+                member_ids = set(self.families.source_ids_for_family(family_id))
+                sources = tuple(
+                    source for source in hit.sources if source.get("source_id") in member_ids
+                )
+                if not sources:
+                    continue
+                occurrences.append(
+                    SegmentOccurrence(
+                        family_id=family_id,
+                        sources=sources,
+                        segment=hit,
+                    )
+                )
+        occurrences.sort(
+            key=lambda item: (item.family_id, item.segment.segment_id)
+        )
+        return occurrences
+
     def find(
         self,
         *,
@@ -166,15 +204,21 @@ class SegmentSimilarityIndex:
             ).fetchall()
 
         hits = [self._hit(row) for row in rows]
-        shingles = [token_shingles(hit.normalized_text, size=shingle_size) for hit in hits]
-        family_ids = [self.families.family_ids_for_artifact(hit.artifact_id) for hit in hits]
+        occurrences = self._occurrences(hits)
+        shingle_cache = {
+            hit.segment_id: token_shingles(hit.normalized_text, size=shingle_size)
+            for hit in hits
+        }
+        occurrence_shingles = [
+            shingle_cache[item.segment.segment_id] for item in occurrences
+        ]
 
         inverted: dict[tuple[str, ...], list[int]] = defaultdict(list)
-        for index, values in enumerate(shingles):
+        for index, values in enumerate(occurrence_shingles):
             for shingle in values:
                 inverted[shingle].append(index)
 
-        shared_counts: dict[tuple[int, int], int] = defaultdict(int)
+        shared_candidate_counts: dict[tuple[int, int], int] = defaultdict(int)
         same_family_pairs: set[tuple[int, int]] = set()
         common_shingle_buckets_ignored = 0
         for members in inverted.values():
@@ -184,36 +228,33 @@ class SegmentSimilarityIndex:
             if len(members) < 2:
                 continue
             for left_index, right_index in itertools.combinations(members, 2):
-                left_families = family_ids[left_index]
-                right_families = family_ids[right_index]
-                if set(left_families).intersection(right_families):
+                if occurrences[left_index].family_id == occurrences[right_index].family_id:
                     same_family_pairs.add((left_index, right_index))
                     continue
-                shared_counts[(left_index, right_index)] += 1
+                shared_candidate_counts[(left_index, right_index)] += 1
 
         compared = 0
         candidates: list[NearDuplicateCandidate] = []
-        for pair, shared in shared_counts.items():
-            if shared < min_shared_shingles:
+        for pair, candidate_shared in shared_candidate_counts.items():
+            if candidate_shared < min_shared_shingles:
                 continue
             left_index, right_index = pair
-            left_shingles = shingles[left_index]
-            right_shingles = shingles[right_index]
+            left_shingles = occurrence_shingles[left_index]
+            right_shingles = occurrence_shingles[right_index]
             if not left_shingles or not right_shingles:
                 continue
             compared += 1
+            shared_shingles = len(left_shingles.intersection(right_shingles))
             union_size = len(left_shingles.union(right_shingles))
-            similarity = shared / union_size if union_size else 0.0
+            similarity = shared_shingles / union_size if union_size else 0.0
             if similarity < threshold:
                 continue
             candidates.append(
                 NearDuplicateCandidate(
                     similarity=similarity,
-                    shared_shingles=shared,
-                    left_family_ids=family_ids[left_index],
-                    right_family_ids=family_ids[right_index],
-                    left=hits[left_index],
-                    right=hits[right_index],
+                    shared_shingles=shared_shingles,
+                    left=occurrences[left_index],
+                    right=occurrences[right_index],
                 )
             )
 
@@ -221,20 +262,23 @@ class SegmentSimilarityIndex:
             key=lambda item: (
                 -item.similarity,
                 -item.shared_shingles,
-                item.left.segment_id,
-                item.right.segment_id,
+                item.left.family_id,
+                item.left.segment.segment_id,
+                item.right.family_id,
+                item.right.segment.segment_id,
             )
         )
         limited = tuple(candidates[:limit])
-        segment_count = len(hits)
+        occurrence_count = len(occurrences)
         return NearDuplicateResult(
             build_id=str(build["build_id"]),
             method=_METHOD,
             rule_name=rule_name,
             segment_type=segment_type,
-            segment_count=segment_count,
-            possible_all_pairs=segment_count * (segment_count - 1) // 2,
-            candidate_pairs_generated=len(shared_counts),
+            segment_count=len(hits),
+            occurrence_count=occurrence_count,
+            possible_all_pairs=occurrence_count * (occurrence_count - 1) // 2,
+            candidate_pairs_generated=len(shared_candidate_counts),
             candidate_pairs_compared=compared,
             same_family_pairs_skipped=len(same_family_pairs),
             common_shingle_buckets_ignored=common_shingle_buckets_ignored,
