@@ -14,6 +14,7 @@ from .ocr import PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractor
 from .review import preferred_extraction, review_count, review_queue
 from .search import SearchIndex
+from .segments import SegmentIndex, load_segmentation_plan
 from .storage import ProoflineStore
 from .structured import StructuredIndex
 from .version_analysis import VersionObservationRunner
@@ -83,6 +84,25 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "index", help="Rebuild disposable lexical and structured evidence indexes"
     )
+
+    segment_parser = subparsers.add_parser(
+        "segment", help="Build a disposable source-profile segment index over preferred evidence"
+    )
+    segment_parser.add_argument("plan")
+
+    repeated_parser = subparsers.add_parser(
+        "repeated-segments",
+        help="List exact normalized segments repeated across distinct artifacts",
+    )
+    repeated_parser.add_argument("--min-artifacts", type=int, default=2)
+    repeated_parser.add_argument("--limit", type=int, default=100)
+
+    anchor_parser = subparsers.add_parser(
+        "segment-anchor", help="Find indexed segments by exact normalized anchor"
+    )
+    anchor_parser.add_argument("value")
+    anchor_parser.add_argument("--type", dest="segment_type")
+    anchor_parser.add_argument("--limit", type=int, default=100)
 
     search_parser = subparsers.add_parser("search", help="Search preferred evidence with FTS5")
     search_parser.add_argument("query")
@@ -216,6 +236,29 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.command == "segment":
+        plan = load_segmentation_plan(args.plan)
+        result = SegmentIndex(state_dir).rebuild(plan)
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "repeated-segments":
+        groups = SegmentIndex(state_dir).repeated(
+            min_artifacts=args.min_artifacts,
+            limit=args.limit,
+        )
+        print(json.dumps([group.to_dict() for group in groups], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "segment-anchor":
+        hits = SegmentIndex(state_dir).anchor(
+            args.value,
+            segment_type=args.segment_type,
+            limit=args.limit,
+        )
+        print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
+        return 0
+
     if args.command == "search":
         hits = SearchIndex(state_dir).search(args.query, limit=args.limit)
         print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
@@ -261,6 +304,7 @@ def main(argv: list[str] | None = None) -> int:
         status["needs_review"] = review_count(state_dir)
         status["search_index_build"] = SearchIndex(state_dir).current_build()
         status["structured_index_build"] = StructuredIndex(state_dir).current_build()
+        status["segment_index_build"] = SegmentIndex(state_dir).current_build()
         print(json.dumps(status, indent=2, sort_keys=True))
         return 0
 
