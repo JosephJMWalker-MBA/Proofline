@@ -29,7 +29,7 @@ jobs:
           python scripts/probe_civicclerk_api.py > civicclerk-probe/civicclerk-api.json
           test -s civicclerk-probe/civicclerk-api.json
 
-      - name: Assert publisher-supplied agenda downloads work
+      - name: Assert publisher-supplied agenda transports yield PDF bytes
         run: |
           python - <<'PY'
           import json
@@ -40,16 +40,19 @@ jobs:
           print(f"successful event responses: {payload['successful_event_responses']}")
           print(f"published files: {payload['published_file_count']}")
           print(f"agenda files: {payload['agenda_file_count']}")
-          print(f"successful download probes: {payload['successful_download_probes']}")
-          print(f"PDF download probes: {payload['pdf_download_probes']}")
+          print(f"successful API envelopes: {payload['successful_api_envelopes']}")
+          print(f"successful blob downloads: {payload['successful_blob_downloads']}")
+          print(f"PDF blob downloads: {payload['pdf_blob_downloads']}")
           if payload['successful_event_responses'] != payload['event_count']:
               raise SystemExit('not every Canton-linked CivicClerk event metadata record was reachable')
           if payload['agenda_file_count'] == 0:
               raise SystemExit('CivicClerk event metadata exposed no published agenda files')
-          if payload['successful_download_probes'] == 0:
-              raise SystemExit('publisher-supplied CivicClerk agenda URLs did not download successfully')
-          if payload['pdf_download_probes'] == 0:
-              raise SystemExit('publisher-supplied CivicClerk agenda URLs did not yield PDF bytes')
+          if payload['successful_api_envelopes'] == 0:
+              raise SystemExit('publisher file URLs yielded no validated CivicClerk blob envelopes')
+          if payload['successful_blob_downloads'] == 0:
+              raise SystemExit('publisher-issued CivicClerk blob transports did not download successfully')
+          if payload['pdf_blob_downloads'] == 0:
+              raise SystemExit('publisher-issued CivicClerk blob transports did not yield PDF bytes')
           PY
 
       - name: Upload probe
