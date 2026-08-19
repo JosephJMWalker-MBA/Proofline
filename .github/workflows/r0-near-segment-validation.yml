@@ -7,10 +7,13 @@ on:
       - "experiments/canton-2026/**"
       - "src/proofline/families.py"
       - "src/proofline/segment_similarity.py"
+      - "src/proofline/recurrence.py"
       - "src/proofline/segments.py"
       - "src/proofline/cli.py"
       - "tests/test_segment_similarity.py"
       - "tests/test_cli_segment_similarity.py"
+      - "tests/test_recurrence.py"
+      - "tests/test_cli_recurrence.py"
   workflow_dispatch:
 
 permissions:
@@ -33,6 +36,11 @@ jobs:
       - name: Install package
         run: python -m pip install -e ".[dev]"
 
+      - name: Verify detector CLI
+        run: |
+          proofline near-segments --help >/dev/null
+          proofline recurrence-clusters --help >/dev/null
+
       - name: Build live R0 corpus and agenda-item segments
         shell: bash
         run: |
@@ -52,7 +60,16 @@ jobs:
             --min-shared-shingles 3 \
             --max-shingle-frequency 64 \
             --limit 100 > near-results/near-board.json
+          proofline --state-dir .near recurrence-clusters \
+            --rule board-ordinance-items \
+            --threshold 0.60 \
+            --shingle-size 3 \
+            --min-shared-shingles 3 \
+            --max-shingle-frequency 64 \
+            --min-occurrences 2 \
+            --limit 100 > near-results/recurrence-board.json
           test -s near-results/near-board.json
+          test -s near-results/recurrence-board.json
 
       - name: Assert candidate generation stays descriptive and bounded
         run: |
@@ -67,9 +84,9 @@ jobs:
           print(f"possible all pairs: {payload['possible_all_pairs']}")
           print(f"candidate pairs generated: {payload['candidate_pairs_generated']}")
           print(f"candidate pairs compared: {payload['candidate_pairs_compared']}")
+          print(f"matched near-duplicate candidates: {payload['matched_candidate_count']}")
           print(f"same-family pairs skipped: {payload['same_family_pairs_skipped']}")
           print(f"common shingle buckets ignored: {payload['common_shingle_buckets_ignored']}")
-          print(f"near-duplicate candidates >= 0.60: {len(candidates)}")
 
           if payload['method'] != 'token_shingle_jaccard/v1':
               raise SystemExit(f"unexpected method: {payload['method']}")
@@ -86,10 +103,16 @@ jobs:
               )
           if payload['same_family_pairs_skipped'] < 1:
               raise SystemExit('expected publisher-backed version-family suppression to be exercised')
-          if len(candidates) < 3:
-              raise SystemExit(f"near-duplicate detector surfaced too few R0 candidates: {len(candidates)}")
-          if len(candidates) > 25:
-              raise SystemExit(f"near-duplicate detector surfaced an unexpectedly broad set: {len(candidates)}")
+          if payload['matched_candidate_count'] < 3:
+              raise SystemExit(
+                  f"near-duplicate detector surfaced too few R0 candidates: {payload['matched_candidate_count']}"
+              )
+          if payload['matched_candidate_count'] > 25:
+              raise SystemExit(
+                  f"near-duplicate detector surfaced an unexpectedly broad set: {payload['matched_candidate_count']}"
+              )
+          if payload['returned_candidate_count'] != len(candidates):
+              raise SystemExit('returned candidate count disagrees with serialized candidates')
           for candidate in candidates:
               left = candidate['left']
               right = candidate['right']
@@ -99,6 +122,57 @@ jobs:
                   raise SystemExit('candidate lost evidence identity')
               if not left['sources'] or not right['sources']:
                   raise SystemExit('candidate lost source-family provenance')
+          PY
+
+      - name: Assert recurrence clusters reduce pairwise matches without hiding limitations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          near = json.loads(Path('near-results/near-board.json').read_text())
+          recurrence = json.loads(Path('near-results/recurrence-board.json').read_text())
+          clusters = recurrence['clusters']
+          print(f"pairwise matched edges: {near['matched_candidate_count']}")
+          print(f"recurrence clusters: {recurrence['cluster_count']}")
+          print(f"returned recurrence clusters: {recurrence['returned_cluster_count']}")
+          for cluster in clusters:
+              print(
+                  f"cluster {cluster['cluster_id']}: families={cluster['family_count']} "
+                  f"occurrences={cluster['occurrence_count']} edges={cluster['edge_count']} "
+                  f"similarity={cluster['min_edge_similarity']:.3f}-{cluster['max_edge_similarity']:.3f}"
+              )
+
+          if recurrence['method'] != 'segment_recurrence_connected_components/v1':
+              raise SystemExit(f"unexpected recurrence method: {recurrence['method']}")
+          if recurrence['similarity_method'] != near['method']:
+              raise SystemExit('recurrence did not preserve similarity-method provenance')
+          if recurrence['candidate_edge_count'] != near['matched_candidate_count']:
+              raise SystemExit(
+                  'recurrence did not consume the complete matched-edge set: '
+                  f"{recurrence['candidate_edge_count']} != {near['matched_candidate_count']}"
+              )
+          if recurrence['returned_cluster_count'] != len(clusters):
+              raise SystemExit('returned cluster count disagrees with serialized clusters')
+          if recurrence['cluster_count'] < 2:
+              raise SystemExit(f"too few recurrence groups: {recurrence['cluster_count']}")
+          if recurrence['cluster_count'] > 10:
+              raise SystemExit(f"unexpectedly broad recurrence grouping: {recurrence['cluster_count']}")
+          if recurrence['cluster_count'] >= recurrence['candidate_edge_count']:
+              raise SystemExit('clustering failed to reduce pairwise result inflation')
+          if not any(cluster['occurrence_count'] >= 3 for cluster in clusters):
+              raise SystemExit('expected at least one multi-context recurrence group')
+          for cluster in clusters:
+              if cluster['family_count'] < 2:
+                  raise SystemExit('recurrence cluster failed to span distinct source families')
+              if cluster['evidence_count'] < 1:
+                  raise SystemExit('recurrence cluster lost evidence identity')
+              if cluster['edge_count'] < 1:
+                  raise SystemExit('recurrence cluster has no supporting similarity edge')
+              if len(cluster['limitations']) < 3:
+                  raise SystemExit('recurrence cluster omitted explicit interpretation limitations')
+              if not all(item['sources'] for item in cluster['occurrences']):
+                  raise SystemExit('recurrence occurrence lost source provenance')
           PY
 
       - name: Upload near-duplicate evidence packet
