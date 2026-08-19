@@ -1,8 +1,18 @@
 from __future__ import annotations
 
+from proofline import Ingestor
 from proofline.recurrence import SegmentRecurrenceClusterer
-from proofline.segment_similarity import NearDuplicateCandidate, SegmentOccurrence
-from proofline.segments import SegmentHit
+from proofline.segment_similarity import (
+    NearDuplicateCandidate,
+    SegmentOccurrence,
+    SegmentSimilarityIndex,
+)
+from proofline.segments import (
+    SegmentHit,
+    SegmentIndex,
+    SegmentationPlan,
+    SegmentationRule,
+)
 
 
 def _occurrence(label: str, family: str, text: str) -> SegmentOccurrence:
@@ -125,3 +135,55 @@ def test_recurrence_cluster_limit_and_min_occurrences_are_explicit() -> None:
     assert limited.cluster_count == 2
     assert limited.returned_cluster_count == 1
     assert len(limited.clusters) == 1
+
+
+def test_recurrence_find_consumes_complete_similarity_edge_set(tmp_path) -> None:
+    state = tmp_path / "state"
+    rule = SegmentationRule(
+        name="board-items",
+        source_name_regex=r"^Board of Control",
+        anchor_regex=r"(?i)^Ordinance (?P<anchor>\d+/2026)$",
+        segment_type="agenda_item",
+        min_chars=30,
+    )
+    text = (
+        "Ordinance 1/2026\n"
+        "Enter into a four year contract with Example Systems for a public safety drone "
+        "program with year one free and later years billed annually under cooperative "
+        "purchasing authority.\n"
+    )
+    for index in range(1, 4):
+        path = tmp_path / f"record-{index}.txt"
+        path.write_text(text, encoding="utf-8")
+        Ingestor(state).ingest(
+            path,
+            source_uri=f"https://example.gov/meeting/{index}",
+            source_name=f"Board of Control — Meeting {index}",
+        )
+
+    SegmentIndex(state).rebuild(SegmentationPlan(name="fixture", rules=(rule,)))
+
+    similarity = SegmentSimilarityIndex(state)
+    limited = similarity.find(rule_name="board-items", threshold=0.5, limit=1)
+    complete = similarity.find(rule_name="board-items", threshold=0.5, limit=None)
+    assert complete.matched_candidate_count == 3
+    assert complete.returned_candidate_count == 3
+    assert len(complete.candidates) == 3
+    assert limited.matched_candidate_count == 3
+    assert limited.returned_candidate_count == 1
+    assert len(limited.candidates) == 1
+
+    clustered = SegmentRecurrenceClusterer(state).find(
+        rule_name="board-items",
+        threshold=0.5,
+        limit=None,
+    )
+    assert clustered.candidate_edge_count == 3
+    assert clustered.cluster_count == 1
+    assert clustered.returned_cluster_count == 1
+    cluster = clustered.clusters[0]
+    assert cluster.occurrence_count == 3
+    assert cluster.family_count == 3
+    assert cluster.evidence_count == 1
+    assert cluster.edge_count == 3
+    assert len(cluster.limitations) == 3
