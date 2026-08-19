@@ -34,6 +34,10 @@ def test_phrase_quality_rejects_procedural_fragments_without_retrieval() -> None
         "Unimproved Street Resurfacing Supporting",
         "TANGO VENTURES LLC FOR",
         "Hearing Regarding",
+        "WEST LONG STREET Back",
+        "Walton Hills Supporting Documents",
+        "West Market Street Ward",
+        "Diamond Akron LLC Diamond",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is None
@@ -48,6 +52,7 @@ def test_phrase_quality_rejects_procedural_fragments_without_retrieval() -> None
         "GREENTREE AVE",
         "Fund Balance Projections",
         "Wastewater Treatment Plant",
+        "Brown Street PC-2026-18-CU",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is not None
@@ -59,14 +64,24 @@ def test_publisher_ui_and_trailing_fragments_have_specific_reasons() -> None:
         None,
         "publisher_ui_fragment",
     )
+    assert lexical_phrase_quality("Walton Hills Supporting Documents") == (
+        None,
+        "publisher_ui_fragment",
+    )
     for query in (
         "Unimproved Street Resurfacing Supporting",
         "TANGO VENTURES LLC FOR",
         "Hearing Regarding",
+        "WEST LONG STREET Back",
+        "West Market Street Ward",
     ):
         quality, reason = lexical_phrase_quality(query)
         assert quality is None
         assert reason == "trailing_incomplete_phrase"
+    assert lexical_phrase_quality("Diamond Akron LLC Diamond") == (
+        None,
+        "repeated_edge_token",
+    )
 
 
 def test_curation_preserves_raw_rejections_and_never_claims_retrieval_use() -> None:
