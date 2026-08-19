@@ -66,6 +66,8 @@ class NearDuplicateResult:
     possible_all_pairs: int
     candidate_pairs_generated: int
     candidate_pairs_compared: int
+    matched_candidate_count: int
+    returned_candidate_count: int
     same_family_pairs_skipped: int
     common_shingle_buckets_ignored: int
     shingle_size: int
@@ -154,9 +156,7 @@ class SegmentSimilarityIndex:
                         segment=hit,
                     )
                 )
-        occurrences.sort(
-            key=lambda item: (item.family_id, item.segment.segment_id)
-        )
+        occurrences.sort(key=lambda item: (item.family_id, item.segment.segment_id))
         return occurrences
 
     def find(
@@ -168,7 +168,7 @@ class SegmentSimilarityIndex:
         max_shingle_frequency: int = 64,
         rule_name: str | None = None,
         segment_type: str | None = None,
-        limit: int = 100,
+        limit: int | None = 100,
     ) -> NearDuplicateResult:
         if not 0.0 <= threshold <= 1.0:
             raise ValueError("threshold must be between 0 and 1")
@@ -178,8 +178,8 @@ class SegmentSimilarityIndex:
             raise ValueError("min_shared_shingles must be positive")
         if max_shingle_frequency < 2:
             raise ValueError("max_shingle_frequency must be at least 2")
-        if limit < 1:
-            raise ValueError("limit must be positive")
+        if limit is not None and limit < 1:
+            raise ValueError("limit must be positive or None")
 
         build = self.segments.current_build()
         if build is None:
@@ -268,7 +268,8 @@ class SegmentSimilarityIndex:
                 item.right.segment.segment_id,
             )
         )
-        limited = tuple(candidates[:limit])
+        matched_candidate_count = len(candidates)
+        limited = tuple(candidates if limit is None else candidates[:limit])
         occurrence_count = len(occurrences)
         return NearDuplicateResult(
             build_id=str(build["build_id"]),
@@ -280,6 +281,8 @@ class SegmentSimilarityIndex:
             possible_all_pairs=occurrence_count * (occurrence_count - 1) // 2,
             candidate_pairs_generated=len(shared_candidate_counts),
             candidate_pairs_compared=compared,
+            matched_candidate_count=matched_candidate_count,
+            returned_candidate_count=len(limited),
             same_family_pairs_skipped=len(same_family_pairs),
             common_shingle_buckets_ignored=common_shingle_buckets_ignored,
             shingle_size=shingle_size,
