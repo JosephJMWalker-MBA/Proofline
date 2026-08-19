@@ -14,6 +14,7 @@ from .ocr import PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractor
 from .review import preferred_extraction, review_count, review_queue
 from .search import SearchIndex
+from .segment_similarity import SegmentSimilarityIndex
 from .segments import SegmentIndex, load_segmentation_plan
 from .storage import ProoflineStore
 from .structured import StructuredIndex
@@ -103,6 +104,18 @@ def _build_parser() -> argparse.ArgumentParser:
     anchor_parser.add_argument("value")
     anchor_parser.add_argument("--type", dest="segment_type")
     anchor_parser.add_argument("--limit", type=int, default=100)
+
+    near_parser = subparsers.add_parser(
+        "near-segments",
+        help="Find deterministic near-duplicate segment occurrences across distinct source families",
+    )
+    near_parser.add_argument("--threshold", type=float, default=0.60)
+    near_parser.add_argument("--shingle-size", type=int, default=3)
+    near_parser.add_argument("--min-shared-shingles", type=int, default=3)
+    near_parser.add_argument("--max-shingle-frequency", type=int, default=64)
+    near_parser.add_argument("--rule", dest="rule_name")
+    near_parser.add_argument("--type", dest="segment_type")
+    near_parser.add_argument("--limit", type=int, default=100)
 
     search_parser = subparsers.add_parser("search", help="Search preferred evidence with FTS5")
     search_parser.add_argument("query")
@@ -257,6 +270,19 @@ def main(argv: list[str] | None = None) -> int:
             limit=args.limit,
         )
         print(json.dumps([hit.to_dict() for hit in hits], indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "near-segments":
+        result = SegmentSimilarityIndex(state_dir).find(
+            threshold=args.threshold,
+            shingle_size=args.shingle_size,
+            min_shared_shingles=args.min_shared_shingles,
+            max_shingle_frequency=args.max_shingle_frequency,
+            rule_name=args.rule_name,
+            segment_type=args.segment_type,
+            limit=args.limit,
+        )
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
         return 0
 
     if args.command == "search":
