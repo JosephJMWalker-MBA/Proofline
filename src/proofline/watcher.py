@@ -12,7 +12,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 from urllib.request import Request, urlopen
 
 from .ingest import Ingestor
@@ -21,6 +21,9 @@ from .watch_storage import WatcherStore
 
 _MANIFEST_SCHEMA = "proofline-source-manifest/v1"
 _USER_AGENT = "Proofline/0.1 public-record watcher"
+_CIVICCLERK_BLOB_STRATEGY = "civicclerk_blob"
+_ALLOWED_FETCH_STRATEGIES = {None, _CIVICCLERK_BLOB_STRATEGY}
+_MAX_ENVELOPE_BYTES = 1024 * 1024
 
 
 class WatchState(StrEnum):
@@ -38,6 +41,7 @@ class ManifestResource:
     expected_media_type: str | None = None
     sequence_group: str | None = None
     sequence_number: int | None = None
+    fetch_strategy: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +72,14 @@ class WatchResult:
         data["state"] = self.state.value
         data["checked_at"] = self.checked_at.isoformat()
         return data
+
+
+@dataclass(frozen=True, slots=True)
+class _DownloadMetadata:
+    http_status: int
+    content_type: str | None
+    etag: str | None
+    last_modified: str | None
 
 
 def load_manifest(path: str | Path) -> SourceManifest:
@@ -103,6 +115,9 @@ def load_manifest(path: str | Path) -> SourceManifest:
             raise ValueError("sequence_group must be a non-empty string")
         if sequence_number is not None and (not isinstance(sequence_number, int) or sequence_number < 0):
             raise ValueError("sequence_number must be a non-negative integer")
+        fetch_strategy = item.get("fetch_strategy")
+        if fetch_strategy not in _ALLOWED_FETCH_STRATEGIES:
+            raise ValueError(f"unsupported fetch_strategy: {fetch_strategy!r}")
         resources.append(
             ManifestResource(
                 source_uri=source_uri,
@@ -111,6 +126,7 @@ def load_manifest(path: str | Path) -> SourceManifest:
                 expected_media_type=item.get("expected_media_type"),
                 sequence_group=sequence_group,
                 sequence_number=sequence_number,
+                fetch_strategy=fetch_strategy,
             )
         )
     return SourceManifest(name=name, resources=tuple(resources))
@@ -179,6 +195,99 @@ class CorpusWatcher:
                 if handle.read(5) != b"%PDF-":
                     raise ValueError("response declared as PDF but PDF magic bytes are missing")
 
+    @staticmethod
+    def _civicclerk_blob_uri(source_uri: str, payload: object) -> str:
+        """Return a validated ephemeral CivicClerk blob transport without persisting it."""
+        source = urlsplit(source_uri)
+        hostname = (source.hostname or "").lower()
+        suffix = ".api.civicclerk.com"
+        if source.scheme != "https" or not hostname.endswith(suffix):
+            raise ValueError("civicclerk_blob requires an HTTPS *.api.civicclerk.com source_uri")
+        tenant = hostname[: -len(suffix)]
+        if not tenant or "." in tenant:
+            raise ValueError("civicclerk_blob source_uri must identify one CivicClerk tenant")
+        if not isinstance(payload, dict):
+            raise ValueError("CivicClerk file response must be a JSON object")
+        blob_uri = payload.get("blobUri")
+        if not isinstance(blob_uri, str) or not blob_uri:
+            raise ValueError("CivicClerk file response did not include blobUri")
+        blob = urlsplit(blob_uri)
+        if blob.scheme != "https" or (blob.hostname or "").lower() != "civicclerk.blob.core.windows.net":
+            raise ValueError("CivicClerk blobUri host is not allowed")
+        expected_prefix = f"/stream/{tenant.upper()}/"
+        if not blob.path.startswith(expected_prefix):
+            raise ValueError("CivicClerk blobUri tenant path does not match source tenant")
+        return blob_uri
+
+    @staticmethod
+    def _write_response(response, destination: Path) -> _DownloadMetadata:
+        status = int(getattr(response, "status", 200))
+        content_type = response.headers.get("Content-Type")
+        etag = response.headers.get("ETag")
+        last_modified = response.headers.get("Last-Modified")
+        with destination.open("wb") as handle:
+            while chunk := response.read(1024 * 1024):
+                handle.write(chunk)
+            handle.flush()
+        return _DownloadMetadata(
+            http_status=status,
+            content_type=content_type,
+            etag=etag,
+            last_modified=last_modified,
+        )
+
+    def _download_direct(self, resource: ManifestResource, destination: Path) -> _DownloadMetadata:
+        request = Request(
+            resource.source_uri,
+            headers={"User-Agent": _USER_AGENT, "Accept": "*/*"},
+            method="GET",
+        )
+        with urlopen(request, timeout=self.timeout) as response:
+            return self._write_response(response, destination)
+
+    def _download_civicclerk_blob(
+        self,
+        resource: ManifestResource,
+        destination: Path,
+    ) -> _DownloadMetadata:
+        envelope_request = Request(
+            resource.source_uri,
+            headers={"User-Agent": _USER_AGENT, "Accept": "application/json"},
+            method="GET",
+        )
+        with urlopen(envelope_request, timeout=self.timeout) as response:
+            envelope_status = int(getattr(response, "status", 200))
+            raw = response.read(_MAX_ENVELOPE_BYTES + 1)
+            if len(raw) > _MAX_ENVELOPE_BYTES:
+                raise ValueError("CivicClerk file envelope exceeded size limit")
+            content_type = self._base_content_type(response.headers.get("Content-Type"))
+            if content_type != "application/json":
+                raise ValueError(
+                    f"CivicClerk file envelope must be application/json, received {content_type or 'unknown'}"
+                )
+            try:
+                payload = json.loads(raw.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ValueError("CivicClerk file envelope was not valid UTF-8 JSON") from exc
+            if envelope_status < 200 or envelope_status >= 300:
+                raise ValueError(f"CivicClerk file envelope returned HTTP {envelope_status}")
+
+        blob_uri = self._civicclerk_blob_uri(resource.source_uri, payload)
+        blob_request = Request(
+            blob_uri,
+            headers={"User-Agent": _USER_AGENT, "Accept": resource.expected_media_type or "*/*"},
+            method="GET",
+        )
+        with urlopen(blob_request, timeout=self.timeout) as response:
+            return self._write_response(response, destination)
+
+    def _download_resource(self, resource: ManifestResource, destination: Path) -> _DownloadMetadata:
+        if resource.fetch_strategy is None:
+            return self._download_direct(resource, destination)
+        if resource.fetch_strategy == _CIVICCLERK_BLOB_STRATEGY:
+            return self._download_civicclerk_blob(resource, destination)
+        raise ValueError(f"unsupported fetch_strategy: {resource.fetch_strategy!r}")
+
     def _record(self, result: WatchResult, *, manifest_name: str) -> None:
         self.watch_store.add_source_check(
             check_id=f"check:{uuid.uuid4()}",
@@ -207,48 +316,31 @@ class CorpusWatcher:
         last_status: int | None = None
 
         for attempt in range(1, self.retries + 1):
-            request = Request(
-                resource.source_uri,
-                headers={"User-Agent": _USER_AGENT, "Accept": "*/*"},
-                method="GET",
-            )
+            temp_dir = self.state_dir / "tmp"
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            temp_path: Path | None = None
             try:
-                with urlopen(request, timeout=self.timeout) as response:
-                    status = getattr(response, "status", 200)
-                    last_status = int(status)
-                    content_type = response.headers.get("Content-Type")
-                    etag = response.headers.get("ETag")
-                    last_modified = response.headers.get("Last-Modified")
+                with tempfile.NamedTemporaryFile(
+                    dir=temp_dir, prefix="watch-", suffix=".download", delete=False
+                ) as handle:
+                    temp_path = Path(handle.name)
 
-                    temp_dir = self.state_dir / "tmp"
-                    temp_dir.mkdir(parents=True, exist_ok=True)
-                    temp_path: Path | None = None
-                    try:
-                        with tempfile.NamedTemporaryFile(
-                            dir=temp_dir, prefix="watch-", suffix=".download", delete=False
-                        ) as handle:
-                            temp_path = Path(handle.name)
-                            while chunk := response.read(1024 * 1024):
-                                handle.write(chunk)
-                            handle.flush()
-
-                        self._validate_download(
-                            temp_path,
-                            content_type=content_type,
-                            expected=resource.expected_media_type,
-                        )
-                        media_type = self._base_content_type(content_type) or resource.expected_media_type
-                        ingested = self.ingestor.ingest(
-                            temp_path,
-                            source_uri=resource.source_uri,
-                            source_name=resource.source_name,
-                            native_identifier=resource.native_identifier,
-                            retrieved_at=checked_at,
-                            media_type=media_type,
-                        )
-                    finally:
-                        if temp_path is not None and temp_path.exists():
-                            temp_path.unlink()
+                metadata = self._download_resource(resource, temp_path)
+                last_status = metadata.http_status
+                self._validate_download(
+                    temp_path,
+                    content_type=metadata.content_type,
+                    expected=resource.expected_media_type,
+                )
+                media_type = self._base_content_type(metadata.content_type) or resource.expected_media_type
+                ingested = self.ingestor.ingest(
+                    temp_path,
+                    source_uri=resource.source_uri,
+                    source_name=resource.source_name,
+                    native_identifier=resource.native_identifier,
+                    retrieved_at=checked_at,
+                    media_type=media_type,
+                )
 
                 if previous is None:
                     state = WatchState.NEW
@@ -266,9 +358,9 @@ class CorpusWatcher:
                     artifact_id=ingested.artifact_id,
                     previous_artifact_id=previous,
                     http_status=last_status,
-                    content_type=self._base_content_type(content_type),
-                    etag=etag,
-                    last_modified=last_modified,
+                    content_type=self._base_content_type(metadata.content_type),
+                    etag=metadata.etag,
+                    last_modified=metadata.last_modified,
                     attempts=attempt,
                 )
                 self._record(result, manifest_name=manifest_name)
@@ -281,6 +373,9 @@ class CorpusWatcher:
             except (URLError, TimeoutError, OSError, ValueError) as exc:
                 last_error = str(exc)
                 retryable = not isinstance(exc, ValueError)
+            finally:
+                if temp_path is not None and temp_path.exists():
+                    temp_path.unlink()
 
             if not retryable or attempt == self.retries:
                 result = WatchResult(
