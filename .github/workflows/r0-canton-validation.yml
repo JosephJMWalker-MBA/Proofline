@@ -41,6 +41,7 @@ jobs:
           proofline segment --help >/dev/null
           proofline repeated-segments --help >/dev/null
           proofline recurrence-clusters --help >/dev/null
+          proofline recurrence-packets --help >/dev/null
           python -m proofline.cli --help >/dev/null
 
       - name: Run Canton discovery and sync
