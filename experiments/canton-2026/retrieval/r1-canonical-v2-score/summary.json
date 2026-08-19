@@ -1,0 +1,93 @@
+{
+  "raw": {
+    "cases": 42,
+    "expectation_accuracy": 1.0,
+    "failure_counts": [],
+    "hit_rate_at_k": 1.0,
+    "negative_accuracy": 1.0,
+    "provenance_validity": 1.0,
+    "schema": "proofline-retrieval-eval/v2",
+    "target_recall_at_k": 1.0,
+    "unresolved_target_count": 0
+  },
+  "scorable": {
+    "cases": 42,
+    "mode_metrics": [
+      {
+        "cases": 9,
+        "mode": "date",
+        "scorable_cases": 9,
+        "scorable_expectation_accuracy": 1.0,
+        "scorable_mean_target_recall": 1.0,
+        "scorable_negative_accuracy": 1.0,
+        "scorable_negative_cases": 1,
+        "scorable_positive_cases": 8,
+        "scorable_positive_hit_rate": 1.0,
+        "unscorable_cases": 0
+      },
+      {
+        "cases": 1,
+        "mode": "identifier",
+        "scorable_cases": 1,
+        "scorable_expectation_accuracy": 1.0,
+        "scorable_mean_target_recall": 1.0,
+        "scorable_negative_accuracy": 1.0,
+        "scorable_negative_cases": 1,
+        "scorable_positive_cases": 0,
+        "scorable_positive_hit_rate": 1.0,
+        "unscorable_cases": 0
+      },
+      {
+        "cases": 14,
+        "mode": "lexical",
+        "scorable_cases": 14,
+        "scorable_expectation_accuracy": 1.0,
+        "scorable_mean_target_recall": 1.0,
+        "scorable_negative_accuracy": 1.0,
+        "scorable_negative_cases": 1,
+        "scorable_positive_cases": 13,
+        "scorable_positive_hit_rate": 1.0,
+        "unscorable_cases": 0
+      },
+      {
+        "cases": 9,
+        "mode": "money",
+        "scorable_cases": 9,
+        "scorable_expectation_accuracy": 1.0,
+        "scorable_mean_target_recall": 1.0,
+        "scorable_negative_accuracy": 1.0,
+        "scorable_negative_cases": 1,
+        "scorable_positive_cases": 8,
+        "scorable_positive_hit_rate": 1.0,
+        "unscorable_cases": 0
+      },
+      {
+        "cases": 9,
+        "mode": "native_identifier",
+        "scorable_cases": 9,
+        "scorable_expectation_accuracy": 1.0,
+        "scorable_mean_target_recall": 1.0,
+        "scorable_negative_accuracy": 1.0,
+        "scorable_negative_cases": 1,
+        "scorable_positive_cases": 8,
+        "scorable_positive_hit_rate": 1.0,
+        "unscorable_cases": 0
+      }
+    ],
+    "retrieval_failure_counts": [],
+    "scorable_case_count": 42,
+    "scorable_expectation_accuracy": 1.0,
+    "scorable_mean_case_provenance_validity": 1.0,
+    "scorable_negative_accuracy": 1.0,
+    "scorable_negative_case_count": 5,
+    "scorable_positive_case_count": 37,
+    "scorable_positive_hit_rate": 1.0,
+    "scorable_target_recall_at_k": 1.0,
+    "source_schema": "proofline-retrieval-eval/v2",
+    "suite": "Proofline R1 Canton canonical-evidence retrieval benchmark \u2014 curated",
+    "unresolved_target_count": 0,
+    "unscorable_case_count": 0,
+    "unscorable_cases": [],
+    "unscorable_mode_counts": []
+  }
+}
