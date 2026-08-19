@@ -1,0 +1,111 @@
+name: r0-near-segment-validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r0-near-segment-validation.yml"
+      - "experiments/canton-2026/**"
+      - "src/proofline/families.py"
+      - "src/proofline/segment_similarity.py"
+      - "src/proofline/segments.py"
+      - "src/proofline/cli.py"
+      - "tests/test_segment_similarity.py"
+      - "tests/test_cli_segment_similarity.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Build live R0 corpus and agenda-item segments
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p near-results
+          proofline --state-dir .near sync experiments/canton-2026/source-plan.json > near-results/sync.json
+          proofline --state-dir .near segment experiments/canton-2026/segment-plan.json > near-results/segment-build.json
+
+      - name: Find cross-family near-duplicate Board items
+        shell: bash
+        run: |
+          set -o pipefail
+          proofline --state-dir .near near-segments \
+            --rule board-ordinance-items \
+            --threshold 0.60 \
+            --shingle-size 3 \
+            --min-shared-shingles 3 \
+            --max-shingle-frequency 64 \
+            --limit 100 > near-results/near-board.json
+          test -s near-results/near-board.json
+
+      - name: Assert candidate generation stays descriptive and bounded
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('near-results/near-board.json').read_text())
+          candidates = payload['candidates']
+          print(f"segments: {payload['segment_count']}")
+          print(f"source-family occurrences: {payload['occurrence_count']}")
+          print(f"possible all pairs: {payload['possible_all_pairs']}")
+          print(f"candidate pairs generated: {payload['candidate_pairs_generated']}")
+          print(f"candidate pairs compared: {payload['candidate_pairs_compared']}")
+          print(f"same-family pairs skipped: {payload['same_family_pairs_skipped']}")
+          print(f"common shingle buckets ignored: {payload['common_shingle_buckets_ignored']}")
+          print(f"near-duplicate candidates >= 0.60: {len(candidates)}")
+
+          if payload['method'] != 'token_shingle_jaccard/v1':
+              raise SystemExit(f"unexpected method: {payload['method']}")
+          if payload['segment_count'] < 100:
+              raise SystemExit(f"Board segment coverage unexpectedly low: {payload['segment_count']}")
+          if payload['occurrence_count'] < payload['segment_count']:
+              raise SystemExit('source-family occurrence count cannot be below segment count')
+          if payload['possible_all_pairs'] <= 0:
+              raise SystemExit('invalid all-pairs baseline')
+          if payload['candidate_pairs_compared'] >= payload['possible_all_pairs'] // 2:
+              raise SystemExit(
+                  'candidate generation regressed toward all-pairs comparison: '
+                  f"{payload['candidate_pairs_compared']} / {payload['possible_all_pairs']}"
+              )
+          if payload['same_family_pairs_skipped'] < 1:
+              raise SystemExit('expected publisher-backed version-family suppression to be exercised')
+          if len(candidates) < 3:
+              raise SystemExit(f"near-duplicate detector surfaced too few R0 candidates: {len(candidates)}")
+          if len(candidates) > 25:
+              raise SystemExit(f"near-duplicate detector surfaced an unexpectedly broad set: {len(candidates)}")
+          for candidate in candidates:
+              left = candidate['left']
+              right = candidate['right']
+              if left['family_id'] == right['family_id']:
+                  raise SystemExit('same-family candidate escaped suppression')
+              if not left['segment']['evidence_id'] or not right['segment']['evidence_id']:
+                  raise SystemExit('candidate lost evidence identity')
+              if not left['sources'] or not right['sources']:
+                  raise SystemExit('candidate lost source-family provenance')
+          PY
+
+      - name: Upload near-duplicate evidence packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r0-near-segment-results
+          path: near-results/
+          if-no-files-found: error
+          retention-days: 7
