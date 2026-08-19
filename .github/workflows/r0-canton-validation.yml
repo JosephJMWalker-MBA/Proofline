@@ -47,24 +47,119 @@ jobs:
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
 
-      - name: Assert live discovery produced a corpus and clean version analysis
+      - name: Assert live corpus contains substantive Council evidence
         run: |
           python - <<'PY'
           import json
+          import sqlite3
           from pathlib import Path
 
           payload = json.loads(Path('r0-results/sync.json').read_text())
           resources = payload['discovery']['manifest']['resources']
-          version_analysis = payload.get('version_analysis') or {}
-          print(f'discovered {len(resources)} resources')
-          print(f"version relations: {version_analysis.get('relation_count', 0)}")
-          print(f"version observations created: {version_analysis.get('observations_created', 0)}")
-          print(f"version analysis skipped: {version_analysis.get('skipped', 0)}")
-          print(f"version analysis failed: {version_analysis.get('failed', 0)}")
+          civicclerk = [r for r in resources if r.get('fetch_strategy') == 'civicclerk_blob']
+          unavailable = int((payload.get('watch') or {}).get('counts', {}).get('unavailable', 0))
+          version_analysis = payload.get('version_analysis')
+
+          print(f'discovered resources: {len(resources)}')
+          print(f'CivicClerk Council resources: {len(civicclerk)}')
+          print(f'unavailable final resources: {unavailable}')
+          if version_analysis is None:
+              print('version analysis: absent from sync output')
+          else:
+              print(f"version relations: {version_analysis.get('relation_count', 0)}")
+              print(f"version observations created: {version_analysis.get('observations_created', 0)}")
+              print(f"version analysis skipped: {version_analysis.get('skipped', 0)}")
+              print(f"version analysis failed: {version_analysis.get('failed', 0)}")
+
           if len(resources) < 20:
               raise SystemExit(f'expected at least 20 discovered resources, got {len(resources)}')
-          if version_analysis.get('failed', 0) != 0:
+          if len(civicclerk) < 15:
+              raise SystemExit(f'expected at least 15 CivicClerk Council agendas, got {len(civicclerk)}')
+          if unavailable != 0:
+              raise SystemExit(f'expected no unavailable final resources, got {unavailable}')
+          if version_analysis is not None and version_analysis.get('failed', 0) != 0:
               raise SystemExit(f"version analysis failures: {version_analysis['failed']}")
+
+          connection = sqlite3.connect('.r0/proofline.db')
+          try:
+              city_sources = connection.execute(
+                  "SELECT COUNT(*) FROM sources WHERE source_name LIKE 'City Council%'"
+              ).fetchone()[0]
+              city_evidence = connection.execute(
+                  """
+                  SELECT COUNT(*)
+                  FROM evidence_units eu
+                  JOIN source_snapshots ss ON ss.artifact_id = eu.artifact_id
+                  JOIN sources s ON s.source_id = ss.source_id
+                  WHERE s.source_name LIKE 'City Council%'
+                  """
+              ).fetchone()[0]
+              city_nonblank = connection.execute(
+                  """
+                  SELECT COUNT(DISTINCT eu.evidence_id)
+                  FROM evidence_units eu
+                  JOIN source_snapshots ss ON ss.artifact_id = eu.artifact_id
+                  JOIN sources s ON s.source_id = ss.source_id
+                  WHERE s.source_name LIKE 'City Council%'
+                    AND EXISTS (
+                      SELECT 1
+                      FROM evidence_extractions ee
+                      WHERE ee.evidence_id = eu.evidence_id
+                        AND TRIM(COALESCE(ee.extracted_text, '')) <> ''
+                    )
+                  """
+              ).fetchone()[0]
+              city_characters = connection.execute(
+                  """
+                  SELECT COALESCE(SUM(LENGTH(ee.extracted_text)), 0)
+                  FROM evidence_units eu
+                  JOIN source_snapshots ss ON ss.artifact_id = eu.artifact_id
+                  JOIN sources s ON s.source_id = ss.source_id
+                  JOIN evidence_extractions ee ON ee.evidence_id = eu.evidence_id
+                  WHERE s.source_name LIKE 'City Council%'
+                  """
+              ).fetchone()[0]
+              city_facts = connection.execute(
+                  """
+                  SELECT COUNT(*)
+                  FROM evidence_facts ef
+                  JOIN source_snapshots ss ON ss.artifact_id = ef.artifact_id
+                  JOIN sources s ON s.source_id = ss.source_id
+                  WHERE s.source_name LIKE 'City Council%'
+                  """
+              ).fetchone()[0]
+              dead_wrappers = connection.execute(
+                  """
+                  SELECT COUNT(*)
+                  FROM sources
+                  WHERE source_name LIKE 'City Council%'
+                    AND source_uri LIKE '%AgendaCenter%'
+                  """
+              ).fetchone()[0]
+          finally:
+              connection.close()
+
+          print(f'City Council sources: {city_sources}')
+          print(f'City Council evidence units: {city_evidence}')
+          print(f'City Council nonblank evidence units: {city_nonblank}')
+          print(f'City Council extracted characters: {city_characters}')
+          print(f'City Council structured facts: {city_facts}')
+          print(f'City Council AgendaCenter wrapper sources: {dead_wrappers}')
+
+          if city_sources < 15:
+              raise SystemExit(f'expected at least 15 City Council sources, got {city_sources}')
+          if city_evidence < 50:
+              raise SystemExit(f'Council evidence unexpectedly sparse: {city_evidence} units')
+          if city_nonblank != city_evidence:
+              raise SystemExit(
+                  f'Council contains blank evidence units: {city_nonblank}/{city_evidence} nonblank'
+              )
+          if city_characters < 50000:
+              raise SystemExit(f'Council extracted text unexpectedly small: {city_characters} chars')
+          if city_facts < 100:
+              raise SystemExit(f'Council structured facts unexpectedly sparse: {city_facts}')
+          if dead_wrappers != 0:
+              raise SystemExit(f'known blank AgendaCenter Council wrappers re-entered corpus: {dead_wrappers}')
           PY
 
       - name: Capture corpus status and review queue
