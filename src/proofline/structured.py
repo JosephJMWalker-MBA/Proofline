@@ -497,13 +497,14 @@ class StructuredIndex:
         char_start: int,
         char_end: int,
         *,
-        limit: int = 100,
+        limit: int | None = 100,
     ) -> list[StructuredHit]:
         """Return current structured facts fully contained in one evidence-text span.
 
         Facts without explicit character offsets are deliberately excluded. That keeps
         subrange attribution evidence-local: spreadsheet-derived or other spanless facts
         cannot be assigned to a segment merely because they share an evidence unit.
+        Pass ``limit=None`` when a downstream evidence packet requires the complete fact set.
         """
         if not evidence_id.strip():
             raise ValueError("evidence_id cannot be empty")
@@ -511,26 +512,27 @@ class StructuredIndex:
             raise ValueError("char_start cannot be negative")
         if char_end <= char_start:
             raise ValueError("char_end must be greater than char_start")
-        if limit < 1:
-            raise ValueError("limit must be positive")
+        if limit is not None and limit < 1:
+            raise ValueError("limit must be positive or None")
         build = self.current_build()
         if build is None:
             raise RuntimeError("structured index has not been built; run `proofline index` first")
+        query = """
+            SELECT * FROM evidence_facts
+            WHERE build_id = ?
+              AND evidence_id = ?
+              AND char_start IS NOT NULL
+              AND char_end IS NOT NULL
+              AND char_start >= ?
+              AND char_end <= ?
+            ORDER BY char_start, char_end, fact_type, fact_id
+        """
+        params: list[object] = [build["build_id"], evidence_id, char_start, char_end]
+        if limit is not None:
+            query += "\nLIMIT ?"
+            params.append(limit)
         with self.store.connection() as connection:
-            rows = connection.execute(
-                """
-                SELECT * FROM evidence_facts
-                WHERE build_id = ?
-                  AND evidence_id = ?
-                  AND char_start IS NOT NULL
-                  AND char_end IS NOT NULL
-                  AND char_start >= ?
-                  AND char_end <= ?
-                ORDER BY char_start, char_end, fact_type, fact_id
-                LIMIT ?
-                """,
-                (build["build_id"], evidence_id, char_start, char_end, limit),
-            ).fetchall()
+            rows = connection.execute(query, params).fetchall()
         return self._hits(rows)
 
     def money(
