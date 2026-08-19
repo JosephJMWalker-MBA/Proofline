@@ -42,6 +42,12 @@ from .models import (
 )
 from .ocr import OcrBackend, OcrPageResult, PyMuPDFTesseractBackend
 from .progressive import ProgressiveExtractionResult, ProgressiveExtractor
+from .recurrence import (
+    RecurrenceCluster,
+    RecurrenceEdge,
+    RecurrenceResult,
+    SegmentRecurrenceClusterer,
+)
 from .review import (
     ReviewItem,
     extraction_attempts,
@@ -117,6 +123,9 @@ __all__ = [
     "ProgressiveExtractor",
     "ProoflineStore",
     "PyMuPDFTesseractBackend",
+    "RecurrenceCluster",
+    "RecurrenceEdge",
+    "RecurrenceResult",
     "RepeatedSegmentGroup",
     "RetrievalCase",
     "RetrievalEvaluator",
@@ -128,6 +137,7 @@ __all__ = [
     "SegmentHit",
     "SegmentIndex",
     "SegmentOccurrence",
+    "SegmentRecurrenceClusterer",
     "SegmentSimilarityIndex",
     "SegmentationPlan",
     "SegmentationRule",
