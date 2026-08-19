@@ -1,0 +1,757 @@
+{
+  "build_id": "index:fef100ff-c0e6-4c48-a432-68e26a523493",
+  "case_results": [
+    {
+      "case_id": "date-72457913a737",
+      "expect_empty": false,
+      "expectation_met": false,
+      "expected_evidence_ids": [],
+      "failure_class": "unresolved_target",
+      "hit": false,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-05-27', end='2026-05-27')",
+      "returned_evidence_ids": [
+        "evidence:5ba02d82abc2234591ad5be5be2f281263c4b0c518547fe3fa6b60f24abeed02",
+        "evidence:6f8945777975c2c6e2e278973b7d452fab9c047b4c9ac25a086a5faf7fe228fb"
+      ],
+      "target_recall": 0.0,
+      "unresolved_targets": [
+        {
+          "artifact_sha256": "87b3a86b8156ab7b9dcbcfb712fbd812cc0d636b8005b34836e2041b8e941507",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/PreviousVersions/_05262026-1147"
+        },
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        }
+      ]
+    },
+    {
+      "case_id": "date-215e011e6de2",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:d301f19d0dd180ac1d46af28d15261c7e84f4f8f8b2a6a650f1f25de649b763c",
+        "evidence:d4b5956e11bf62497cd8e422fec7454e0ccf08bee64145c50b0bd4b1ee3bacf3"
+      ],
+      "failure_class": "unresolved_target",
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-01-05', end='2026-01-05')",
+      "returned_evidence_ids": [
+        "evidence:071b9d7f7a32cb2f9a5a1c4c488bfe568f836f4fd0f115023d24fe6395c957ab",
+        "evidence:20f0fe9029df338dd9bf910ca769944f1c925b3e0e583cd8f61424cd3de792ba",
+        "evidence:5ba02d82abc2234591ad5be5be2f281263c4b0c518547fe3fa6b60f24abeed02",
+        "evidence:d301f19d0dd180ac1d46af28d15261c7e84f4f8f8b2a6a650f1f25de649b763c",
+        "evidence:d4b5956e11bf62497cd8e422fec7454e0ccf08bee64145c50b0bd4b1ee3bacf3"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": [
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        },
+        {
+          "artifact_sha256": "aa76b9d3220bd721a04bc449acba06e0241a527baf49886914ebf7fae3a8e402",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/calendar.aspx?CID=31&month=1&view=list&year=2026"
+        },
+        {
+          "artifact_sha256": "e6a3a36dff2280fbec7fc7b0b3925ae9e8be77263ea9db10ac5a1f7267d038bc",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/Calendar.aspx?EID=2425&month=1&year=2026&day=19&calType=0"
+        }
+      ]
+    },
+    {
+      "case_id": "date-f295f1f16a04",
+      "expect_empty": false,
+      "expectation_met": false,
+      "expected_evidence_ids": [],
+      "failure_class": "unresolved_target",
+      "hit": false,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-05-28', end='2026-05-28')",
+      "returned_evidence_ids": [
+        "evidence:5ba02d82abc2234591ad5be5be2f281263c4b0c518547fe3fa6b60f24abeed02"
+      ],
+      "target_recall": 0.0,
+      "unresolved_targets": [
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        }
+      ]
+    },
+    {
+      "case_id": "date-d4fd47619e31",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:c645c5de3befb1d4a8638df75bc197272c4b3693fe512ff0e7297773cbe799bc"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2025-01-12', end='2025-01-12')",
+      "returned_evidence_ids": [
+        "evidence:c645c5de3befb1d4a8638df75bc197272c4b3693fe512ff0e7297773cbe799bc"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "date-578884524b5a",
+      "expect_empty": false,
+      "expectation_met": false,
+      "expected_evidence_ids": [],
+      "failure_class": "unresolved_target",
+      "hit": false,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-02-13', end='2026-02-13')",
+      "returned_evidence_ids": [
+        "evidence:5267a64c3c7915ec0db44f8a0166533c91071b7d7c17222ca4b032a2d212247c",
+        "evidence:5ba02d82abc2234591ad5be5be2f281263c4b0c518547fe3fa6b60f24abeed02"
+      ],
+      "target_recall": 0.0,
+      "unresolved_targets": [
+        {
+          "artifact_sha256": "413f592e8c43a5124e719916fc543c56861dda42f5dc30d0a23d8b5c5f5202af",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter/PreviousVersions/_02172026-1112"
+        },
+        {
+          "artifact_sha256": "b3e3bb252f0dfde885f39542a432d5be4d3227fa16225d276523ccbd80d09178",
+          "locator": "record:1",
+          "source_uri": "https://cantonohio.gov/AgendaCenter"
+        }
+      ]
+    },
+    {
+      "case_id": "date-7f2b26ee86b1",
+      "expect_empty": false,
+      "expectation_met": false,
+      "expected_evidence_ids": [],
+      "failure_class": "unresolved_target",
+      "hit": false,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2026-08-25', end='2026-08-25')",
+      "returned_evidence_ids": [
+        "evidence:940f0dd78bb47628a44cb18e6f3ddc0d182e1e64e0defecc204e1db75688a5bf"
+      ],
+      "target_recall": 0.0,
+      "unresolved_targets": [
+        {
+          "artifact_sha256": "d8c5e50cab53eb1b38082485a219db36e169ef5d89573d076cfa6e885320e85b",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/calendar.aspx?CID=31&month=8&view=list&year=2026"
+        }
+      ]
+    },
+    {
+      "case_id": "lexical-entity-f26b362d5d39",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:0b4409b596d14edb6c128fe5adea931ca75e0cdcd2bfa2931fae11836c803ec5",
+        "evidence:a542f86d86c33b280ce2ad4b9721de62ffdc092deeed98342776c7a135615d22",
+        "evidence:c9e71baac1292c2fef4cbfd86e9f6c37fc7333bff8244822f8dfbac2abdabd10",
+        "evidence:d75985dfb2225f9d6f62580730219ab19123e8bb8e2decc2995da549835d5a58"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Sanitary Sewer Replacement Project",
+      "returned_evidence_ids": [
+        "evidence:a542f86d86c33b280ce2ad4b9721de62ffdc092deeed98342776c7a135615d22",
+        "evidence:d75985dfb2225f9d6f62580730219ab19123e8bb8e2decc2995da549835d5a58",
+        "evidence:c9e71baac1292c2fef4cbfd86e9f6c37fc7333bff8244822f8dfbac2abdabd10",
+        "evidence:0b4409b596d14edb6c128fe5adea931ca75e0cdcd2bfa2931fae11836c803ec5",
+        "evidence:c1f8d03a6763fb7b41da08662e288756e83d134e1d3859656c0dc3d00dd9e460",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0",
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:96a4b074d4847379cb111e54345f1bf160bf67e9dfc241c2156b164207fadab9",
+        "evidence:80e6e919fe868fe2d67d93d3aaefa7839d244f177359080d5e2ded6ca52d4f19",
+        "evidence:0def223df9cdc80ac8bf9661b4ff8f22b60541ffc4abf0036947e815b8ee8de1"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-e66b736e8764",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907",
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d",
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "GPD Group",
+      "returned_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907",
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d",
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-60b1ef606aa0",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:c92d5fb9b7db3eb4ec6ec3e90c397c4e3aafb78135f623620f11fa8f001c285d",
+        "evidence:ed9e4129d23b6133abec870a5e8b3f79f49187aef34d2b9a7cfeee76f309c39c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "BROOKPARK WATER MAIN REPLACEMENT",
+      "returned_evidence_ids": [
+        "evidence:ed9e4129d23b6133abec870a5e8b3f79f49187aef34d2b9a7cfeee76f309c39c",
+        "evidence:c92d5fb9b7db3eb4ec6ec3e90c397c4e3aafb78135f623620f11fa8f001c285d",
+        "evidence:71fb0dc14eabfaa7e530b11d3e2f0653fae7d32ebe4b9968df3e10532dee7fe3",
+        "evidence:1a8904b3c1d4a54be847b845cc29b623bf22b1b501759af330af1dc0a257584d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-82225757aafd",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:1b1ed4523b77c85bae584f5dc046089db9cb088a13fb085a6e538ad569ef58f2",
+        "evidence:d77d6f81ad0ccdb5a1f8438bd2bf8a2a4d23fdc1b06c1e7f8cf790ac20b8ecb0"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "GREENTREE AVE",
+      "returned_evidence_ids": [
+        "evidence:1b1ed4523b77c85bae584f5dc046089db9cb088a13fb085a6e538ad569ef58f2",
+        "evidence:d77d6f81ad0ccdb5a1f8438bd2bf8a2a4d23fdc1b06c1e7f8cf790ac20b8ecb0"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-255c687a6210",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:bc1f49910758e8dccc559e3dadbc02f3564392ec02f308e4ba52cbb128723a50"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Traffic Engineering Maintenance Building",
+      "returned_evidence_ids": [
+        "evidence:bc1f49910758e8dccc559e3dadbc02f3564392ec02f308e4ba52cbb128723a50"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-0290531d5992",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "AEP Building Planning Study",
+      "returned_evidence_ids": [
+        "evidence:03e61617b496e82e39a19a0382c08ca005a3a16c433e921ed5589c1379dc3907",
+        "evidence:b3e6d63814841179fcc8b96eb7403f99d9caa62f343636672d30f672d462e1a4",
+        "evidence:2c1d208dcf87deee78a5d16730e5ebf7befe7a377abb0295707de1e5a30110f8",
+        "evidence:537e8be107b3c744dc51982e6e57077d9af916a078db08a9a600621aab7dfd5d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-dfad9e1b4c94",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Mt. Pleasant Water Main",
+      "returned_evidence_ids": [
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-77b68bf78910",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:d0e2fc9d39a56c85421551980ddbd5f81b0b1d9177588e220f09de87a4f90429"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Transportation Cooperative Purchasing Agreement",
+      "returned_evidence_ids": [
+        "evidence:d0e2fc9d39a56c85421551980ddbd5f81b0b1d9177588e220f09de87a4f90429"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-a46577122805",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:f91d3cdc5dee6ab280ea48f19813870f1cc28592721a45be9bb562d47309c785"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Collection Systems Department",
+      "returned_evidence_ids": [
+        "evidence:f91d3cdc5dee6ab280ea48f19813870f1cc28592721a45be9bb562d47309c785",
+        "evidence:8e30872560409746c0e6b77bed9ef530001250fade04ee01c5f3d3a4f9bdbfce",
+        "evidence:d0620176cca2c6c40e56c43b260639713948dbc4c7a1f5bfc03c54dadc148b0e",
+        "evidence:af50817841b5766484af7cd65137b0b6422e88f9cd15c3da929507ecbca5e139",
+        "evidence:eeb8265c15215b4137d62c93045d4cefeef6ad73fc5ac93e2a3fe038dd27b0fc",
+        "evidence:5267a64c3c7915ec0db44f8a0166533c91071b7d7c17222ca4b032a2d212247c",
+        "evidence:9e63c50141f40920a82710894b06ee46ff03d6b290b6aabab6d90c83ca67d04a",
+        "evidence:e3693ece579de44ef62dd6aa5a5f76b5010ff235a5da7c290d49122bfc9ec53f",
+        "evidence:678dd56a3962e10db8cae2234c362985c4a61af606704032c9f4aa9d0bfe3948",
+        "evidence:fa1ff64034e7a1e4fec05eabddd85b2902c6e07c74cee5e15cac4419be4c7e9a"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "lexical-entity-d8be49f1b255",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "Custodial Cleaning Services",
+      "returned_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543",
+        "evidence:b7710be559f375a3ee9962b6a99b98b8eaad18a07a3878bb5b2335bc144ba74b",
+        "evidence:6f1375be6d1e193991ae96ebc66396c971f44cad893147f14cf3207d9f3d8e0d"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-f89d7deb2713",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:b7710be559f375a3ee9962b6a99b98b8eaad18a07a3878bb5b2335bc144ba74b"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=278593.0, max=278593.0)",
+      "returned_evidence_ids": [
+        "evidence:b7710be559f375a3ee9962b6a99b98b8eaad18a07a3878bb5b2335bc144ba74b"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-2cd54aa92bd0",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0",
+        "evidence:d19174d849430ed972cbcf16c9999c88def05f6bf501ae33f912fa85dd84ba7c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=22610.0, max=22610.0)",
+      "returned_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0",
+        "evidence:d19174d849430ed972cbcf16c9999c88def05f6bf501ae33f912fa85dd84ba7c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-c1b1aea304e4",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=12000.0, max=12000.0)",
+      "returned_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:49b9191fc74611e5ce342ce9101346b7ca176dd80e864059760a0bdb0e1dd3f0"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-2fb901b95b35",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:81ea4f4daa3b5db08aa51fdf4045de6fd9068ff0ed9717c69b367f30fea042e5"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=11869500.0, max=11869500.0)",
+      "returned_evidence_ids": [
+        "evidence:81ea4f4daa3b5db08aa51fdf4045de6fd9068ff0ed9717c69b367f30fea042e5"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-4e8ee4f6ac9d",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:96a4b074d4847379cb111e54345f1bf160bf67e9dfc241c2156b164207fadab9"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=1500785.73, max=1500785.73)",
+      "returned_evidence_ids": [
+        "evidence:96a4b074d4847379cb111e54345f1bf160bf67e9dfc241c2156b164207fadab9"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "money-8ec60751603a",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=344746.46, max=344746.46)",
+      "returned_evidence_ids": [
+        "evidence:b4a305c270e157b661967dff030af461d5fec39a7fd2f22f8b3b4fa91bb0713c"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-3bbb192dac72",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:d153686ce3bc07ac0d355e006beebf2f9583edc80cfba850b9947f4ecb2fa3ef"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-01062026-1017-archived-pdf",
+      "returned_evidence_ids": [
+        "evidence:d153686ce3bc07ac0d355e006beebf2f9583edc80cfba850b9947f4ecb2fa3ef"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-42da248f7984",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:603ce8f3b7d61bb10f9f65ecf37d2f42b0e55d44386c2c370ded2919e2f1163a",
+        "evidence:8ffce5ca14c206e040b863e588b6535c6dd739a1d425664052ca4e8ebb40c987",
+        "evidence:a8225c3ed842ce04b8929dcb295c67ae1e62ffc1e994a98fefd309a1372d0727",
+        "evidence:d382837b1f63ac0142eebd4ef6876582f0fca2cec9fa4c58b8af5cb1050142ff"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicclerk-cantonoh-file-3726-agenda",
+      "returned_evidence_ids": [
+        "evidence:2acdb8f883b111d7c85d6b699d76fe27d6cdc550581dbfdda6cb1321afbd9887",
+        "evidence:603ce8f3b7d61bb10f9f65ecf37d2f42b0e55d44386c2c370ded2919e2f1163a",
+        "evidence:8ffce5ca14c206e040b863e588b6535c6dd739a1d425664052ca4e8ebb40c987",
+        "evidence:a8225c3ed842ce04b8929dcb295c67ae1e62ffc1e994a98fefd309a1372d0727",
+        "evidence:d382837b1f63ac0142eebd4ef6876582f0fca2cec9fa4c58b8af5cb1050142ff"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-3ab6e61a60b6",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:0acf4bcd49aedb5dc98503555a499e5fa260f839a1f6daca707812d0512c843e"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-03172026-1122-pdf",
+      "returned_evidence_ids": [
+        "evidence:0acf4bcd49aedb5dc98503555a499e5fa260f839a1f6daca707812d0512c843e"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-b42fb6cd4b5a",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-05262026-1147-pdf",
+      "returned_evidence_ids": [
+        "evidence:14a713bdcb0e39af8aad4b1d54ab8fe14f8920eee31e120de85791ae29dbc543"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "native-id-950dbbbf6c93",
+      "expect_empty": false,
+      "expectation_met": false,
+      "expected_evidence_ids": [],
+      "failure_class": "unresolved_target",
+      "hit": false,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "calendar-event-2522",
+      "returned_evidence_ids": [
+        "evidence:10af9bbe7fe8151cd275322adcf662b73a6395117818287b505db49d779842ba"
+      ],
+      "target_recall": 0.0,
+      "unresolved_targets": [
+        {
+          "artifact_sha256": "c69cb2f0d86461a40175187cba3fd15e60e62aa0f7e5ab6a9794d1a4ffe7a124",
+          "locator": "record:1",
+          "source_uri": "https://www.cantonohio.gov/Calendar.aspx?EID=2522&month=4&year=2026&day=19&calType=0"
+        }
+      ]
+    },
+    {
+      "case_id": "native-id-61ae5934794d",
+      "expect_empty": false,
+      "expectation_met": true,
+      "expected_evidence_ids": [
+        "evidence:96a4b074d4847379cb111e54345f1bf160bf67e9dfc241c2156b164207fadab9"
+      ],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "civicengage-05122026-1143-pdf",
+      "returned_evidence_ids": [
+        "evidence:96a4b074d4847379cb111e54345f1bf160bf67e9dfc241c2156b164207fadab9"
+      ],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-date-65b9ca35b580",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "date",
+      "provenance_validity": 1.0,
+      "query": "date(start='2099-12-31', end='2099-12-31')",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-identifier-5aa6e0cd3a82",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "identifier",
+      "provenance_validity": 1.0,
+      "query": "__proofline_missing_identifier__",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-lexical-2291ca975d02",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "lexical",
+      "provenance_validity": 1.0,
+      "query": "zzprooflinebenchmarkmissingzz",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-money-5a26d896a6dc",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "money",
+      "provenance_validity": 1.0,
+      "query": "money(min=60012345.67, max=60012345.67)",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    },
+    {
+      "case_id": "negative-native-c51fb4911fe1",
+      "expect_empty": true,
+      "expectation_met": true,
+      "expected_evidence_ids": [],
+      "failure_class": null,
+      "hit": true,
+      "mode": "native_identifier",
+      "provenance_validity": 1.0,
+      "query": "__proofline_missing_native_id__",
+      "returned_evidence_ids": [],
+      "target_recall": 1.0,
+      "unresolved_targets": []
+    }
+  ],
+  "cases": 33,
+  "expectation_accuracy": 0.8484848484848485,
+  "failure_counts": [
+    {
+      "count": 6,
+      "failure_class": "unresolved_target"
+    }
+  ],
+  "hit_rate_at_k": 0.8214285714285714,
+  "k": 10,
+  "mode_metrics": [
+    {
+      "cases": 7,
+      "expectation_accuracy": 0.42857142857142855,
+      "mean_target_recall": 0.3333333333333333,
+      "mode": "date",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 6,
+      "positive_hit_rate": 0.3333333333333333,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 1,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "identifier",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 0,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 11,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "lexical",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 10,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 7,
+      "expectation_accuracy": 1.0,
+      "mean_target_recall": 1.0,
+      "mode": "money",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 6,
+      "positive_hit_rate": 1.0,
+      "provenance_validity": 1.0
+    },
+    {
+      "cases": 7,
+      "expectation_accuracy": 0.8571428571428571,
+      "mean_target_recall": 0.8333333333333334,
+      "mode": "native_identifier",
+      "negative_accuracy": 1.0,
+      "negative_cases": 1,
+      "positive_cases": 6,
+      "positive_hit_rate": 0.8333333333333334,
+      "provenance_validity": 1.0
+    }
+  ],
+  "negative_accuracy": 1.0,
+  "negative_case_count": 5,
+  "provenance_validity": 1.0,
+  "schema": "proofline-retrieval-eval/v2",
+  "structured_build_id": "structured:3a626e28-cd2f-4ff0-b4d8-028832ff10d6",
+  "suite": "Proofline R1 deterministic real-corpus benchmark candidate pool \u2014 curated",
+  "target_recall_at_k": 1.0,
+  "unresolved_target_count": 10
+}
