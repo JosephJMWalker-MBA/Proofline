@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from proofline import Ingestor
+from proofline import Ingestor, evidence_id_from_locator
 from proofline.recurrence_packets import RecurrenceEvidencePacketBuilder
 from proofline.segments import SegmentIndex, SegmentationPlan, SegmentationRule
 from proofline.structured import StructuredIndex
@@ -58,11 +58,9 @@ def test_recurrence_packet_contains_only_facts_inside_each_segment(tmp_path) -> 
     assert packet.cluster.family_count == 3
     assert len(packet.occurrences) == 3
 
-    per_occurrence_values = []
     for occurrence_packet in packet.occurrences:
         segment = occurrence_packet.occurrence.segment
         values = {fact.normalized_text for fact in occurrence_packet.facts}
-        per_occurrence_values.append(values)
         assert "100.00" in values
         assert not any(value and value.startswith("999.") for value in values)
         assert not any(value and value.startswith("888.") for value in values)
@@ -90,7 +88,7 @@ def test_recurrence_packet_contains_only_facts_inside_each_segment(tmp_path) -> 
     assert "not a Gold observation" in packet.limitations[2]
 
 
-def test_structured_within_span_excludes_neighboring_and_spanless_facts(tmp_path) -> None:
+def test_structured_within_span_excludes_neighboring_facts(tmp_path) -> None:
     state = tmp_path / "state"
     text = "Outside $999.00.\nInside $123.45 on January 2, 2026.\nOutside $777.00.\n"
     path = tmp_path / "facts.txt"
@@ -103,9 +101,10 @@ def test_structured_within_span_excludes_neighboring_and_spanless_facts(tmp_path
     index = StructuredIndex(state)
     index.rebuild()
 
+    evidence_id = evidence_id_from_locator(result.artifact_id, "record", "record:1")
     start = text.index("Inside")
     end = text.index("\nOutside $777")
-    hits = index.within_span(result.evidence_units[0].evidence_id, start, end)
+    hits = index.within_span(evidence_id, start, end)
     values = {(hit.fact_type, hit.normalized_text) for hit in hits}
     assert ("money", "123.45") in values
     assert ("date", "2026-01-02") in values
