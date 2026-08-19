@@ -1,0 +1,217 @@
+name: r1-matter-key-validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-matter-key-validation.yml"
+      - "experiments/canton-2026/matter-key-policy.json"
+      - "experiments/canton-2026/segment-plan.json"
+      - "src/proofline/matter_keys.py"
+      - "src/proofline/segments.py"
+      - "tests/test_matter_keys.py"
+      - "docs/MATTER_KEYS.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Canton evidence and corrected agenda-item segments
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p matter-results
+          proofline --state-dir .matter sync experiments/canton-2026/source-plan.json > matter-results/sync.json
+          proofline --state-dir .matter segment experiments/canton-2026/segment-plan.json > matter-results/segment-first.json
+
+      - name: Resolve conservative matter keys and assert false-join guards
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from collections import defaultdict
+          from pathlib import Path
+
+          from proofline.matter_keys import MatterKeyResolver, load_matter_key_policy
+
+          state = Path('.matter')
+          policy = load_matter_key_policy('experiments/canton-2026/matter-key-policy.json')
+          result = MatterKeyResolver(state).resolve(policy)
+          payload = result.to_dict()
+          Path('matter-results/matter-keys-first.json').write_text(
+              json.dumps(payload, indent=2, sort_keys=True), encoding='utf-8'
+          )
+
+          print(f"matter candidates: {result.candidate_count}")
+          print(f"resolved: {result.resolved_count}")
+          print(f"ambiguous: {result.ambiguous_count}")
+          print(f"insufficient identity: {result.insufficient_identity_count}")
+          print(f"repeated resolved keys: {result.repeated_group_count}")
+
+          if result.method != 'proofline-matter-key/v1':
+              raise SystemExit(f'unexpected matter-key method: {result.method}')
+          if result.candidate_count < 140:
+              raise SystemExit(f'Board matter-key coverage unexpectedly low: {result.candidate_count}')
+          if result.resolved_count < 20:
+              raise SystemExit(f'conservative resolved-key coverage unexpectedly low: {result.resolved_count}')
+          if result.ambiguous_count < 2:
+              raise SystemExit('expected live multi-project ambiguity to remain explicit')
+          if result.repeated_group_count < 1:
+              raise SystemExit('expected at least one repeated resolved matter key')
+
+          with sqlite3.connect(state / 'proofline.db') as connection:
+              connection.row_factory = sqlite3.Row
+              segment_text = {
+                  row['segment_id']: (row['raw_text'], int(row['char_start']), int(row['char_end']))
+                  for row in connection.execute(
+                      'SELECT segment_id, raw_text, char_start, char_end FROM evidence_segments'
+                  ).fetchall()
+              }
+
+          base_groups = defaultdict(lambda: {'counterparties': set(), 'matter_keys': set()})
+          ambiguous_multi_project = 0
+          for candidate in result.candidates:
+              if candidate.status.value == 'resolved':
+                  if candidate.matter_key is None:
+                      raise SystemExit('resolved candidate lost matter key')
+                  by_role = {component.role: component for component in candidate.components}
+                  required = {'project_id', 'transaction_role', 'change_order_number', 'counterparty'}
+                  if not required.issubset(by_role):
+                      raise SystemExit('resolved candidate lost required identity component')
+                  if by_role['transaction_role'].normalized_value != 'change_order':
+                      raise SystemExit('current Canton policy resolved an undeclared transaction role')
+
+                  raw_text, segment_start, segment_end = segment_text[candidate.segment_id]
+                  for component in candidate.components:
+                      if not (segment_start <= component.char_start < component.char_end <= segment_end):
+                          raise SystemExit('matter-key component escaped its evidence segment span')
+                      relative_start = component.char_start - segment_start
+                      relative_end = component.char_end - segment_start
+                      if raw_text[relative_start:relative_end].strip() != component.raw_value:
+                          raise SystemExit('matter-key component text does not match its evidence span')
+                      if component.evidence_id != candidate.evidence_id:
+                          raise SystemExit('matter-key component crossed evidence identity')
+
+                  base = (
+                      by_role['project_id'].normalized_value,
+                      by_role['transaction_role'].normalized_value,
+                      by_role['change_order_number'].normalized_value,
+                  )
+                  base_groups[base]['counterparties'].add(by_role['counterparty'].normalized_value)
+                  base_groups[base]['matter_keys'].add(candidate.matter_key)
+              else:
+                  if candidate.matter_key is not None:
+                      raise SystemExit('non-resolved candidate received a matter key')
+                  if 'multiple_project_ids' in candidate.reasons:
+                      ambiguous_multi_project += 1
+
+          if ambiguous_multi_project < 2:
+              raise SystemExit('multi-project records were not preserved as explicit ambiguity')
+
+          collision_groups = [
+              value for value in base_groups.values() if len(value['counterparties']) > 1
+          ]
+          if not collision_groups:
+              raise SystemExit('live corpus did not exercise same-project/change-order counterparty separation')
+          for group in collision_groups:
+              if len(group['matter_keys']) != len(group['counterparties']):
+                  raise SystemExit('different counterparties collapsed into one matter key')
+
+          for group in result.repeated_groups:
+              if group.occurrence_count < 2:
+                  raise SystemExit('repeated matter-key group has fewer than two occurrences')
+              if any(candidate.matter_key != group.matter_key for candidate in group.candidates):
+                  raise SystemExit('repeated matter-key group mixed identities')
+              identities = {
+                  tuple((component.role, component.normalized_value) for component in candidate.components)
+                  for candidate in group.candidates
+              }
+              if len(identities) != 1:
+                  raise SystemExit('same matter key grouped different normalized identity components')
+
+          profile = {
+              'candidate_count': result.candidate_count,
+              'resolved_count': result.resolved_count,
+              'ambiguous_count': result.ambiguous_count,
+              'insufficient_identity_count': result.insufficient_identity_count,
+              'repeated_group_count': result.repeated_group_count,
+              'counterparty_collision_group_count': len(collision_groups),
+              'ambiguous_multi_project_count': ambiguous_multi_project,
+          }
+          Path('matter-results/profile.json').write_text(
+              json.dumps(profile, indent=2, sort_keys=True), encoding='utf-8'
+          )
+          PY
+
+      - name: Prove matter-key identities survive an identical segment rebuild
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.matter_keys import MatterKeyResolver, load_matter_key_policy
+          from proofline.segments import SegmentIndex, load_segmentation_plan
+
+          state = Path('.matter')
+          policy = load_matter_key_policy('experiments/canton-2026/matter-key-policy.json')
+          first = MatterKeyResolver(state).resolve(policy)
+          first_candidates = {
+              candidate.segment_id: (candidate.candidate_id, candidate.status.value, candidate.matter_key)
+              for candidate in first.candidates
+          }
+
+          plan = load_segmentation_plan('experiments/canton-2026/segment-plan.json')
+          second_build = SegmentIndex(state).rebuild(plan)
+          second = MatterKeyResolver(state).resolve(policy)
+          second_candidates = {
+              candidate.segment_id: (candidate.candidate_id, candidate.status.value, candidate.matter_key)
+              for candidate in second.candidates
+          }
+
+          if first.segment_build_id == second_build.build_id:
+              raise SystemExit('segment rebuild unexpectedly reused build UUID')
+          if first_candidates != second_candidates:
+              raise SystemExit('matter-key candidate/key identities changed across identical rebuild')
+
+          Path('matter-results/stability.json').write_text(
+              json.dumps(
+                  {
+                      'first_segment_build_id': first.segment_build_id,
+                      'second_segment_build_id': second_build.build_id,
+                      'candidate_count': len(first_candidates),
+                      'identities_stable': True,
+                  },
+                  indent=2,
+                  sort_keys=True,
+              ),
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Upload matter-key evidence packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-matter-key-results
+          path: matter-results/
+          if-no-files-found: error
+          retention-days: 14
