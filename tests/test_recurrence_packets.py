@@ -88,7 +88,7 @@ def test_recurrence_packet_contains_only_facts_inside_each_segment(tmp_path) -> 
     assert "not a Gold observation" in packet.limitations[2]
 
 
-def test_structured_within_span_excludes_neighboring_facts(tmp_path) -> None:
+def test_structured_within_span_excludes_neighbors_and_supports_complete_retrieval(tmp_path) -> None:
     state = tmp_path / "state"
     text = "Outside $999.00.\nInside $123.45 on January 2, 2026.\nOutside $777.00.\n"
     path = tmp_path / "facts.txt"
@@ -104,8 +104,11 @@ def test_structured_within_span_excludes_neighboring_facts(tmp_path) -> None:
     evidence_id = evidence_id_from_locator(result.artifact_id, "record", "record:1")
     start = text.index("Inside")
     end = text.index("\nOutside $777")
-    hits = index.within_span(evidence_id, start, end)
-    values = {(hit.fact_type, hit.normalized_text) for hit in hits}
+    complete = index.within_span(evidence_id, start, end, limit=None)
+    limited = index.within_span(evidence_id, start, end, limit=1)
+    values = {(hit.fact_type, hit.normalized_text) for hit in complete}
+    assert len(complete) == 2
+    assert len(limited) == 1
     assert ("money", "123.45") in values
     assert ("date", "2026-01-02") in values
     assert ("money", "999.00") not in values
