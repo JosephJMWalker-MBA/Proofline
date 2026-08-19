@@ -38,6 +38,8 @@ jobs:
           command -v proofline
           proofline --help >/dev/null
           proofline analyze-versions --help >/dev/null
+          proofline segment --help >/dev/null
+          proofline repeated-segments --help >/dev/null
           python -m proofline.cli --help >/dev/null
 
       - name: Run Canton discovery and sync
@@ -47,6 +49,15 @@ jobs:
           mkdir -p r0-results
           python -m proofline.cli --state-dir .r0 sync experiments/canton-2026/source-plan.json | tee r0-results/sync.json
           test -s r0-results/sync.json
+
+      - name: Build agenda-item segments and inspect exact repeats
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m proofline.cli --state-dir .r0 segment experiments/canton-2026/segment-plan.json | tee r0-results/segment-build.json
+          python -m proofline.cli --state-dir .r0 repeated-segments --min-artifacts 2 --limit 100 > r0-results/repeated-segments.json
+          test -s r0-results/segment-build.json
+          test -s r0-results/repeated-segments.json
 
       - name: Assert live corpus contains substantive Council evidence and version analysis
         run: |
@@ -162,6 +173,66 @@ jobs:
               raise SystemExit(f'Council structured facts unexpectedly sparse: {city_facts}')
           if dead_wrappers != 0:
               raise SystemExit(f'known blank AgendaCenter Council wrappers re-entered corpus: {dead_wrappers}')
+          PY
+
+      - name: Assert agenda-item segmentation is substantive and evidence-local
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+
+          build = json.loads(Path('r0-results/segment-build.json').read_text())
+          repeats = json.loads(Path('r0-results/repeated-segments.json').read_text())
+          print(f"segment evidence units: {build['evidence_count']}")
+          print(f"segments: {build['segment_count']}")
+          print(f"exact repeat groups: {len(repeats)}")
+          if build['evidence_count'] < 80:
+              raise SystemExit(f"segment plan matched too little evidence: {build['evidence_count']}")
+          if build['segment_count'] < 400:
+              raise SystemExit(f"segment count unexpectedly low: {build['segment_count']}")
+          if len(repeats) < 5:
+              raise SystemExit(f"expected at least five exact-repeat groups, got {len(repeats)}")
+
+          connection = sqlite3.connect('.r0/proofline.db')
+          try:
+              board = connection.execute(
+                  "SELECT COUNT(*) FROM evidence_segments WHERE rule_name='board-ordinance-items'"
+              ).fetchone()[0]
+              council = connection.execute(
+                  "SELECT COUNT(*) FROM evidence_segments WHERE rule_name='council-numbered-items'"
+              ).fetchone()[0]
+              invalid_spans = connection.execute(
+                  """
+                  SELECT COUNT(*)
+                  FROM evidence_segments es
+                  JOIN evidence_extractions ee ON ee.extraction_id = (
+                    SELECT x.extraction_id
+                    FROM evidence_extractions x
+                    WHERE x.evidence_id = es.evidence_id
+                    ORDER BY COALESCE(x.quality_score, -1.0) DESC,
+                             x.occurred_at DESC,
+                             x.rowid DESC
+                    LIMIT 1
+                  )
+                  WHERE es.char_start < 0
+                     OR es.char_end <= es.char_start
+                     OR es.char_end > LENGTH(ee.extracted_text)
+                     OR SUBSTR(ee.extracted_text, es.char_start + 1, es.char_end - es.char_start) != es.raw_text
+                  """
+              ).fetchone()[0]
+          finally:
+              connection.close()
+
+          print(f'Board ordinance segments: {board}')
+          print(f'Council numbered segments: {council}')
+          print(f'invalid segment spans: {invalid_spans}')
+          if board < 100:
+              raise SystemExit(f'Board segmentation unexpectedly sparse: {board}')
+          if council < 250:
+              raise SystemExit(f'Council segmentation unexpectedly sparse: {council}')
+          if invalid_spans != 0:
+              raise SystemExit(f'segments lost evidence-local span integrity: {invalid_spans}')
           PY
 
       - name: Capture corpus status and review queue
