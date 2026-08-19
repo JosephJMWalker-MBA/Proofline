@@ -6,10 +6,12 @@ on:
       - ".github/workflows/r0-lead-validation.yml"
       - "experiments/canton-2026/**"
       - "src/proofline/lead_lifecycle.py"
+      - "src/proofline/review_records.py"
       - "src/proofline/candidate_analysis.py"
       - "src/proofline/cli.py"
       - "src/proofline/__init__.py"
       - "tests/test_lead_lifecycle.py"
+      - "tests/test_review_records.py"
       - "tests/test_cli_lead_lifecycle.py"
   workflow_dispatch:
 
@@ -58,7 +60,7 @@ jobs:
             --max-shingle-frequency 64 \
             --min-quality 0.70 > lead-results/candidates.json
 
-      - name: Package candidate leads twice without human review
+      - name: Package candidate leads twice before human review
         shell: bash
         run: |
           set -o pipefail
@@ -124,6 +126,82 @@ jobs:
               connection.close()
           if review_events != 0:
               raise SystemExit(f'machine-safe workflow created {review_events} review events')
+          PY
+
+      - name: Apply version-controlled human review record twice
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.review_records import apply_review_record
+
+          record = Path(
+              'experiments/canton-2026/reviews/'
+              'lead-3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c.json'
+          )
+          first = apply_review_record('.lead', record)
+          second = apply_review_record('.lead', record)
+          Path('lead-results/review-first.json').write_text(
+              json.dumps(first.to_dict(), indent=2, sort_keys=True)
+          )
+          Path('lead-results/review-rerun.json').write_text(
+              json.dumps(second.to_dict(), indent=2, sort_keys=True)
+          )
+          if not first.created:
+              raise SystemExit('version-controlled human review was not appended on first application')
+          if second.created:
+              raise SystemExit('review record reapplication created a duplicate human event')
+          if first.event.event_id != second.event.event_id:
+              raise SystemExit('review event identity changed on deterministic reapplication')
+          PY
+
+      - name: Assert documented human disposition is explained
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.lead_lifecycle import LeadLifecycle
+          from proofline.review_records import load_review_record
+
+          leads = json.loads(Path('lead-results/leads-first.json').read_text())
+          if len(leads) != 1:
+              raise SystemExit(f'expected exactly one live R0 lead, found {len(leads)}')
+          lead_id = leads[0]['lead_id']
+          record_path = Path(
+              'experiments/canton-2026/reviews/'
+              'lead-3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c.json'
+          )
+          record = load_review_record(record_path)
+          if record.lead_id != lead_id:
+              raise SystemExit(
+                  'documented review lead identity no longer matches the live deterministic lead; '
+                  'human review must not silently transfer to a different lead'
+              )
+
+          packet = LeadLifecycle('.lead').get(lead_id)
+          if packet is None:
+              raise SystemExit('reviewed lead cannot be read back')
+          if packet['lead']['status'] != 'candidate':
+              raise SystemExit('human review mutated the immutable lead packet')
+          if packet['current_status'] != 'explained':
+              raise SystemExit(f"expected explained disposition, found {packet['current_status']}")
+          if len(packet['review_history']) != 1:
+              raise SystemExit('expected exactly one durable human review event')
+          event = packet['review_history'][0]
+          if event['reviewer'] != 'Joseph Walker':
+              raise SystemExit('documented reviewer identity was not preserved')
+          if event['status'] != 'explained':
+              raise SystemExit('documented review event has the wrong disposition')
+          if 'sequential expenditure-deadline amendments' not in event['rationale']:
+              raise SystemExit('documented rationale was not preserved')
+
+          Path('lead-results/reviewed-lead.json').write_text(
+              json.dumps(packet, indent=2, sort_keys=True)
+          )
+          print(f"reviewed lead: {lead_id}")
+          print(f"current disposition: {packet['current_status']}")
           PY
 
       - name: Upload R0 lead packets

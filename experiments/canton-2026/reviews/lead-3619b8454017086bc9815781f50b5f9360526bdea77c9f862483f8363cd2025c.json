@@ -1,0 +1,12 @@
+{
+  "schema": "proofline-lead-review/v1",
+  "lead_id": "lead:3619b8454017086bc9815781f50b5f9360526bdea77c9f862483f8363cd2025c",
+  "status": "explained",
+  "reviewer": "Joseph Walker",
+  "occurred_at": "2026-08-19T17:14:00+00:00",
+  "rationale": "The underlying Board of Control records describe sequential expenditure-deadline amendments. The recurring $185,000 amount and July 31 handoff are consistent with continuity of the same administrative matter; the evidence currently provides an ordinary explanation for why Proofline surfaced the changing dates. No evidence of misconduct is inferred.",
+  "notes": [
+    "Human disposition explicitly approved by Joseph Walker on August 19, 2026.",
+    "This disposition explains why the machine surfaced the record pattern; it is not a claim about intent or wrongdoing."
+  ]
+}
