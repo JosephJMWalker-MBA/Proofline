@@ -1,0 +1,126 @@
+name: r1-canonical-retrieval-evaluation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-canonical-retrieval-evaluation.yml"
+      - "src/proofline/evaluation.py"
+      - "src/proofline/evaluation_reporting.py"
+      - "src/proofline/search.py"
+      - "src/proofline/structured.py"
+      - "experiments/canton-2026/retrieval/r1-canonical-v2-unscored.json"
+      - "experiments/canton-2026/retrieval/R1_CANONICAL_V2_FREEZE.md"
+      - "experiments/canton-2026/source-plan.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Verify frozen canonical suite before scoring
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          path = Path('experiments/canton-2026/retrieval/r1-canonical-v2-unscored.json')
+          expected = 'aee4d01b3b7fa505d008296e226bbaff43af6022c025ad9764f14b412e9cfbbc'
+          actual = hashlib.sha256(path.read_bytes()).hexdigest()
+          print(f'frozen canonical benchmark sha256: {actual}')
+          if actual != expected:
+              raise SystemExit(f'frozen canonical benchmark changed: expected {expected}, got {actual}')
+          PY
+
+      - name: Rebuild Canton evidence and indexes
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p r1-canonical-evaluation
+          proofline --state-dir .r1canonicaleval sync experiments/canton-2026/source-plan.json \
+            > r1-canonical-evaluation/sync.json
+
+      - name: Score exact frozen canonical benchmark
+        run: |
+          proofline --state-dir .r1canonicaleval evaluate \
+            experiments/canton-2026/retrieval/r1-canonical-v2-unscored.json \
+            --k 10 > r1-canonical-evaluation/evaluation.json
+
+      - name: Derive scorable metrics separately from raw evaluator output
+        run: |
+          python -m proofline.evaluation_report_cli \
+            r1-canonical-evaluation/evaluation.json \
+            --output r1-canonical-evaluation/scorable-report.json
+
+      - name: Summarize measurements without imposing retrieval thresholds
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          raw = json.loads(Path('r1-canonical-evaluation/evaluation.json').read_text())
+          scorable = json.loads(Path('r1-canonical-evaluation/scorable-report.json').read_text())
+          summary = {
+              'raw': {
+                  'schema': raw.get('schema'),
+                  'cases': raw.get('cases'),
+                  'expectation_accuracy': raw.get('expectation_accuracy'),
+                  'hit_rate_at_k': raw.get('hit_rate_at_k'),
+                  'target_recall_at_k': raw.get('target_recall_at_k'),
+                  'negative_accuracy': raw.get('negative_accuracy'),
+                  'provenance_validity': raw.get('provenance_validity'),
+                  'unresolved_target_count': raw.get('unresolved_target_count'),
+                  'failure_counts': raw.get('failure_counts'),
+              },
+              'scorable': scorable,
+          }
+          Path('r1-canonical-evaluation/summary.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+
+          if raw.get('schema') != 'proofline-retrieval-eval/v2':
+              raise SystemExit('canonical evaluation did not use v2 contract')
+          if raw.get('cases') != 42:
+              raise SystemExit(f"frozen canonical case count changed: {raw.get('cases')}")
+          if scorable.get('cases') != 42:
+              raise SystemExit('scorable report case count does not match frozen suite')
+          # Deliberately do not fail on hit rate, recall, unresolved targets, or failures.
+          PY
+
+      - name: Verify frozen canonical suite after scoring
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          path = Path('experiments/canton-2026/retrieval/r1-canonical-v2-unscored.json')
+          expected = 'aee4d01b3b7fa505d008296e226bbaff43af6022c025ad9764f14b412e9cfbbc'
+          if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+              raise SystemExit('canonical evaluation mutated the frozen benchmark')
+          PY
+
+      - name: Upload complete canonical R1 measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-canonical-retrieval-evaluation
+          path: r1-canonical-evaluation/
+          if-no-files-found: error
+          retention-days: 14
