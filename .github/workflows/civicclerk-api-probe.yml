@@ -29,7 +29,7 @@ jobs:
           python scripts/probe_civicclerk_api.py > civicclerk-probe/civicclerk-api.json
           test -s civicclerk-probe/civicclerk-api.json
 
-      - name: Assert event metadata is publicly reachable
+      - name: Assert publisher-supplied agenda downloads work
         run: |
           python - <<'PY'
           import json
@@ -38,10 +38,18 @@ jobs:
           payload = json.loads(Path('civicclerk-probe/civicclerk-api.json').read_text())
           print(f"events: {payload['event_count']}")
           print(f"successful event responses: {payload['successful_event_responses']}")
-          print(f"file-like records: {payload['file_candidate_count']}")
-          print(f"successful stream probes: {payload['successful_stream_probes']}")
-          if payload['successful_event_responses'] == 0:
-              raise SystemExit('CivicClerk event metadata endpoint was not publicly reachable')
+          print(f"published files: {payload['published_file_count']}")
+          print(f"agenda files: {payload['agenda_file_count']}")
+          print(f"successful download probes: {payload['successful_download_probes']}")
+          print(f"PDF download probes: {payload['pdf_download_probes']}")
+          if payload['successful_event_responses'] != payload['event_count']:
+              raise SystemExit('not every Canton-linked CivicClerk event metadata record was reachable')
+          if payload['agenda_file_count'] == 0:
+              raise SystemExit('CivicClerk event metadata exposed no published agenda files')
+          if payload['successful_download_probes'] == 0:
+              raise SystemExit('publisher-supplied CivicClerk agenda URLs did not download successfully')
+          if payload['pdf_download_probes'] == 0:
+              raise SystemExit('publisher-supplied CivicClerk agenda URLs did not yield PDF bytes')
           PY
 
       - name: Upload probe
