@@ -1,0 +1,7 @@
+{
+  "schema": "proofline-onbase-agenda-plan/v1",
+  "name": "akron-city-council-2026",
+  "source_uri": "https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Meetings",
+  "meeting_type_ids": [101],
+  "years": [2026]
+}
