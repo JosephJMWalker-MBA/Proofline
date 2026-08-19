@@ -38,6 +38,7 @@ class SourceFamilyResolver:
         self.relation_type = relation_type
         self._families: tuple[SourceFamily, ...] | None = None
         self._source_to_family: dict[str, str] | None = None
+        self._family_to_sources: dict[str, tuple[str, ...]] | None = None
         self._artifact_to_families: dict[str, tuple[str, ...]] = {}
 
     @staticmethod
@@ -63,7 +64,11 @@ class SourceFamilyResolver:
         parent[right_root] = left_root
 
     def _build(self) -> None:
-        if self._families is not None and self._source_to_family is not None:
+        if (
+            self._families is not None
+            and self._source_to_family is not None
+            and self._family_to_sources is not None
+        ):
             return
         with self.store.connection() as connection:
             sources = [
@@ -99,15 +104,18 @@ class SourceFamilyResolver:
 
         families: list[SourceFamily] = []
         source_to_family: dict[str, str] = {}
+        family_to_sources: dict[str, tuple[str, ...]] = {}
         for members in sorted((tuple(sorted(values)) for values in components.values())):
             family_id = stable_id("source-family", *members)
             family = SourceFamily(family_id=family_id, source_ids=members)
             families.append(family)
+            family_to_sources[family_id] = members
             for source_id in members:
                 source_to_family[source_id] = family_id
 
         self._families = tuple(families)
         self._source_to_family = source_to_family
+        self._family_to_sources = family_to_sources
 
     def families(self) -> tuple[SourceFamily, ...]:
         self._build()
@@ -118,6 +126,11 @@ class SourceFamilyResolver:
         self._build()
         assert self._source_to_family is not None
         return self._source_to_family.get(source_id)
+
+    def source_ids_for_family(self, family_id: str) -> tuple[str, ...]:
+        self._build()
+        assert self._family_to_sources is not None
+        return self._family_to_sources.get(family_id, ())
 
     def family_ids_for_artifact(self, artifact_id: str) -> tuple[str, ...]:
         cached = self._artifact_to_families.get(artifact_id)
