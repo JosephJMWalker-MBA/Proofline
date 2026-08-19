@@ -69,12 +69,6 @@ jobs:
           if any(policy.classify(uri) != 'canonical' for uri in canonical_uris):
               raise SystemExit('canonical OnBase item URI is not canonical under Akron source policy')
 
-          search_uri = next(
-              result['source_uri']
-              for result in sync['canonical_sync']['results']
-              if False
-          ) if False else None
-
           connection = sqlite3.connect(state / 'proofline.db')
           connection.row_factory = sqlite3.Row
           try:
@@ -84,7 +78,7 @@ jobs:
               evidence_rows = connection.execute(
                   """
                   SELECT s.source_uri, eu.evidence_id, eu.locator, best.extracted_text,
-                         best.extraction_method, best.quality_score
+                         best.quality_score
                   FROM sources s
                   JOIN source_snapshots ss ON ss.source_id = s.source_id
                   JOIN evidence_units eu ON eu.artifact_id = ss.artifact_id
