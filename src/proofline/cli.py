@@ -22,6 +22,7 @@ from .segments import SegmentIndex, load_segmentation_plan
 from .storage import ProoflineStore
 from .structured import StructuredIndex
 from .version_analysis import VersionObservationRunner
+from .watch_analysis import WatchChangeObservationRunner
 from .watcher import CorpusWatcher, load_manifest
 from .watch_storage import WatcherStore
 
@@ -69,10 +70,16 @@ def _build_parser() -> argparse.ArgumentParser:
     discover_parser.add_argument("--output")
 
     sync_parser = subparsers.add_parser(
-        "sync", help="Discover, watch, analyze publisher-backed versions, and rebuild indexes"
+        "sync",
+        help="Discover, watch, analyze source chronology and publisher-backed versions, and rebuild indexes",
     )
     sync_parser.add_argument("plan")
     sync_parser.add_argument("--manifest-output")
+
+    subparsers.add_parser(
+        "analyze-watch-changes",
+        help="Promote substantive watcher changed transitions into source-change observations",
+    )
 
     subparsers.add_parser(
         "analyze-versions",
@@ -226,6 +233,7 @@ def main(argv: list[str] | None = None) -> int:
             state_dir, args.plan, args.manifest_output
         )
         watched = CorpusWatcher(state_dir).run(discovered.manifest)
+        watch_change_analysis = WatchChangeObservationRunner(state_dir).run()
         version_analysis = VersionObservationRunner(state_dir).run()
         lexical = SearchIndex(state_dir).rebuild()
         structured = StructuredIndex(state_dir).rebuild()
@@ -236,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
                     "manifest_path": str(destination),
                     "discovery": discovered.to_dict(),
                     "watch": watched,
+                    "watch_change_analysis": watch_change_analysis.to_dict(),
                     "version_analysis": version_analysis.to_dict(),
                     "indexes": {
                         "lexical": lexical.to_dict(),
@@ -246,7 +255,12 @@ def main(argv: list[str] | None = None) -> int:
                 sort_keys=True,
             )
         )
-        return 0 if version_analysis.failed == 0 else 1
+        return 0 if watch_change_analysis.failed == 0 and version_analysis.failed == 0 else 1
+
+    if args.command == "analyze-watch-changes":
+        result = WatchChangeObservationRunner(state_dir).run()
+        print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+        return 0 if result.failed == 0 else 1
 
     if args.command == "analyze-versions":
         result = VersionObservationRunner(state_dir).run()
@@ -425,6 +439,9 @@ def main(argv: list[str] | None = None) -> int:
             if evidence_id:
                 item["preferred_extraction"] = preferred_extraction(store, evidence_id)
         trace["source_relations"] = VersionObservationRunner(state_dir).relations_for_observation(
+            args.observation_id
+        )
+        trace["source_checks"] = WatchChangeObservationRunner(state_dir).checks_for_observation(
             args.observation_id
         )
         trace["detector_contexts"] = CandidateObservationRunner(state_dir).contexts_for_observation(
