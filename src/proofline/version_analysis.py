@@ -74,6 +74,37 @@ class VersionObservationRunner:
             artifact_id = self.store.latest_artifact_for_source(source_id)
         return artifact_id
 
+    def _has_substantive_silver(self, artifact_id: str) -> bool:
+        """Return whether preferred Silver contains any non-whitespace extracted text.
+
+        An evidence-unit row proves that the source was structurally ingested; it does not
+        prove that extraction yielded content suitable for a Gold comparison. Blank wrapper
+        PDFs, empty pages, and similarly contentless artifacts must remain insufficient
+        evidence rather than being interpreted as a substantive deletion/addition.
+        """
+        with self.store.connection() as connection:
+            row = connection.execute(
+                """
+                SELECT 1
+                FROM evidence_units eu
+                JOIN evidence_extractions best
+                  ON best.extraction_id = (
+                    SELECT ee.extraction_id
+                    FROM evidence_extractions ee
+                    WHERE ee.evidence_id = eu.evidence_id
+                    ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                             ee.occurred_at DESC,
+                             ee.rowid DESC
+                    LIMIT 1
+                  )
+                WHERE eu.artifact_id = ?
+                  AND TRIM(COALESCE(best.extracted_text, '')) <> ''
+                LIMIT 1
+                """,
+                (artifact_id,),
+            ).fetchone()
+        return row is not None
+
     def _attach(self, observation_id: str, relation_id: str) -> None:
         with self.store.connection() as connection:
             connection.execute(
@@ -147,6 +178,18 @@ class VersionObservationRunner:
                 observation_created=False,
                 changed=False,
                 status="same_artifact",
+            )
+        if not self._has_substantive_silver(before_artifact_id) or not self._has_substantive_silver(
+            after_artifact_id
+        ):
+            return VersionObservationItem(
+                relation_id=relation.relation_id,
+                before_artifact_id=before_artifact_id,
+                after_artifact_id=after_artifact_id,
+                observation_id=None,
+                observation_created=False,
+                changed=None,
+                status="insufficient_evidence",
             )
 
         try:
