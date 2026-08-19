@@ -5,6 +5,7 @@ import json
 import pytest
 
 from proofline import Ingestor
+from proofline.recurrence import SegmentRecurrenceClusterer
 from proofline.segments import (
     SegmentIndex,
     SegmentationPlan,
@@ -160,3 +161,83 @@ def test_repeated_requires_distinct_artifacts(tmp_path) -> None:
     index = SegmentIndex(state)
     index.rebuild(SegmentationPlan(name="fixture", rules=(_BOARD_RULE,)))
     assert index.repeated(min_artifacts=2) == []
+
+
+def test_segment_and_recurrence_ids_are_stable_across_rebuilds(tmp_path) -> None:
+    state = tmp_path / "state"
+    base = (
+        "Ordinance 1/2026\n"
+        "Enter into a four year contract with Example Systems for a public safety drone program "
+        "with year one free and later years billed annually under cooperative purchasing.\n"
+    )
+    texts = (
+        base,
+        base.replace("free and", "free, and"),
+        base.replace("public safety drone program", "public safety BRINCS drone program"),
+    )
+    for index, text in enumerate(texts, start=1):
+        path = tmp_path / f"meeting-{index}.txt"
+        path.write_text(text, encoding="utf-8")
+        Ingestor(state).ingest(
+            path,
+            source_uri=f"https://example.gov/meeting/{index}",
+            source_name=f"Board of Control — Meeting {index}",
+        )
+
+    plan = SegmentationPlan(name="fixture", rules=(_BOARD_RULE,))
+    index = SegmentIndex(state)
+    first_build = index.rebuild(plan)
+    first_segment_ids = tuple(
+        sorted(hit.segment_id for hit in index.anchor("1/2026", segment_type="agenda_item"))
+    )
+    first_cluster_ids = tuple(
+        cluster.cluster_id
+        for cluster in SegmentRecurrenceClusterer(state).find(
+            rule_name="ordinance-items",
+            threshold=0.50,
+            limit=None,
+        ).clusters
+    )
+
+    second_build = index.rebuild(plan)
+    second_segment_ids = tuple(
+        sorted(hit.segment_id for hit in index.anchor("1/2026", segment_type="agenda_item"))
+    )
+    second_cluster_ids = tuple(
+        cluster.cluster_id
+        for cluster in SegmentRecurrenceClusterer(state).find(
+            rule_name="ordinance-items",
+            threshold=0.50,
+            limit=None,
+        ).clusters
+    )
+
+    assert first_build.build_id != second_build.build_id
+    assert first_segment_ids == second_segment_ids
+    assert first_cluster_ids == second_cluster_ids
+    assert len(first_segment_ids) == 3
+    assert len(first_cluster_ids) == 1
+
+    unrelated_rule = SegmentationRule(
+        name="council-items",
+        source_name_regex=r"^City Council",
+        anchor_regex=r"^(?P<anchor>\d+)\.$",
+        segment_type="agenda_item",
+        min_chars=20,
+    )
+    index.rebuild(
+        SegmentationPlan(name="fixture-expanded", rules=(_BOARD_RULE, unrelated_rule))
+    )
+    expanded_segment_ids = tuple(
+        sorted(hit.segment_id for hit in index.anchor("1/2026", segment_type="agenda_item"))
+    )
+    expanded_cluster_ids = tuple(
+        cluster.cluster_id
+        for cluster in SegmentRecurrenceClusterer(state).find(
+            rule_name="ordinance-items",
+            threshold=0.50,
+            limit=None,
+        ).clusters
+    )
+    assert expanded_segment_ids == first_segment_ids
+    assert expanded_cluster_ids == first_cluster_ids

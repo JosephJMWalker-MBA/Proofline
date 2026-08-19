@@ -169,6 +169,20 @@ def segmentation_plan_sha256(plan: SegmentationPlan) -> str:
     return sha256_text(serialized)
 
 
+def segmentation_rule_sha256(rule: SegmentationRule) -> str:
+    """Hash the semantics that define one segmenting rule independent of plan neighbors."""
+    serialized = json.dumps(
+        {
+            "schema": _SEGMENTATION_SCHEMA,
+            "segmenter_version": _SEGMENTER_VERSION,
+            "rule": asdict(rule),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return sha256_text(serialized)
+
+
 def load_segmentation_plan(path: str | Path) -> SegmentationPlan:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if payload.get("schema") != _SEGMENTATION_SCHEMA:
@@ -294,6 +308,7 @@ class SegmentIndex:
         if batch_size < 1:
             raise ValueError("batch_size must be positive")
         compiled = [(rule, *_compile_rule(rule)) for rule in plan.rules]
+        rule_hashes = {rule.name: segmentation_rule_sha256(rule) for rule in plan.rules}
         build_id = f"segments:{uuid.uuid4()}"
         built_at = datetime.now(UTC).isoformat()
         plan_sha256 = segmentation_plan_sha256(plan)
@@ -342,15 +357,15 @@ class SegmentIndex:
                     evidence_count += 1
 
                     for rule in matching_rules:
-                        for ordinal, segment in enumerate(segment_text(row["extracted_text"], rule)):
+                        for segment in segment_text(row["extracted_text"], rule):
                             segment_id = stable_id(
                                 "segment",
-                                build_id,
+                                _SEGMENTER_VERSION,
+                                rule_hashes[rule.name],
                                 row["evidence_id"],
-                                rule.name,
                                 str(segment.char_start),
                                 str(segment.char_end),
-                                str(ordinal),
+                                segment.text_sha256,
                             )
                             connection.execute(
                                 """
@@ -415,7 +430,7 @@ class SegmentIndex:
                 SELECT * FROM segment_index_builds
                 ORDER BY built_at DESC, rowid DESC
                 LIMIT 1
-                """
+                """,
             ).fetchone()
         return dict(row) if row else None
 
