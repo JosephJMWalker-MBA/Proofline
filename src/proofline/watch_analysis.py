@@ -8,11 +8,11 @@ chronological changes even though the final artifact was observed earlier.
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .detectors import build_version_change_observation
+from .silver import artifact_has_substantive_preferred_text
 from .storage import ProoflineStore
 from .watch_storage import WatcherStore
 
@@ -74,30 +74,6 @@ class WatchChangeObservationRunner:
         self.store: ProoflineStore = self.watcher.base
         with self.store.connection() as connection:
             connection.executescript(_LINK_SCHEMA)
-
-    def _has_substantive_silver(self, artifact_id: str) -> bool:
-        with self.store.connection() as connection:
-            row = connection.execute(
-                """
-                SELECT 1
-                FROM evidence_units eu
-                JOIN evidence_extractions best
-                  ON best.extraction_id = (
-                    SELECT ee.extraction_id
-                    FROM evidence_extractions ee
-                    WHERE ee.evidence_id = eu.evidence_id
-                    ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
-                             ee.occurred_at DESC,
-                             ee.rowid DESC
-                    LIMIT 1
-                  )
-                WHERE eu.artifact_id = ?
-                  AND TRIM(COALESCE(best.extracted_text, '')) <> ''
-                LIMIT 1
-                """,
-                (artifact_id,),
-            ).fetchone()
-        return row is not None
 
     def _changed_checks(self) -> list[dict]:
         with self.store.connection() as connection:
@@ -181,7 +157,9 @@ class WatchChangeObservationRunner:
                 observation_created=False,
                 status="invalid_same_artifact",
             )
-        if not self._has_substantive_silver(before) or not self._has_substantive_silver(after):
+        if not artifact_has_substantive_preferred_text(
+            self.store, before
+        ) or not artifact_has_substantive_preferred_text(self.store, after):
             return WatchChangeObservationItem(
                 check_id=check_id,
                 source_id=source_id,
@@ -192,7 +170,7 @@ class WatchChangeObservationRunner:
                 status="insufficient_evidence",
             )
         try:
-            diff, observation = build_version_change_observation(self.store, before, after)
+            _, observation = build_version_change_observation(self.store, before, after)
         except Exception as exc:
             return WatchChangeObservationItem(
                 check_id=check_id,
