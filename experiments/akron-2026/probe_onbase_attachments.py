@@ -7,14 +7,18 @@ import sqlite3
 from collections import Counter
 from dataclasses import asdict, dataclass
 from html.parser import HTMLParser
+from http.cookiejar import CookieJar
 from pathlib import Path
-from urllib.parse import parse_qs, parse_qsl, urljoin, urlsplit
-from urllib.request import Request, urlopen
+from urllib.parse import parse_qs, parse_qsl, urljoin, urlsplit, urlunsplit
+from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 SCHEMA = "proofline-onbase-attachment-probe/v1"
 MAX_SAMPLE_LINKS = 8
 MAX_SAMPLE_BYTES = 4 * 1024 * 1024
 USER_AGENT = "Proofline/0.1 bounded OnBase supporting-document contract probe"
+_WRAPPER_DIRECTIVE = 'replace("DownloadFile", "DownloadFileBytes")'
+_DOWNLOAD_SEGMENT = "/Documents/DownloadFile/"
+_DOWNLOAD_BYTES_SEGMENT = "/Documents/DownloadFileBytes/"
 
 
 @dataclass(frozen=True, slots=True)
@@ -245,58 +249,122 @@ def select_sample(relations: list[AttachmentRelation]) -> list[AttachmentRelatio
     return selected
 
 
-def fetch_sample(relation: AttachmentRelation, destination: Path) -> dict:
-    request = Request(
-        relation.resolved_uri,
-        headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
-        method="GET",
-    )
-    try:
-        with urlopen(request, timeout=30) as response:
-            status = int(getattr(response, "status", 200))
-            final_uri = response.geturl()
-            content_type = response.headers.get("Content-Type")
-            content_disposition = response.headers.get("Content-Disposition")
-            content_length = response.headers.get("Content-Length")
-            body = response.read(MAX_SAMPLE_BYTES + 1)
-    except Exception as exc:  # probe must retain negative transport results as data
-        return {
-            "source_uri": relation.resolved_uri,
-            "meeting_id": relation.meeting_id,
-            "item_id": relation.item_id,
-            "link_text": relation.link_text,
-            "link_signature": relation.link_signature,
-            "error": f"{type(exc).__name__}: {exc}",
-        }
+def _publisher_declared_bytes_uri(wrapper_uri: str, wrapper_body: bytes) -> str | None:
+    """Follow only the exact client-side transport rule preserved in the publisher wrapper."""
 
+    try:
+        html = wrapper_body.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    if _WRAPPER_DIRECTIVE not in html:
+        return None
+
+    parsed = urlsplit(wrapper_uri)
+    if _DOWNLOAD_SEGMENT not in parsed.path or _DOWNLOAD_BYTES_SEGMENT in parsed.path:
+        return None
+    path = parsed.path.replace(_DOWNLOAD_SEGMENT, _DOWNLOAD_BYTES_SEGMENT, 1)
+    candidate = urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment))
+    candidate_parts = urlsplit(candidate)
+    if (
+        candidate_parts.scheme != parsed.scheme
+        or candidate_parts.netloc.casefold() != parsed.netloc.casefold()
+    ):
+        return None
+    return candidate
+
+
+def _read_bounded_response(response) -> tuple[bytes, dict]:
+    status = int(getattr(response, "status", 200))
+    final_uri = response.geturl()
+    content_type = response.headers.get("Content-Type")
+    content_disposition = response.headers.get("Content-Disposition")
+    content_length = response.headers.get("Content-Length")
+    body = response.read(MAX_SAMPLE_BYTES + 1)
     truncated = len(body) > MAX_SAMPLE_BYTES
     prefix = body[:MAX_SAMPLE_BYTES]
-    destination.write_bytes(prefix)
-    final = urlsplit(final_uri)
-    original = urlsplit(relation.resolved_uri)
-    complete_sha = hashlib.sha256(prefix).hexdigest() if not truncated else None
-    return {
-        "source_uri": relation.resolved_uri,
-        "meeting_id": relation.meeting_id,
-        "item_id": relation.item_id,
-        "link_text": relation.link_text,
-        "link_signature": relation.link_signature,
+    return prefix, {
         "http_status": status,
         "content_type": content_type,
         "content_disposition": content_disposition,
         "content_length_header": content_length,
         "final_uri": final_uri,
-        "redirected": final_uri != relation.resolved_uri,
-        "final_same_host": (final.hostname or "").casefold()
-        == (original.hostname or "").casefold(),
         "captured_bytes": len(prefix),
         "capture_truncated": truncated,
-        "complete_sha256": complete_sha,
+        "complete_sha256": hashlib.sha256(prefix).hexdigest() if not truncated else None,
         "prefix_sha256": hashlib.sha256(prefix).hexdigest(),
         "magic_media_type": _detect_media(prefix),
         "magic_prefix_hex": prefix[:16].hex(),
-        "saved_file": destination.name,
     }
+
+
+def fetch_sample(relation: AttachmentRelation, sample_dir: Path, index: int) -> dict:
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
+    wrapper_request = Request(
+        relation.resolved_uri,
+        headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
+        method="GET",
+    )
+    base = {
+        "source_uri": relation.resolved_uri,
+        "meeting_id": relation.meeting_id,
+        "item_id": relation.item_id,
+        "link_text": relation.link_text,
+        "link_signature": relation.link_signature,
+    }
+
+    try:
+        with opener.open(wrapper_request, timeout=30) as response:
+            wrapper_body, wrapper_meta = _read_bounded_response(response)
+    except Exception as exc:  # probe must retain negative transport results as data
+        return {**base, "wrapper_error": f"{type(exc).__name__}: {exc}"}
+
+    wrapper_path = sample_dir / f"sample-{index:02d}-wrapper.bin"
+    wrapper_path.write_bytes(wrapper_body)
+    wrapper_final = urlsplit(wrapper_meta["final_uri"])
+    original = urlsplit(relation.resolved_uri)
+    wrapper_meta.update(
+        {
+            "redirected": wrapper_meta["final_uri"] != relation.resolved_uri,
+            "final_same_host": (wrapper_final.hostname or "").casefold()
+            == (original.hostname or "").casefold(),
+            "saved_file": wrapper_path.name,
+        }
+    )
+
+    bytes_uri = _publisher_declared_bytes_uri(relation.resolved_uri, wrapper_body)
+    result = {
+        **base,
+        "wrapper": wrapper_meta,
+        "publisher_declared_byte_transport": bytes_uri is not None,
+        "bytes_uri": bytes_uri,
+    }
+    if bytes_uri is None:
+        return result
+
+    bytes_request = Request(
+        bytes_uri,
+        headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
+        method="GET",
+    )
+    try:
+        with opener.open(bytes_request, timeout=30) as response:
+            payload, payload_meta = _read_bounded_response(response)
+    except Exception as exc:
+        return {**result, "payload_error": f"{type(exc).__name__}: {exc}"}
+
+    payload_path = sample_dir / f"sample-{index:02d}-payload.bin"
+    payload_path.write_bytes(payload)
+    payload_final = urlsplit(payload_meta["final_uri"])
+    bytes_parts = urlsplit(bytes_uri)
+    payload_meta.update(
+        {
+            "redirected": payload_meta["final_uri"] != bytes_uri,
+            "final_same_host": (payload_final.hostname or "").casefold()
+            == (bytes_parts.hostname or "").casefold(),
+            "saved_file": payload_path.name,
+        }
+    )
+    return {**result, "payload": payload_meta}
 
 
 def main() -> int:
@@ -314,7 +382,7 @@ def main() -> int:
     relations, profile = discover_relations(state_dir)
     sample_relations = select_sample(relations)
     samples = [
-        fetch_sample(relation, samples_dir / f"sample-{index:02d}.bin")
+        fetch_sample(relation, samples_dir, index)
         for index, relation in enumerate(sample_relations, start=1)
     ]
 
@@ -342,9 +410,13 @@ def main() -> int:
         },
         "sample_policy": {
             "max_links": MAX_SAMPLE_LINKS,
-            "max_bytes_per_link": MAX_SAMPLE_BYTES,
+            "max_bytes_per_response": MAX_SAMPLE_BYTES,
             "selection": "sha256(source_uri), distinct meeting first, same-instance links only",
             "external_links_fetched": False,
+            "byte_transport_rule": (
+                "follow only when the preserved wrapper contains the exact publisher JavaScript "
+                'replace(\"DownloadFile\", \"DownloadFileBytes\")'
+            ),
         },
         "sample_count": len(samples),
         "samples": samples,
