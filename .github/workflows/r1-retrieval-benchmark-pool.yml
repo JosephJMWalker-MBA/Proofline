@@ -1,0 +1,110 @@
+name: r1-retrieval-benchmark-pool
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-retrieval-benchmark-pool.yml"
+      - "src/proofline/benchmarking.py"
+      - "src/proofline/benchmark_cli.py"
+      - "src/proofline/evaluation.py"
+      - "tests/test_benchmarking.py"
+      - "experiments/canton-2026/source-plan.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-pool:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Canton evidence and deterministic indexes
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p r1-benchmark-results
+          proofline --state-dir .r1pool sync experiments/canton-2026/source-plan.json \
+            > r1-benchmark-results/sync.json
+
+      - name: Generate candidate pool without retrieval evaluation
+        run: |
+          python -m proofline.benchmark_cli \
+            --state-dir .r1pool \
+            --output r1-benchmark-results/candidate-pool.json \
+            --max-per-kind 6 \
+            --max-targets 5 \
+            > r1-benchmark-results/pool-summary.json
+
+      - name: Assert candidate pool is retrieval-blind and sufficiently mixed
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          pool = json.loads(Path('r1-benchmark-results/candidate-pool.json').read_text())
+          if pool['schema'] != 'proofline-retrieval-eval/v2':
+              raise SystemExit('candidate pool is not retrieval eval v2')
+          selection = pool.get('selection') or {}
+          if selection.get('retrieval_results_consulted') is not False:
+              raise SystemExit('benchmark pool must be generated without consulting retrieval results')
+
+          cases = pool.get('cases') or []
+          if len(cases) < 12:
+              raise SystemExit(f'candidate pool unexpectedly small: {len(cases)}')
+
+          kinds = Counter(case.get('selection_kind') for case in cases)
+          modes = Counter(case.get('mode') for case in cases)
+          negatives = [case for case in cases if case.get('expect_empty')]
+          positives = [case for case in cases if not case.get('expect_empty')]
+
+          print(f"candidate cases: {len(cases)}")
+          print(f"selection kinds: {dict(sorted(kinds.items()))}")
+          print(f"retrieval modes: {dict(sorted(modes.items()))}")
+
+          if len(negatives) != 5:
+              raise SystemExit(f'expected five deterministic negative controls, got {len(negatives)}')
+          if kinds['lexical_entity_cross'] < 1:
+              raise SystemExit('no cross-evidence lexical phrase candidate was generated')
+          if modes['lexical'] < 3:
+              raise SystemExit('too few lexical benchmark candidates')
+          if modes['money'] < 2 or modes['date'] < 2:
+              raise SystemExit('structured money/date benchmark coverage is too small')
+          if not positives:
+              raise SystemExit('candidate pool contains no positive targets')
+
+          for case in positives:
+              expected = case.get('expected') or []
+              if not expected:
+                  raise SystemExit(f"positive case {case['case_id']} has no explicit targets")
+              for target in expected:
+                  if not target.get('source_uri') or not target.get('locator'):
+                      raise SystemExit(f"target lacks source/locator in {case['case_id']}")
+                  if len(target.get('artifact_sha256') or '') != 64:
+                      raise SystemExit(f"target lacks exact artifact sha in {case['case_id']}")
+          PY
+
+      - name: Upload unscored candidate pool
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-retrieval-benchmark-pool
+          path: r1-benchmark-results/
+          if-no-files-found: error
+          retention-days: 7
