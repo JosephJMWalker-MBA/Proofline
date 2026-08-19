@@ -1,0 +1,128 @@
+name: r1-canonical-benchmark-pool
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-canonical-benchmark-pool.yml"
+      - "src/proofline/benchmark_sources.py"
+      - "src/proofline/benchmarking.py"
+      - "src/proofline/benchmark_cli.py"
+      - "src/proofline/benchmark_curation.py"
+      - "src/proofline/benchmark_curate_cli.py"
+      - "tests/test_benchmark_source_policy.py"
+      - "experiments/canton-2026/retrieval/source-policy.json"
+      - "experiments/canton-2026/source-plan.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-pool:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild Canton evidence and indexes
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p r1-canonical-results
+          proofline --state-dir .r1canonical sync experiments/canton-2026/source-plan.json \
+            > r1-canonical-results/sync.json
+
+      - name: Generate broad canonical raw pool without retrieval evaluation
+        run: |
+          python -m proofline.benchmark_cli \
+            --state-dir .r1canonical \
+            --source-policy experiments/canton-2026/retrieval/source-policy.json \
+            --output r1-canonical-results/raw-candidate-pool.json \
+            --max-per-kind 40 \
+            --max-targets 5 \
+            --name "Proofline R1 Canton canonical-evidence retrieval benchmark" \
+            > r1-canonical-results/raw-pool-summary.json
+
+      - name: Curate lexical question quality without retrieval evaluation
+        run: |
+          python -m proofline.benchmark_curate_cli \
+            r1-canonical-results/raw-candidate-pool.json \
+            --output r1-canonical-results/candidate-pool.json \
+            --max-per-kind 8 \
+            > r1-canonical-results/curation-summary.json
+
+      - name: Assert every positive target is canonical page evidence
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          pool = json.loads(Path('r1-canonical-results/candidate-pool.json').read_text())
+          selection = pool.get('selection') or {}
+          if selection.get('retrieval_results_consulted') is not False:
+              raise SystemExit('canonical benchmark consulted retrieval results')
+          if selection.get('target_source_role') != 'canonical':
+              raise SystemExit('canonical target role metadata missing')
+          policy = selection.get('source_policy') or {}
+          if policy.get('schema') != 'proofline-benchmark-source-policy/v1':
+              raise SystemExit('source-role policy provenance missing')
+
+          cases = pool.get('cases') or []
+          positives = [case for case in cases if not case.get('expect_empty')]
+          negatives = [case for case in cases if case.get('expect_empty')]
+          modes = Counter(case.get('mode') for case in cases)
+          kinds = Counter(case.get('selection_kind') for case in cases)
+
+          print(f"canonical candidate cases: {len(cases)}")
+          print(f"modes: {dict(sorted(modes.items()))}")
+          print(f"kinds: {dict(sorted(kinds.items()))}")
+          print(f"evidence units considered: {selection.get('evidence_units_considered')}")
+
+          if len(cases) < 20:
+              raise SystemExit(f'canonical candidate pool unexpectedly small: {len(cases)}')
+          if len(negatives) != 5:
+              raise SystemExit(f'expected five negative controls, got {len(negatives)}')
+          if modes['lexical'] < 5 or modes['money'] < 3 or modes['date'] < 3:
+              raise SystemExit('canonical benchmark lacks lexical/money/date breadth')
+
+          allowed_prefixes = (
+              'https://cantonohio.gov/AgendaCenter/ViewFile/Agenda/',
+              'https://cantonohio.gov/AgendaCenter/ViewFile/ArchivedAgenda/',
+              'https://cantonoh.api.civicclerk.com/v1/Meetings/GetMeetingFile(',
+          )
+          for case in positives:
+              expected = case.get('expected') or []
+              if not expected:
+                  raise SystemExit(f"positive case {case['case_id']} has no targets")
+              for target in expected:
+                  source = target.get('source_uri') or ''
+                  if not source.startswith(allowed_prefixes):
+                      raise SystemExit(f"noncanonical target leaked into {case['case_id']}: {source}")
+                  if not str(target.get('locator') or '').startswith('page:'):
+                      raise SystemExit(f"non-page target leaked into {case['case_id']}: {target}")
+                  if len(target.get('artifact_sha256') or '') != 64:
+                      raise SystemExit(f"target lacks exact artifact sha: {case['case_id']}")
+          PY
+
+      - name: Upload unscored canonical pool
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-canonical-benchmark-pool
+          path: r1-canonical-results/
+          if-no-files-found: error
+          retention-days: 7

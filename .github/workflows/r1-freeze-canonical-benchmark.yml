@@ -1,0 +1,59 @@
+name: r1-freeze-canonical-benchmark
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-freeze-canonical-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Download inspected unscored canonical pool
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/9378375454/zip" > /tmp/r1-canonical.zip
+          mkdir -p /tmp/r1-canonical
+          unzip -q /tmp/r1-canonical.zip -d /tmp/r1-canonical
+
+      - name: Verify inspected artifact identities
+        run: |
+          set -euo pipefail
+          cd /tmp/r1-canonical
+          echo "aee4d01b3b7fa505d008296e226bbaff43af6022c025ad9764f14b412e9cfbbc  candidate-pool.json" | sha256sum -c -
+          echo "60807ca48ce44f5fd400b5509fedaec5a34e99b34b8619bfe3f8b3674207c0b3  raw-candidate-pool.json" | sha256sum -c -
+          echo "1b85ad9b0e10761096acf47147d2bac39e430e64211b66ffd365561c0d0988f5  sync.json" | sha256sum -c -
+
+      - name: Commit exact canonical benchmark once
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          destination="experiments/canton-2026/retrieval"
+          benchmark="$destination/r1-canonical-v2-unscored.json"
+          raw="$destination/r1-canonical-v2-raw-pool.json"
+          if [[ -e "$benchmark" ]]; then
+            echo "Canonical R1 benchmark already frozen; refusing to overwrite it."
+            exit 0
+          fi
+          mkdir -p "$destination"
+          cp /tmp/r1-canonical/candidate-pool.json "$benchmark"
+          cp /tmp/r1-canonical/raw-candidate-pool.json "$raw"
+          git config user.name "proofline-ci"
+          git config user.email "proofline-ci@users.noreply.github.com"
+          git add "$benchmark" "$raw"
+          git commit -m "Freeze canonical R1 benchmark before scoring"
+          git push origin "HEAD:$HEAD_BRANCH"

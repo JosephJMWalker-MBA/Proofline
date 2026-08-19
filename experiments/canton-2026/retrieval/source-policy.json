@@ -1,0 +1,47 @@
+{
+  "schema": "proofline-benchmark-source-policy/v1",
+  "name": "Canton 2026 longitudinal retrieval benchmark source roles",
+  "default_role": "excluded",
+  "rules": [
+    {
+      "name": "board-current-agenda-pdf",
+      "role": "canonical",
+      "source_uri_regex": "^https://cantonohio\\.gov/AgendaCenter/ViewFile/Agenda/_[0-9]{8}-[0-9]+$"
+    },
+    {
+      "name": "board-archived-agenda-pdf",
+      "role": "canonical",
+      "source_uri_regex": "^https://cantonohio\\.gov/AgendaCenter/ViewFile/ArchivedAgenda/_[0-9]{8}-[0-9]+$"
+    },
+    {
+      "name": "council-civicclerk-agenda-pdf",
+      "role": "canonical",
+      "source_uri_regex": "^https://cantonoh\\.api\\.civicclerk\\.com/v1/Meetings/GetMeetingFile\\(fileId=[0-9]+,plainText=false\\)$"
+    },
+    {
+      "name": "agenda-center-index",
+      "role": "support",
+      "source_uri_regex": "^https://cantonohio\\.gov/AgendaCenter/?$"
+    },
+    {
+      "name": "agenda-center-previous-versions",
+      "role": "support",
+      "source_uri_regex": "^https://cantonohio\\.gov/AgendaCenter/PreviousVersions/"
+    },
+    {
+      "name": "canton-calendar-month-listing",
+      "role": "support",
+      "source_uri_regex": "^https://www\\.cantonohio\\.gov/calendar\\.aspx\\?"
+    },
+    {
+      "name": "canton-calendar-event",
+      "role": "support",
+      "source_uri_regex": "^https://www\\.cantonohio\\.gov/Calendar\\.aspx\\?"
+    },
+    {
+      "name": "civicclerk-event-metadata",
+      "role": "support",
+      "source_uri_regex": "^https://cantonoh\\.api\\.civicclerk\\.com/v1/Events/"
+    }
+  ]
+}

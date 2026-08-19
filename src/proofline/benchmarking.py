@@ -4,6 +4,9 @@ The pool builder is intentionally retrieval-blind. It derives candidate question
 expected targets directly from preserved evidence, source metadata, and structured facts. A
 candidate pool should be frozen before it is scored so the benchmark does not become a list of
 queries selected because the current retrieval implementation already succeeds on them.
+
+An optional source-role policy can restrict longitudinal benchmark targets to publisher/profile-
+defined canonical evidence while leaving discovery/support artifacts preserved in the corpus.
 """
 
 from __future__ import annotations
@@ -12,11 +15,13 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from .benchmark_sources import BenchmarkSourcePolicy
 from .hashing import sha256_text
 from .storage import ProoflineStore
 from .structured import StructuredIndex
 
 _POOL_METHOD = "proofline-retrieval-benchmark-pool/v1"
+_POOL_METHOD_SOURCE_POLICY = "proofline-retrieval-benchmark-pool/v2"
 _EVAL_SCHEMA = "proofline-retrieval-eval/v2"
 
 _PHRASE_RE = re.compile(
@@ -35,10 +40,41 @@ _STOP_PHRASES = {
 class RetrievalBenchmarkPoolBuilder:
     """Build a deterministic v2 benchmark candidate pool without executing retrieval."""
 
-    def __init__(self, state_dir: str | Path = ".proofline") -> None:
+    def __init__(
+        self,
+        state_dir: str | Path = ".proofline",
+        *,
+        source_policy: BenchmarkSourcePolicy | None = None,
+    ) -> None:
         self.state_dir = Path(state_dir)
         self.store = ProoflineStore(self.state_dir / "proofline.db")
         self.structured = StructuredIndex(self.state_dir)
+        self.source_policy = source_policy
+
+    def _source_uris(self, artifact_id: str) -> tuple[str, ...]:
+        with self.store.connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT DISTINCT s.source_uri
+                FROM source_snapshots ss
+                JOIN sources s ON s.source_id = ss.source_id
+                WHERE ss.artifact_id = ?
+                ORDER BY s.source_uri
+                """,
+                (artifact_id,),
+            ).fetchall()
+        return tuple(str(row["source_uri"]) for row in rows)
+
+    def _source_uri(self, artifact_id: str) -> str | None:
+        source_uris = self._source_uris(artifact_id)
+        if self.source_policy is None:
+            return source_uris[0] if source_uris else None
+        canonical = [
+            source_uri
+            for source_uri in source_uris
+            if self.source_policy.classify(source_uri) == "canonical"
+        ]
+        return canonical[0] if canonical else None
 
     def _evidence(self) -> list[dict]:
         with self.store.connection() as connection:
@@ -71,38 +107,29 @@ class RetrievalBenchmarkPoolBuilder:
             text = str(row["extracted_text"])
             if not text.strip():
                 continue
+            artifact_id = str(row["artifact_id"])
+            source_uri = self._source_uri(artifact_id)
+            # With a source policy, absence of a canonical source mapping is an intentional
+            # exclusion from benchmark target populations, not missing corpus provenance.
+            if self.source_policy is not None and source_uri is None:
+                continue
+            if source_uri is None:
+                continue
             records.append(
                 {
                     "evidence_id": str(row["evidence_id"]),
-                    "artifact_id": str(row["artifact_id"]),
+                    "artifact_id": artifact_id,
                     "locator": str(row["locator"]),
                     "artifact_sha256": str(row["artifact_sha256"]),
+                    "source_uri": source_uri,
                     "text": text,
                 }
             )
         return records
 
-    def _source_uri(self, artifact_id: str) -> str | None:
-        with self.store.connection() as connection:
-            row = connection.execute(
-                """
-                SELECT s.source_uri
-                FROM source_snapshots ss
-                JOIN sources s ON s.source_id = ss.source_id
-                WHERE ss.artifact_id = ?
-                ORDER BY s.source_uri
-                LIMIT 1
-                """,
-                (artifact_id,),
-            ).fetchone()
-        return str(row["source_uri"]) if row else None
-
-    def _target(self, record: dict) -> dict | None:
-        source_uri = self._source_uri(record["artifact_id"])
-        if source_uri is None:
-            return None
+    def _target(self, record: dict) -> dict:
         return {
-            "source_uri": source_uri,
+            "source_uri": record["source_uri"],
             "locator": record["locator"],
             "artifact_sha256": record["artifact_sha256"],
         }
@@ -133,7 +160,6 @@ class RetrievalBenchmarkPoolBuilder:
                 normalized = display.casefold()
                 if normalized in _STOP_PHRASES or len(normalized) < 7:
                     continue
-                # Headings and boilerplate often repeat a single two-word title everywhere.
                 if normalized in seen:
                     continue
                 seen.add(normalized)
@@ -145,13 +171,7 @@ class RetrievalBenchmarkPoolBuilder:
         for normalized, evidence_ids in phrase_evidence.items():
             if not (1 <= len(evidence_ids) <= max_targets):
                 continue
-            targets: list[dict] = []
-            for evidence_id in sorted(evidence_ids):
-                target = self._target(evidence_by_id[evidence_id])
-                if target is not None:
-                    targets.append(target)
-            if len(targets) != len(evidence_ids):
-                continue
+            targets = [self._target(evidence_by_id[evidence_id]) for evidence_id in sorted(evidence_ids)]
             display = phrase_display[normalized]
             payload = {
                 "case_id": self._case_id("lexical-entity", normalized),
@@ -187,16 +207,20 @@ class RetrievalBenchmarkPoolBuilder:
         with self.store.connection() as connection:
             rows = connection.execute(
                 """
-                SELECT native_identifier, artifact_id
-                FROM source_snapshots
-                WHERE native_identifier IS NOT NULL AND TRIM(native_identifier) != ''
-                ORDER BY native_identifier, artifact_id
+                SELECT ss.native_identifier, ss.artifact_id, s.source_uri
+                FROM source_snapshots ss
+                JOIN sources s ON s.source_id = ss.source_id
+                WHERE ss.native_identifier IS NOT NULL AND TRIM(ss.native_identifier) != ''
+                ORDER BY ss.native_identifier, ss.artifact_id, s.source_uri
                 """
             ).fetchall()
         for row in rows:
+            source_uri = str(row["source_uri"])
+            if self.source_policy is not None and self.source_policy.classify(source_uri) != "canonical":
+                continue
             native = str(row["native_identifier"])
             artifact_id = str(row["artifact_id"])
-            for record in records_by_artifact.get(artifact_id, ()):  # only searchable evidence
+            for record in records_by_artifact.get(artifact_id, ()):  # canonical searchable evidence only
                 by_native[native].add(record["evidence_id"])
 
         evidence_by_id = {record["evidence_id"]: record for record in records}
@@ -204,23 +228,19 @@ class RetrievalBenchmarkPoolBuilder:
         for native, evidence_ids in by_native.items():
             if not (1 <= len(evidence_ids) <= max_targets):
                 continue
-            targets = [
-                self._target(evidence_by_id[evidence_id]) for evidence_id in sorted(evidence_ids)
-            ]
-            if any(target is None for target in targets):
-                continue
             candidates.append(
                 {
                     "case_id": self._case_id("native-id", native),
                     "mode": "native_identifier",
                     "query": native,
-                    "expected": targets,
+                    "expected": [
+                        self._target(evidence_by_id[evidence_id])
+                        for evidence_id in sorted(evidence_ids)
+                    ],
                     "selection_kind": "native_identifier",
                 }
             )
-        return self._stable_select(
-            candidates, key=lambda item: item["query"], limit=max_per_kind
-        )
+        return self._stable_select(candidates, key=lambda item: item["query"], limit=max_per_kind)
 
     def _structured_cases(
         self,
@@ -261,11 +281,7 @@ class RetrievalBenchmarkPoolBuilder:
         for (fact_type, normalized), evidence_ids in grouped.items():
             if not (1 <= len(evidence_ids) <= max_targets):
                 continue
-            targets = [
-                self._target(evidence_by_id[evidence_id]) for evidence_id in sorted(evidence_ids)
-            ]
-            if any(target is None for target in targets):
-                continue
+            targets = [self._target(evidence_by_id[evidence_id]) for evidence_id in sorted(evidence_ids)]
 
             if fact_type == "money":
                 value = numeric.get((fact_type, normalized))
@@ -311,9 +327,7 @@ class RetrievalBenchmarkPoolBuilder:
             selected.extend(
                 self._stable_select(
                     by_kind.get(kind, []),
-                    key=lambda item: item.get("query")
-                    or item.get("start")
-                    or item.get("minimum"),
+                    key=lambda item: item.get("query") or item.get("start") or item.get("minimum"),
                     limit=max_per_kind,
                 )
             )
@@ -326,23 +340,33 @@ class RetrievalBenchmarkPoolBuilder:
             lexical += "z"
 
         with self.store.connection() as connection:
-            native_values = {
-                str(row["native_identifier"]).casefold()
-                for row in connection.execute(
-                    """
-                    SELECT DISTINCT native_identifier
-                    FROM source_snapshots
-                    WHERE native_identifier IS NOT NULL
-                    """
-                ).fetchall()
-            }
-            facts = connection.execute(
+            native_rows = connection.execute(
                 """
-                SELECT fact_type, normalized_text, numeric_value
-                FROM evidence_facts
-                WHERE build_id = (SELECT build_id FROM structured_index_builds ORDER BY built_at DESC, rowid DESC LIMIT 1)
+                SELECT DISTINCT ss.native_identifier, s.source_uri
+                FROM source_snapshots ss
+                JOIN sources s ON s.source_id = ss.source_id
+                WHERE ss.native_identifier IS NOT NULL
                 """
             ).fetchall()
+            facts = connection.execute(
+                """
+                SELECT fact_type, normalized_text, numeric_value, evidence_id
+                FROM evidence_facts
+                WHERE build_id = (
+                    SELECT build_id FROM structured_index_builds
+                    ORDER BY built_at DESC, rowid DESC LIMIT 1
+                )
+                """
+            ).fetchall()
+
+        native_values = {
+            str(row["native_identifier"]).casefold()
+            for row in native_rows
+            if self.source_policy is None
+            or self.source_policy.classify(str(row["source_uri"])) == "canonical"
+        }
+        evidence_ids = {record["evidence_id"] for record in records}
+        relevant_facts = [row for row in facts if str(row["evidence_id"]) in evidence_ids]
 
         missing_native = "__proofline_missing_native_id__"
         while missing_native.casefold() in native_values:
@@ -350,7 +374,7 @@ class RetrievalBenchmarkPoolBuilder:
 
         identifiers = {
             str(row["normalized_text"]).casefold()
-            for row in facts
+            for row in relevant_facts
             if row["fact_type"] == "identifier" and row["normalized_text"] is not None
         }
         missing_identifier = "__proofline_missing_identifier__"
@@ -359,7 +383,7 @@ class RetrievalBenchmarkPoolBuilder:
 
         money_values = [
             float(row["numeric_value"])
-            for row in facts
+            for row in relevant_facts
             if row["fact_type"] == "money" and row["numeric_value"] is not None
         ]
         max_money = max(money_values, default=0.0)
@@ -367,7 +391,7 @@ class RetrievalBenchmarkPoolBuilder:
 
         date_values = {
             str(row["normalized_text"])
-            for row in facts
+            for row in relevant_facts
             if row["fact_type"] == "date" and row["normalized_text"] is not None
         }
         year = 2099
@@ -439,19 +463,13 @@ class RetrievalBenchmarkPoolBuilder:
 
         cases: list[dict] = []
         cases.extend(
-            self._lexical_phrase_cases(
-                records, max_per_kind=max_per_kind, max_targets=max_targets
-            )
+            self._lexical_phrase_cases(records, max_per_kind=max_per_kind, max_targets=max_targets)
         )
         cases.extend(
-            self._native_identifier_cases(
-                records, max_per_kind=max_per_kind, max_targets=max_targets
-            )
+            self._native_identifier_cases(records, max_per_kind=max_per_kind, max_targets=max_targets)
         )
         cases.extend(
-            self._structured_cases(
-                records, max_per_kind=max_per_kind, max_targets=max_targets
-            )
+            self._structured_cases(records, max_per_kind=max_per_kind, max_targets=max_targets)
         )
         cases.extend(self._negative_controls(records))
 
@@ -459,20 +477,25 @@ class RetrievalBenchmarkPoolBuilder:
         for case in cases:
             kind_counts[str(case["selection_kind"])] += 1
 
+        selection = {
+            "method": _POOL_METHOD_SOURCE_POLICY if self.source_policy else _POOL_METHOD,
+            "retrieval_results_consulted": False,
+            "evidence_units_considered": len(records),
+            "max_per_kind": max_per_kind,
+            "max_targets_per_case": max_targets,
+            "kind_counts": dict(sorted(kind_counts.items())),
+            "note": (
+                "Cases are derived from evidence/source/structured indexes only. "
+                "Freeze this pool before running retrieval evaluation."
+            ),
+        }
+        if self.source_policy is not None:
+            selection["source_policy"] = self.source_policy.to_dict()
+            selection["target_source_role"] = "canonical"
+
         return {
             "schema": _EVAL_SCHEMA,
             "name": name,
-            "selection": {
-                "method": _POOL_METHOD,
-                "retrieval_results_consulted": False,
-                "evidence_units_considered": len(records),
-                "max_per_kind": max_per_kind,
-                "max_targets_per_case": max_targets,
-                "kind_counts": dict(sorted(kind_counts.items())),
-                "note": (
-                    "Cases are derived from evidence/source/structured indexes only. "
-                    "Freeze this pool before running retrieval evaluation."
-                ),
-            },
+            "selection": selection,
             "cases": cases,
         }
