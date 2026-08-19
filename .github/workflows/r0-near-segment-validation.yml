@@ -14,6 +14,7 @@ on:
       - "src/proofline/cli.py"
       - "tests/test_recurrence.py"
       - "tests/test_recurrence_packets.py"
+      - "tests/test_segments.py"
       - "tests/test_segment_similarity.py"
       - "tests/test_cli_segment_similarity.py"
   workflow_dispatch:
@@ -82,7 +83,77 @@ jobs:
           PY
           test -s near-results/recurrence-board.json
 
-      - name: Enrich recurrence clusters with evidence-local structured facts
+      - name: Prove live segment and recurrence identities survive a rebuild
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+
+          from proofline.recurrence import SegmentRecurrenceClusterer
+          from proofline.segments import SegmentIndex, load_segmentation_plan
+
+          state = Path('.near')
+          plan = load_segmentation_plan('experiments/canton-2026/segment-plan.json')
+          index = SegmentIndex(state)
+          first_build = index.current_build()
+          if first_build is None:
+              raise SystemExit('segment index missing before stability check')
+
+          def segment_ids():
+              with sqlite3.connect(state / 'proofline.db') as connection:
+                  return tuple(
+                      row[0]
+                      for row in connection.execute(
+                          'SELECT segment_id FROM evidence_segments ORDER BY segment_id'
+                      ).fetchall()
+                  )
+
+          def cluster_ids():
+              result = SegmentRecurrenceClusterer(state).find(
+                  rule_name='board-ordinance-items',
+                  threshold=0.60,
+                  shingle_size=3,
+                  min_shared_shingles=3,
+                  max_shingle_frequency=64,
+                  limit=None,
+              )
+              return tuple(sorted(cluster.cluster_id for cluster in result.clusters))
+
+          before_segments = segment_ids()
+          before_clusters = cluster_ids()
+          second_build = index.rebuild(plan)
+          after_segments = segment_ids()
+          after_clusters = cluster_ids()
+
+          payload = {
+              'first_build_id': first_build['build_id'],
+              'second_build_id': second_build.build_id,
+              'segment_count': len(before_segments),
+              'cluster_count': len(before_clusters),
+              'segment_ids_stable': before_segments == after_segments,
+              'cluster_ids_stable': before_clusters == after_clusters,
+          }
+          Path('near-results/identity-stability.json').write_text(
+              json.dumps(payload, indent=2, sort_keys=True),
+              encoding='utf-8',
+          )
+          print(json.dumps(payload, indent=2, sort_keys=True))
+
+          if first_build['build_id'] == second_build.build_id:
+              raise SystemExit('rebuild unexpectedly reused the same build UUID')
+          if not before_segments:
+              raise SystemExit('live stability check found no segments')
+          if not before_clusters:
+              raise SystemExit('live stability check found no recurrence clusters')
+          if before_segments != after_segments:
+              raise SystemExit('segment IDs changed across identical live rebuilds')
+          if before_clusters != after_clusters:
+              raise SystemExit('recurrence cluster IDs changed across identical live rebuilds')
+          PY
+          test -s near-results/identity-stability.json
+
+      - name: Enrich stable recurrence clusters with evidence-local structured facts
         run: |
           python - <<'PY'
           import json
@@ -105,7 +176,7 @@ jobs:
           PY
           test -s near-results/recurrence-fact-packets.json
 
-      - name: Assert candidate generation stays descriptive and bounded
+      - name: Assert candidate generation and fact packets remain evidence-local
         run: |
           python - <<'PY'
           import json
@@ -113,6 +184,7 @@ jobs:
 
           payload = json.loads(Path('near-results/near-board.json').read_text())
           recurrence = json.loads(Path('near-results/recurrence-board.json').read_text())
+          stability = json.loads(Path('near-results/identity-stability.json').read_text())
           packets = json.loads(Path('near-results/recurrence-fact-packets.json').read_text())
           candidates = payload['candidates']
           clusters = recurrence['clusters']
@@ -146,6 +218,8 @@ jobs:
           print(f"common shingle buckets ignored: {payload['common_shingle_buckets_ignored']}")
           print(f"recurrence candidate edges: {recurrence['candidate_edge_count']}")
           print(f"recurrence clusters: {recurrence['cluster_count']}")
+          print(f"stable segment IDs across rebuild: {stability['segment_ids_stable']}")
+          print(f"stable recurrence IDs across rebuild: {stability['cluster_ids_stable']}")
           print(f"recurrence packet facts: {packet_fact_count}")
           print(f"recurrence packets with facts: {packets_with_facts}")
           print(f"fact values present in all occurrences: {common_values}")
@@ -161,6 +235,8 @@ jobs:
               raise SystemExit(f"unexpected packet method: {packets['method']}")
           if packets['recurrence_method'] != recurrence['method']:
               raise SystemExit('packet builder did not preserve recurrence method provenance')
+          if not stability['segment_ids_stable'] or not stability['cluster_ids_stable']:
+              raise SystemExit('derived identities failed live rebuild stability check')
           if payload['segment_count'] < 100:
               raise SystemExit(f"Board segment coverage unexpectedly low: {payload['segment_count']}")
           if payload['occurrence_count'] < payload['segment_count']:
@@ -228,6 +304,8 @@ jobs:
           packet_ids = {packet['cluster']['cluster_id'] for packet in packet_rows}
           if packet_ids != recurrence_ids:
               raise SystemExit('packet builder changed recurrence cluster identity')
+          if packet_fact_count < 1 or packets_with_facts < 1:
+              raise SystemExit('live recurrence packets unexpectedly contain no structured facts')
 
           for packet in packet_rows:
               if not packet['limitations'] or 'not a Gold observation' not in packet['limitations'][-1]:
