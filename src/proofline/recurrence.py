@@ -59,6 +59,7 @@ class RecurrenceResult:
     threshold: float
     candidate_edge_count: int
     cluster_count: int
+    returned_cluster_count: int
     clusters: tuple[RecurrenceCluster, ...]
 
     def to_dict(self) -> dict:
@@ -68,6 +69,7 @@ class RecurrenceResult:
             "threshold": self.threshold,
             "candidate_edge_count": self.candidate_edge_count,
             "cluster_count": self.cluster_count,
+            "returned_cluster_count": self.returned_cluster_count,
             "clusters": [cluster.to_dict() for cluster in self.clusters],
         }
 
@@ -208,15 +210,16 @@ class SegmentRecurrenceClusterer:
                 item.cluster_id,
             )
         )
-        if limit is not None:
-            clusters = clusters[:limit]
+        cluster_count = len(clusters)
+        returned = clusters if limit is None else clusters[:limit]
         return RecurrenceResult(
             method=_METHOD,
             similarity_method=similarity_method,
             threshold=threshold,
             candidate_edge_count=len(candidates),
-            cluster_count=len(clusters),
-            clusters=tuple(clusters),
+            cluster_count=cluster_count,
+            returned_cluster_count=len(returned),
+            clusters=tuple(returned),
         )
 
     def find(
