@@ -1,0 +1,196 @@
+name: r1-akron-attachment-probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-attachment-probe.yml"
+      - "experiments/akron-2026/probe_onbase_attachments.py"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "src/proofline/onbase.py"
+      - "src/proofline/onbase_cli.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild canonical Akron item evidence through existing adapter
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p akron-attachment-probe-results
+          proofline-onbase \
+            --state-dir .akron-attachment-probe \
+            --manifest-out akron-attachment-probe-results/agenda-items.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-attachment-probe-results/sync.json
+
+      - name: Probe only publisher-declared supporting-document links
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/akron-2026/probe_onbase_attachments.py \
+            --state-dir .akron-attachment-probe \
+            --output akron-attachment-probe-results \
+            | tee akron-attachment-probe-results/probe-summary.json
+
+      - name: Validate probe boundaries without requiring a positive attachment result
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          root = Path('akron-attachment-probe-results')
+          report = json.loads((root / 'attachment-probe.json').read_text())
+          relations = json.loads((root / 'relations.json').read_text())
+          sync = json.loads((root / 'sync.json').read_text())
+          manifest = json.loads((root / 'agenda-items.json').read_text())
+
+          if report.get('schema') != 'proofline-onbase-attachment-probe/v1':
+              raise SystemExit('unexpected attachment-probe schema')
+
+          profile = report['profile']
+          canonical_rows = profile['canonical_item_rows']
+          if canonical_rows < 100:
+              raise SystemExit(f'canonical Akron item population unexpectedly small: {canonical_rows}')
+          if canonical_rows < len(manifest.get('resources') or []):
+              raise SystemExit('probe saw fewer canonical item rows than the rebuilt manifest')
+
+          policy = report['sample_policy']
+          if policy.get('external_links_fetched') is not False:
+              raise SystemExit('attachment probe claims external links were fetched')
+          if report['sample_count'] > policy['max_links']:
+              raise SystemExit('attachment probe exceeded its declared link bound')
+          if policy['max_links'] != 8:
+              raise SystemExit('attachment probe network bound changed unexpectedly')
+          if policy['max_bytes_per_response'] != 4 * 1024 * 1024:
+              raise SystemExit('attachment probe byte bound changed unexpectedly')
+
+          relation_pairs = set()
+          same_instance_uris = set()
+          for relation in relations:
+              source = relation['item_source_uri']
+              resolved = relation['resolved_uri']
+              source_parts = urlsplit(source)
+              resolved_parts = urlsplit(resolved)
+              if source_parts.scheme not in {'http', 'https'}:
+                  raise SystemExit(f'non-http canonical item URI entered relation set: {source}')
+              if resolved_parts.scheme not in {'http', 'https'} or not resolved_parts.hostname:
+                  raise SystemExit(f'non-http attachment URI entered relation set: {resolved}')
+              if not relation.get('raw_href'):
+                  raise SystemExit('attachment relation lost publisher-declared raw href')
+              if not relation.get('item_artifact_sha256'):
+                  raise SystemExit('attachment relation lost exact parent item artifact SHA-256')
+              pair = (source, resolved, relation.get('link_text') or '')
+              if pair in relation_pairs:
+                  raise SystemExit('exact duplicate attachment relation survived deduplication')
+              relation_pairs.add(pair)
+              if relation.get('same_instance'):
+                  same_instance_uris.add(resolved)
+
+          for sample in report['samples']:
+              source_uri = sample['source_uri']
+              if source_uri not in same_instance_uris:
+                  raise SystemExit('sample fetch was not authorized by a same-instance discovered relation')
+
+              wrapper = sample.get('wrapper')
+              if wrapper:
+                  if wrapper.get('captured_bytes', 0) > policy['max_bytes_per_response']:
+                      raise SystemExit('wrapper fetch exceeded declared byte bound')
+                  final_uri = wrapper.get('final_uri')
+                  if final_uri and urlsplit(final_uri).scheme not in {'http', 'https'}:
+                      raise SystemExit('wrapper redirect resolved outside http/https')
+
+              bytes_uri = sample.get('bytes_uri')
+              if sample.get('publisher_declared_byte_transport'):
+                  if not bytes_uri:
+                      raise SystemExit('declared byte transport lost its URI')
+                  source_parts = urlsplit(source_uri)
+                  bytes_parts = urlsplit(bytes_uri)
+                  if (
+                      source_parts.scheme != bytes_parts.scheme
+                      or (source_parts.hostname or '').casefold()
+                      != (bytes_parts.hostname or '').casefold()
+                  ):
+                      raise SystemExit('publisher byte transport escaped the discovered source instance')
+                  if '/Documents/DownloadFileBytes/' not in bytes_parts.path:
+                      raise SystemExit('publisher byte transport did not use declared DownloadFileBytes path')
+
+              payload = sample.get('payload')
+              if payload:
+                  if payload.get('captured_bytes', 0) > policy['max_bytes_per_response']:
+                      raise SystemExit('payload fetch exceeded declared byte bound')
+                  final_uri = payload.get('final_uri')
+                  if final_uri and urlsplit(final_uri).scheme not in {'http', 'https'}:
+                      raise SystemExit('payload redirect resolved outside http/https')
+
+          if same_instance_uris and report['sample_count'] == 0:
+              raise SystemExit('same-instance supporting links existed but bounded sample selected none')
+
+          canonical = sync.get('canonical_sync', {}).get('counts', {})
+          if canonical.get('unavailable') != 0:
+              raise SystemExit('base canonical Akron rebuild had unavailable items')
+
+          wrappers = [sample.get('wrapper') for sample in report['samples'] if sample.get('wrapper')]
+          payloads = [sample.get('payload') for sample in report['samples'] if sample.get('payload')]
+          summary = {
+              'canonical_item_rows': canonical_rows,
+              'items_with_support_marker': profile['items_with_support_marker'],
+              'items_with_attachment_links': profile['items_with_attachment_links'],
+              'relation_count': report['relations']['relation_count'],
+              'unique_attachment_uri_count': report['relations']['unique_attachment_uri_count'],
+              'same_instance_unique_uri_count': report['relations']['same_instance_unique_uri_count'],
+              'external_unique_uri_count': report['relations']['external_unique_uri_count'],
+              'sample_count': report['sample_count'],
+              'wrapper_magic_media_types': sorted(
+                  item.get('magic_media_type', 'unknown') for item in wrappers
+              ),
+              'publisher_declared_byte_transport_count': sum(
+                  bool(sample.get('publisher_declared_byte_transport'))
+                  for sample in report['samples']
+              ),
+              'payload_count': len(payloads),
+              'payload_magic_media_types': sorted(
+                  item.get('magic_media_type', 'unknown') for item in payloads
+              ),
+              'wrapper_errors': sum('wrapper_error' in sample for sample in report['samples']),
+              'payload_errors': sum('payload_error' in sample for sample in report['samples']),
+              'manifest_sha256': sync.get('manifest_sha256'),
+          }
+          (root / 'validation-summary.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+
+          # Deliberately do not require attachments to exist, succeed, be PDFs, remain same-host
+          # after redirect, or contain financial facts. Those are the source-contract measurements.
+          PY
+
+      - name: Upload bounded attachment-contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-attachment-probe
+          path: akron-attachment-probe-results/
+          if-no-files-found: error
+          retention-days: 14
