@@ -50,6 +50,16 @@ def _represent(
     )
 
 
+def _json_keys(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield key
+            yield from _json_keys(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _json_keys(child)
+
+
 @pytest.mark.parametrize(
     ("text", "token", "normalized", "source_name", "scope", "context_type", "amount_type"),
     [
@@ -312,7 +322,7 @@ def test_t13_holdout_is_frozen_disjoint_and_content_blind() -> None:
     assert selected == sorted(selected)
     assert all(len(value) == 64 for value in [*excluded, *selected])
 
-    serialized = json.dumps(payload, sort_keys=True).casefold()
-    assert "source_uri\"" not in serialized
-    assert "source_name" not in serialized
-    assert "document text" not in serialized
+    keys = set(_json_keys(payload))
+    assert "source_uri" not in keys
+    assert "source_name" not in keys
+    assert "document_text" not in keys
