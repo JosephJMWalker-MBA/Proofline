@@ -180,3 +180,16 @@ def test_frozen_selection_resolves_by_source_identity_hash_only() -> None:
     assert metadata["live_excluded_ranks"] == list(range(1, 9))
     assert metadata["live_selected_ranks"] == list(range(9, 33))
     assert set(metadata["excluded_source_hashes"]).isdisjoint(metadata["selected_source_hashes"])
+
+
+def test_posthoc_t8_bronze_audit_is_frozen_and_not_a_resampling_rule() -> None:
+    path = ROOT / "experiments" / "akron-2026" / "r1_t8_derivation_bronze_sha256.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload["schema"] == "proofline-akron-t8-derivation-bronze-audit/v1"
+    assert payload["artifact_count"] == 8
+    assert len(payload["artifact_sha256"]) == 8
+    assert len(set(payload["artifact_sha256"])) == 8
+    assert payload["artifact_sha256"] == sorted(payload["artifact_sha256"])
+    assert all(len(value) == 64 for value in payload["artifact_sha256"])
+    assert "do not alter, replace, or resample" in payload["purpose"]
