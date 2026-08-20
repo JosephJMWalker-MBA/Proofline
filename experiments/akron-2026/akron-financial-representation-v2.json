@@ -84,8 +84,14 @@
     {
       "rule_id": "fee_schedule_context",
       "value": "fee_schedule",
-      "context_any": ["planning commission filing fees chart", "planning commission filing faes chart", "non-refundable filing fee"],
-      "context_all": ["estimated total project cost", "applicable fee"]
+      "context_all": ["applicable fee"],
+      "context_any": [
+        "estimated total project cost",
+        "estimated tot al project cost",
+        "planning commission filing fees chart",
+        "planning commission filing faes chart",
+        "non-refundable filing fee"
+      ]
     },
     {
       "rule_id": "property_transaction_context",
