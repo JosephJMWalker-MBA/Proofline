@@ -41,6 +41,15 @@ jobs:
           import json
           from pathlib import Path
 
+          def json_keys(value):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      yield key
+                      yield from json_keys(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from json_keys(child)
+
           root = Path('.')
           contract_path = root / 'experiments' / 'akron-2026' / 'akron-financial-representation-v2.json'
           module_path = root / 'experiments' / 'akron-2026' / 'financial_representation_v2.py'
@@ -81,9 +90,9 @@ jobs:
           if holdout['selected']['original_manifest_ranks'] != [33, 64]:
               raise SystemExit('T13 holdout rank boundary changed')
 
-          serialized = json.dumps(holdout, sort_keys=True).casefold()
-          for forbidden in ('source_uri"', 'source_name', 'document text'):
-              if forbidden in serialized:
+          keys = set(json_keys(holdout))
+          for forbidden in ('source_uri', 'source_name', 'document_text'):
+              if forbidden in keys:
                   raise SystemExit(f'T13 holdout contains content-bearing field: {forbidden}')
 
           print(json.dumps({
