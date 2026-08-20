@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/r1-akron-money-role-oos.yml"
+      - "experiments/akron-2026/R1_T11_MONEY_ROLE_OOS.md"
       - "experiments/akron-2026/akron-money-role-contract-v1.json"
       - "experiments/akron-2026/r1_t11_disjoint_attachment_sources.json"
       - "experiments/akron-2026/sync_frozen_attachment_selection.py"
