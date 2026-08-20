@@ -11,20 +11,25 @@
     {
       "rule_id": "private_background_sales",
       "role": "private_background_amount",
-      "context_all": ["sold over", "transactions"],
+      "context_all": ["sales volume", "sold over"],
       "left_regex": "sold\\s+over\\s*$"
     },
     {
-      "rule_id": "city_expenditure_labeled_amount",
+      "rule_id": "city_expenditure_amount_field",
       "role": "city_expenditure_amount",
       "context_all": ["city expenditures"],
-      "left_regex": "(?:amount|total expenditure(?: \\(if applicable\\))?)\\s*:\\s*$"
+      "left_regex": "amount\\s*:\\s*$"
+    },
+    {
+      "rule_id": "city_total_expenditure_field",
+      "role": "city_expenditure_amount",
+      "left_regex": "total expenditure(?: \\(if applicable\\))?\\s*:\\s*$"
     },
     {
       "rule_id": "contract_explicitly_funded",
       "role": "contract_amount",
       "context_all": ["contract with"],
-      "context_any": ["funded from", "funded by", "owda loan"]
+      "context_any": ["funded from", "funded by", "funded out of", "owda loan"]
     },
     {
       "rule_id": "special_assessment_rate",
@@ -35,19 +40,19 @@
     {
       "rule_id": "conditional_use_fee_schedule_threshold",
       "role": "fee_schedule_threshold",
-      "context_all": ["estimated total project cost", "applicable fee", "non-refundable filing fee"],
+      "context_all": ["estimated total project cost", "applicable fee"],
       "numeric_in": ["0.00", "20000.00", "20001.00", "100000.00", "101001.00"]
     },
     {
       "rule_id": "conditional_use_filing_fee",
       "role": "filing_fee_amount",
-      "context_all": ["estimated total project cost", "applicable fee", "non-refundable filing fee"],
+      "context_all": ["estimated total project cost", "applicable fee"],
       "numeric_in": ["250.00", "750.00", "1500.00"]
     },
     {
       "rule_id": "estimated_project_cost_field",
       "role": "estimated_project_cost",
-      "context_none": ["applicable fee", "non-refundable filing fee"],
+      "context_none": ["applicable fee"],
       "left_regex": "estimated\\s+total\\s+project\\s+cost\\s*:\\s*$"
     }
   ],
