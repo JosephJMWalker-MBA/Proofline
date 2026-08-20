@@ -43,7 +43,7 @@ def _tesseract_version() -> str | None:
 def _artifact_metadata(store: ProoflineStore, artifact_id: str) -> dict:
     with store.connection() as connection:
         row = connection.execute(
-            "SELECT artifact_id, sha256, media_type, size_bytes, stored_path FROM artifacts WHERE artifact_id = ?",
+            "SELECT artifact_id, sha256, media_type, byte_size, stored_path FROM artifacts WHERE artifact_id = ?",
             (artifact_id,),
         ).fetchone()
     if row is None:
