@@ -1,0 +1,251 @@
+name: r1-akron-money-role-oos
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-money-role-oos.yml"
+      - "experiments/akron-2026/R1_T11_MONEY_ROLE_OOS.md"
+      - "experiments/akron-2026/akron-money-role-contract-v1.json"
+      - "experiments/akron-2026/r1_t11_disjoint_attachment_sources.json"
+      - "experiments/akron-2026/sync_frozen_attachment_selection.py"
+      - "experiments/akron-2026/evaluate_money_roles.py"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "tests/test_akron_money_role_oos.py"
+      - "src/proofline/onbase_attachments.py"
+      - "src/proofline/onbase_attachments_cli.py"
+      - "src/proofline/progressive.py"
+      - "src/proofline/ocr.py"
+      - "src/proofline/structured.py"
+      - "src/proofline/relations.py"
+      - "src/proofline/storage.py"
+      - "src/proofline/watch_storage.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Ensure bounded OCR capability is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v tesseract >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y tesseract-ocr
+          fi
+          tesseract --version | head -1
+
+      - name: Rebuild canonical Akron parents and full attachment identity graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-money-role-oos akron-money-role-oos
+          mkdir -p akron-money-role-oos
+          proofline-onbase-attachments \
+            --state-dir .akron-money-role-oos \
+            --manifest-out akron-money-role-oos/attachment-manifest.json \
+            --relations-out akron-money-role-oos/discovered-relations.json \
+            --rejections-out akron-money-role-oos/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-money-role-oos/discovery.json
+
+      - name: Sync the exact frozen 24-source disjoint evaluation set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/sync_frozen_attachment_selection.py \
+            --state-dir .akron-money-role-oos \
+            --manifest akron-money-role-oos/attachment-manifest.json \
+            --relations akron-money-role-oos/discovered-relations.json \
+            --selection experiments/akron-2026/r1_t11_disjoint_attachment_sources.json \
+            --output akron-money-role-oos/selection-sync.json \
+            > akron-money-role-oos/selection-sync-stdout.json
+
+      - name: Evaluate frozen T9-derived roles on the disjoint sample
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/evaluate_money_roles.py \
+            --state-dir .akron-money-role-oos \
+            --selection-sync akron-money-role-oos/selection-sync.json \
+            --contract experiments/akron-2026/akron-money-role-contract-v1.json \
+            --output akron-money-role-oos/role-evaluation.json \
+            --threshold 0.70 \
+            --ocr \
+            --language eng \
+            --dpi 200 \
+            > akron-money-role-oos/role-evaluation-stdout.json
+
+      - name: Validate disjointness, provenance, and non-detector boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('akron-money-role-oos')
+          frozen = json.loads(Path('experiments/akron-2026/r1_t11_disjoint_attachment_sources.json').read_text())
+          contract = json.loads(Path('experiments/akron-2026/akron-money-role-contract-v1.json').read_text())
+          discovery = json.loads((root / 'discovery.json').read_text())
+          sync = json.loads((root / 'selection-sync.json').read_text())
+          evaluation = json.loads((root / 'role-evaluation.json').read_text())
+          rejections = json.loads((root / 'rejections.json').read_text())
+
+          expected_selected = frozen['selected']['source_uri_sha256']
+          expected_excluded = frozen['excluded']['source_uri_sha256']
+          if len(expected_selected) != 24 or len(set(expected_selected)) != 24:
+              raise SystemExit('frozen T11 selected source set is not exactly 24 unique identities')
+          if len(expected_excluded) != 8 or len(set(expected_excluded)) != 8:
+              raise SystemExit('frozen T8 exclusion set is not exactly eight unique identities')
+          if set(expected_selected) & set(expected_excluded):
+              raise SystemExit('T11 evaluation source set overlaps the T8 derivation set')
+
+          if sync.get('schema') != 'proofline-akron-frozen-attachment-sync/v1':
+              raise SystemExit('unexpected frozen attachment sync schema')
+          if sync['selection']['selected_source_hashes'] != expected_selected:
+              raise SystemExit('live T11 selection differs from the frozen source identities')
+          if sync['selection']['excluded_source_hashes'] != expected_excluded:
+              raise SystemExit('live T11 exclusion boundary differs from frozen T8 identities')
+          counts = (sync.get('watch') or {}).get('counts') or {}
+          if counts.get('new') != 24 or counts.get('unavailable') != 0:
+              raise SystemExit(f'T11 exact attachment sync failed: {counts}')
+          selected_sources = sync.get('selected_sources') or []
+          if len(selected_sources) != 24:
+              raise SystemExit('T11 sync did not retain exactly 24 selected sources')
+          if len({item['source_uri_sha256'] for item in selected_sources}) != 24:
+              raise SystemExit('T11 selected source identities are not unique')
+          selected_uri_to_hash = {
+              item['source_uri']: item['source_uri_sha256'] for item in selected_sources
+          }
+
+          if evaluation.get('schema') != 'proofline-akron-money-role-oos-evaluation/v1':
+              raise SystemExit('unexpected T11 role-evaluation schema')
+          if evaluation.get('stage') != 'out_of_sample_role_evaluation_only':
+              raise SystemExit('T11 crossed its evaluation-stage boundary')
+          if evaluation.get('semantic_roles_assigned') is not True:
+              raise SystemExit('T11 did not execute the frozen semantic-role contract')
+          if evaluation.get('detector_authorized') is not False or evaluation.get('lead_count') is not None:
+              raise SystemExit('T11 improperly authorized detector or lead output')
+          if evaluation['sample']['attachment_count'] != 24:
+              raise SystemExit('T11 evaluated the wrong attachment count')
+          if evaluation['sample']['selected_source_hashes'] != expected_selected:
+              raise SystemExit('T11 evaluated a different source set than the frozen sample')
+          if evaluation['sample']['excluded_source_hashes'] != expected_excluded:
+              raise SystemExit('T11 lost the T8 exclusion boundary')
+
+          attachment_artifact_ids = [item['artifact']['artifact_id'] for item in evaluation['attachments']]
+          unique_artifact_count = len(set(attachment_artifact_ids))
+          if evaluation['sample']['unique_artifact_count'] != unique_artifact_count:
+              raise SystemExit('T11 unique Bronze artifact count is internally inconsistent')
+          duplicate_groups = evaluation['sample'].get('duplicate_artifact_groups') or []
+          if evaluation['sample']['duplicate_artifact_group_count'] != len(duplicate_groups):
+              raise SystemExit('T11 duplicate Bronze group count is internally inconsistent')
+          duplicate_excess = sum(group['source_count'] - 1 for group in duplicate_groups)
+          if 24 - unique_artifact_count != duplicate_excess:
+              raise SystemExit('T11 duplicate Bronze source/artifact accounting is inconsistent')
+          for group in duplicate_groups:
+              if group['source_count'] != len(group['source_uris']):
+                  raise SystemExit('T11 duplicate Bronze group lost source identities')
+              if len(group['source_uris']) != len(group['source_uri_sha256s']):
+                  raise SystemExit('T11 duplicate Bronze group lost source identity hashes')
+              for uri, digest in zip(group['source_uris'], group['source_uri_sha256s']):
+                  if selected_uri_to_hash.get(uri) != digest:
+                      raise SystemExit('T11 duplicate Bronze group contains non-selected source provenance')
+
+          if evaluation['structured_build']['parser_version'] != 'proofline-structured/v2':
+              raise SystemExit('T11 did not use the repaired structured parser v2')
+          if evaluation['extraction']['ocr_failed'] != 0:
+              raise SystemExit(f"T11 OCR failures: {evaluation['extraction']['ocr_failures']}")
+
+          allowed_roles = set(contract['roles'])
+          rule_map = {rule['rule_id']: rule['role'] for rule in contract['rules']}
+          facts = evaluation.get('facts') or []
+          if evaluation['money_fact_count'] != len(facts):
+              raise SystemExit('T11 money-fact count does not match emitted facts')
+          if evaluation['classified_fact_count'] + evaluation['unclassified_fact_count'] != len(facts):
+              raise SystemExit('T11 classified/unclassified counts do not cover the fact population')
+          if sum(evaluation.get('role_counts', {}).values()) != len(facts):
+              raise SystemExit('T11 role counts do not cover the fact population')
+
+          low_quality_fact_count = 0
+          for fact in facts:
+              if fact['role'] not in allowed_roles:
+                  raise SystemExit(f"T11 emitted unknown role: {fact['role']}")
+              if float(fact['quality_score'] or 0.0) < 0.70:
+                  low_quality_fact_count += 1
+              if len(fact.get('page_text_sha256') or '') != 64:
+                  raise SystemExit('T11 fact lost preferred-page provenance')
+              if len(fact.get('context_sha256') or '') != 64:
+                  raise SystemExit('T11 fact lost local-context provenance')
+              source_uris = fact.get('source_uris') or []
+              source_hashes = fact.get('source_uri_sha256s') or []
+              if not source_uris or len(source_uris) != len(source_hashes):
+                  raise SystemExit('T11 fact lost publisher source provenance')
+              for uri, digest in zip(source_uris, source_hashes):
+                  if selected_uri_to_hash.get(uri) != digest:
+                      raise SystemExit('T11 fact contains non-selected source provenance')
+              if fact['role'] == contract['default_role']:
+                  if fact.get('rule_id') is not None:
+                      raise SystemExit('unclassified T11 fact unexpectedly names a semantic rule')
+              else:
+                  rule_id = fact.get('rule_id')
+                  if rule_id not in rule_map or rule_map[rule_id] != fact['role']:
+                      raise SystemExit('classified T11 fact is not backed by the frozen contract rule')
+
+          if low_quality_fact_count:
+              raise SystemExit(
+                  f'T11 contains {low_quality_fact_count} money facts below the 0.70 quality floor'
+              )
+
+          summary = {
+              'attachment_source_count': evaluation['sample']['attachment_count'],
+              'unique_artifact_count': evaluation['sample']['unique_artifact_count'],
+              'duplicate_artifact_group_count': evaluation['sample']['duplicate_artifact_group_count'],
+              'money_fact_count': evaluation['money_fact_count'],
+              'classified_fact_count': evaluation['classified_fact_count'],
+              'unclassified_fact_count': evaluation['unclassified_fact_count'],
+              'role_counts': evaluation['role_counts'],
+              'unique_artifact_page_count': evaluation['extraction']['unique_artifact_page_count'],
+              'post_ocr_low_quality_page_count': evaluation['extraction']['post_ocr_low_quality_page_count'],
+              'money_facts_below_quality_floor': low_quality_fact_count,
+              'ocr_pages_attempted': evaluation['extraction']['ocr_pages_attempted'],
+              'ocr_extractions_added': evaluation['extraction']['ocr_extractions_added'],
+              'ocr_failed': evaluation['extraction']['ocr_failed'],
+              'global_discovery_rejection_count': len(rejections),
+              'live_attachment_graph_size': discovery['attachments']['resource_count'],
+              'detector_authorized': evaluation['detector_authorized'],
+              'lead_count': evaluation['lead_count'],
+          }
+          (root / 'summary.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload T11 out-of-sample role evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-money-role-oos
+          path: akron-money-role-oos/
+          if-no-files-found: error
+          retention-days: 14
