@@ -187,7 +187,7 @@ jobs:
           print(json.dumps(summary, indent=2, sort_keys=True))
           PY
 
-      - name: Prove deterministic rediscovery and unchanged bounded attachment rerun
+      - name: Prove deterministic rediscovery and audit bounded attachment rerun
         shell: bash
         run: |
           set -o pipefail
@@ -206,24 +206,91 @@ jobs:
           root = Path('akron-attachment-production')
           first = json.loads((root / 'first.json').read_text())
           second = json.loads((root / 'second.json').read_text())
+          first_relations = json.loads((root / 'relations.json').read_text())
+          second_relations = json.loads((root / 'relations-rerun.json').read_text())
 
           if (root / 'attachments.json').read_bytes() != (root / 'attachments-rerun.json').read_bytes():
               raise SystemExit('full attachment manifest bytes changed on immediate rerun')
-          if (root / 'relations.json').read_bytes() != (root / 'relations-rerun.json').read_bytes():
-              raise SystemExit('publisher-backed attachment relations changed on immediate rerun')
           if (root / 'rejections.json').read_bytes() != (root / 'rejections-rerun.json').read_bytes():
               raise SystemExit('attachment rejection receipt changed on immediate rerun')
           if first['attachments']['manifest_sha256'] != second['attachments']['manifest_sha256']:
               raise SystemExit('attachment manifest identity changed on immediate rerun')
 
+          topology_keys = (
+              'source_uri',
+              'parent_source_uri',
+              'meeting_id',
+              'item_id',
+              'publish_id',
+              'link_text',
+              'raw_href',
+          )
+          first_topology = [tuple(row[key] for key in topology_keys) for row in first_relations]
+          second_topology = [tuple(row[key] for key in topology_keys) for row in second_relations]
+          if first_topology != second_topology:
+              raise SystemExit('publisher-backed attachment relationship topology changed on rerun')
+          if len(first_relations) != len(second_relations):
+              raise SystemExit('attachment relation count changed on rerun')
+
+          parent_evidence_changes = sum(
+              left['parent_artifact_sha256'] != right['parent_artifact_sha256']
+              for left, right in zip(first_relations, second_relations)
+          )
+          parent_sources_changed = len(
+              {
+                  right['parent_source_uri']
+                  for left, right in zip(first_relations, second_relations)
+                  if left['parent_artifact_sha256'] != right['parent_artifact_sha256']
+              }
+          )
+
+          canonical_counts = second['canonical']['sync_counts']
+          canonical_total = second['canonical']['agenda_item_count']
+          if canonical_counts['new'] != 0 or canonical_counts['unavailable'] != 0:
+              raise SystemExit(f'canonical parent rerun produced new/unavailable resources: {canonical_counts}')
+          if canonical_counts['changed'] + canonical_counts['unchanged'] != canonical_total:
+              raise SystemExit('canonical parent rerun counts do not cover every source')
+
           sync = second['attachment_sync']
           counts = sync['watch']['counts']
-          if counts['new'] != 0 or counts['changed'] != 0 or counts['unavailable'] != 0:
-              raise SystemExit(f'bounded attachment rerun was not unchanged: {counts}')
-          if counts['unchanged'] != 8:
-              raise SystemExit(f"expected 8 unchanged bounded attachments, got {counts['unchanged']}")
-          if sync['relations_created'] != 0 or sync['relations_total'] != 8:
-              raise SystemExit('supporting_document_of relation rerun was not idempotent')
+          if counts['new'] != 0 or counts['unavailable'] != 0:
+              raise SystemExit(f'bounded attachment rerun produced new/unavailable resources: {counts}')
+          if counts['changed'] + counts['unchanged'] != 8:
+              raise SystemExit(f'bounded attachment rerun did not account for all 8 sources: {counts}')
+
+          changed_attachment_results = [
+              result for result in sync['watch']['results'] if result['state'] == 'changed'
+          ]
+          for result in changed_attachment_results:
+              if not result.get('artifact_id') or not result.get('previous_artifact_id'):
+                  raise SystemExit('changed attachment lost prior/current artifact provenance')
+              if result['artifact_id'] == result['previous_artifact_id']:
+                  raise SystemExit('changed attachment reused identical artifact identity')
+
+          if sync['relations_total'] != 8 + sync['relations_created']:
+              raise SystemExit(
+                  'relation evidence-version count does not match newly created rerun receipts'
+              )
+
+          summary = {
+              'attachment_manifest_sha256': second['attachments']['manifest_sha256'],
+              'attachment_relation_count': len(second_relations),
+              'parent_relation_evidence_change_count': parent_evidence_changes,
+              'parent_sources_changed_in_relation_graph': parent_sources_changed,
+              'canonical_parent_watch_counts': canonical_counts,
+              'bounded_attachment_watch_counts': counts,
+              'bounded_attachment_changed_count': len(changed_attachment_results),
+              'relations_created_on_rerun': sync['relations_created'],
+              'relations_total_after_rerun': sync['relations_total'],
+          }
+          (root / 'rerun-validation.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+
+          # Parent item pages and attachment bytes are live public records and may legitimately
+          # version between passes. The stable invariant is publisher-declared source/relationship
+          # topology plus complete watcher and relation evidence for every observed version.
           PY
 
       - name: Upload Akron attachment production evidence
