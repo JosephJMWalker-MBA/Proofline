@@ -1,0 +1,53 @@
+{
+  "fact_count": 31,
+  "facts": [
+    {"char_end":345,"char_start":337,"locator":"page:1","normalized_text":"400000.00","raw_text":"$400,000","source":"s1"},
+    {"char_end":489,"char_start":487,"locator":"page:2","normalized_text":"0.00","raw_text":"$0","source":"s1"},
+    {"char_end":499,"char_start":492,"locator":"page:2","normalized_text":"20000.00","raw_text":"$20,000","source":"s1"},
+    {"char_end":504,"char_start":500,"locator":"page:2","normalized_text":"250.00","raw_text":"$250","source":"s1"},
+    {"char_end":512,"char_start":505,"locator":"page:2","normalized_text":"20001.00","raw_text":"$20,001","source":"s1"},
+    {"char_end":523,"char_start":515,"locator":"page:2","normalized_text":"100000.00","raw_text":"$100,000","source":"s1"},
+    {"char_end":528,"char_start":524,"locator":"page:2","normalized_text":"750.00","raw_text":"$750","source":"s1"},
+    {"char_end":559,"char_start":551,"locator":"page:2","normalized_text":"101001.00","raw_text":"$101,001","source":"s1"},
+    {"char_end":573,"char_start":567,"locator":"page:2","normalized_text":"1500.00","raw_text":"$1,500","source":"s1"},
+    {"char_end":478,"char_start":476,"locator":"page:2","normalized_text":"0.00","raw_text":"$0","source":"s2"},
+    {"char_end":488,"char_start":481,"locator":"page:2","normalized_text":"20000.00","raw_text":"$20,000","source":"s2"},
+    {"char_end":493,"char_start":489,"locator":"page:2","normalized_text":"250.00","raw_text":"$250","source":"s2"},
+    {"char_end":510,"char_start":503,"locator":"page:2","normalized_text":"20001.00","raw_text":"$20,001","source":"s2"},
+    {"char_end":521,"char_start":513,"locator":"page:2","normalized_text":"100000.00","raw_text":"$100,000","source":"s2"},
+    {"char_end":526,"char_start":522,"locator":"page:2","normalized_text":"750.00","raw_text":"$750","source":"s2"},
+    {"char_end":554,"char_start":546,"locator":"page:2","normalized_text":"101001.00","raw_text":"$101,001","source":"s2"},
+    {"char_end":568,"char_start":562,"locator":"page:2","normalized_text":"1500.00","raw_text":"$1,500","source":"s2"},
+    {"char_end":393,"char_start":391,"locator":"page:2","normalized_text":"0.00","raw_text":"$0","source":"s3"},
+    {"char_end":403,"char_start":396,"locator":"page:2","normalized_text":"20000.00","raw_text":"$20,000","source":"s3"},
+    {"char_end":408,"char_start":404,"locator":"page:2","normalized_text":"250.00","raw_text":"$250","source":"s3"},
+    {"char_end":419,"char_start":412,"locator":"page:2","normalized_text":"20001.00","raw_text":"$20,001","source":"s3"},
+    {"char_end":430,"char_start":422,"locator":"page:2","normalized_text":"100000.00","raw_text":"$100,000","source":"s3"},
+    {"char_end":435,"char_start":431,"locator":"page:2","normalized_text":"750.00","raw_text":"$750","source":"s3"},
+    {"char_end":459,"char_start":451,"locator":"page:2","normalized_text":"101001.00","raw_text":"$101,001","source":"s3"},
+    {"char_end":473,"char_start":467,"locator":"page:2","normalized_text":"1500.00","raw_text":"$1,500","source":"s3"},
+    {"char_end":382,"char_start":378,"locator":"page:4","normalized_text":"138.00","raw_text":"$138","source":"s4"},
+    {"char_end":937,"char_start":930,"locator":"page:2","normalized_text":"51780.00","raw_text":"$51,780","source":"s5"},
+    {"char_end":1211,"char_start":1207,"locator":"page:2","normalized_text":"51.00","raw_text":"$ 51","source":"s5"},
+    {"char_end":2945,"char_start":2933,"locator":"page:2","normalized_text":"853000.00","raw_text":"$ 853,000.00","source":"s6"},
+    {"char_end":396,"char_start":391,"locator":"page:5","normalized_text":"4.50","raw_text":"$4.50","source":"s7"},
+    {"char_end":425,"char_start":419,"locator":"page:5","normalized_text":"11.25","raw_text":"$11.25","source":"s7"}
+  ],
+  "schema": "proofline-akron-t8-money-facts/v1",
+  "signature_sha256": "6e9ea2cc4c6e219c749e65ebc9b068b998ca5776159f37415268237b43ed3df0",
+  "source_run": {
+    "artifact_digest": "sha256:36a8402a45567cae5a9c18ee2c7bbc94b7b15a2437cccf38f94b6ed4a01e1af2",
+    "head_sha": "8d0d867e588d48331e620269ed0ec03445768abd",
+    "workflow_artifact_id": 9411607002,
+    "workflow_run_id": 32382105638
+  },
+  "sources": {
+    "s1": {"artifact_id":"artifact:4c5cea19f103675557d9abef93c4ba1f0b7a9d89aa66ff5e55bff0b93f6efe02","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/2025%20-%20D-223%20-%20PETITION%20OF%20TANGO%20VENTURES%20LLC%20FOR%20A%20CONDITIONAL%20USE%20TO%20E.pdf?documentType=1&meetingId=662&itemId=46012&publishId=98280&isSection=False&isAttachment=True"},
+    "s2": {"artifact_id":"artifact:6e73c6d666c599b6b74b3100d2906735a99406463914f8e37a4bc008358b67ad","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/2026%20-%20D-62%20-%20PETITION%20OF%20CAROL%20COLEMAN%20CRANE%2c%20DBA%20TEAM%20TOWING%2c%20FOR%20A.pdf?documentType=1&meetingId=683&itemId=47645&publishId=102737&isSection=False&isAttachment=True"},
+    "s3": {"artifact_id":"artifact:446060594dc237b9b3373d0b059c5534a8776dcc0087f4826b71d3c24e00fb2e","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/2026%20-%20D-8%20-%20PETITION%20OF%20SHUNNAH%20TYLER%20FOR%20A%20CONDITIONAL%20USE%20TO%20EXPAND%20A.pdf?documentType=1&meetingId=665&itemId=46253&publishId=99104&isSection=False&isAttachment=True"},
+    "s4": {"artifact_id":"artifact:2014544978a992b40b4d805df63fe74984d46a68042bfe4a041af624062348cb","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/R-138-2024%20-%20APPOINTMENTS%20OF%20BARB%20WARESS%20AND%20HARTENSE%20PRYEAR%20FOR%20TERM%20ENDING.pdf?documentType=1&meetingId=683&itemId=47765&publishId=102806&isSection=False&isAttachment=True"},
+    "s5": {"artifact_id":"artifact:9e1a310c95b0dcb3969bf081f03eecc48f1d9d14db42e60ab9f2e36dae1af688","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/Supporting%20Document%20for%20-%20%20().pdf?documentType=1&meetingId=666&itemId=46355&publishId=99642&isSection=False&isAttachment=True"},
+    "s6": {"artifact_id":"artifact:5a359bb75403a4a376a72184b046314bef1bbce6ecd7350cde272e8adc99abf2","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/Supporting%20Document%20for%20-%20%20().pdf?documentType=1&meetingId=670&itemId=46649&publishId=100617&isSection=False&isAttachment=True"},
+    "s7": {"artifact_id":"artifact:7f3a9b77d6b385f8eec3b610af88a6dab0700bdef99793bbfb5ec82e13844b64","source_uri":"https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/Supporting%20Document%20for%20-%20ORDINANCE%20levying%20special%20assessments%20for%20the%20improvem.pdf?documentType=1&meetingId=690&itemId=48268&publishId=104438&isSection=False&isAttachment=True"}
+  }
+}
