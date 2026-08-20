@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/r1-akron-money-parser-integrity.yml"
       - ".github/workflows/r1-akron-money-context-profile.yml"
+      - "experiments/akron-2026/R1_T10_MONEY_PARSER_INTEGRITY.md"
       - "experiments/akron-2026/measure_money_parser_delta.py"
       - "experiments/akron-2026/profile_attachment_evidence.py"
       - "experiments/akron-2026/r1_t8_money_facts.json"
