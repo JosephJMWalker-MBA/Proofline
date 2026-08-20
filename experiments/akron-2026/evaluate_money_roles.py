@@ -239,7 +239,8 @@ def evaluate(
         relations_by_source[relation.source_uri].append(relation)
 
     attachments = []
-    source_by_artifact: dict[str, str] = {}
+    sources_by_artifact: dict[str, list[dict]] = defaultdict(list)
+    artifact_profiles: dict[str, dict] = {}
     for selected in selected_sources:
         source_uri = selected["source_uri"]
         source_id = source_id_from_uri(source_uri)
@@ -253,14 +254,23 @@ def evaluate(
             raise RuntimeError(f"selected attachment is not PDF: {source_uri}")
         if not relations_by_source.get(source_uri):
             raise RuntimeError(f"selected attachment has no publisher-backed relation: {source_uri}")
-        source_by_artifact[artifact_id] = source_uri
+
+        native = artifact_profiles.get(artifact_id)
+        if native is None:
+            native = _page_profile(store, artifact_id, threshold=threshold)
+            artifact_profiles[artifact_id] = native
+
+        source_record = {
+            "source_uri": source_uri,
+            "source_uri_sha256": selected["source_uri_sha256"],
+            "source_name": selected.get("source_name"),
+        }
+        sources_by_artifact[artifact_id].append(source_record)
         attachments.append(
             {
-                "source_uri": source_uri,
-                "source_uri_sha256": selected["source_uri_sha256"],
-                "source_name": selected.get("source_name"),
+                **source_record,
                 "artifact": metadata,
-                "native": _page_profile(store, artifact_id, threshold=threshold),
+                "native": native,
                 "relations": [
                     {
                         "parent_source_uri": relation.related_source_uri,
@@ -272,6 +282,9 @@ def evaluate(
             }
         )
 
+    for artifact_id in sources_by_artifact:
+        sources_by_artifact[artifact_id].sort(key=lambda item: item["source_uri"])
+
     tesseract_version = _tesseract_version()
     ocr_results = {}
     if run_ocr:
@@ -279,10 +292,10 @@ def evaluate(
             raise RuntimeError("Tesseract is unavailable; cannot run requested T11 OCR")
         extractor = ProgressiveExtractor(state_dir)
         backend = PyMuPDFTesseractBackend(language=language, dpi=dpi)
-        for item in attachments:
-            if item["native"]["low_quality_page_count"] == 0:
+        for artifact_id in sorted(sources_by_artifact):
+            native = artifact_profiles[artifact_id]
+            if native["low_quality_page_count"] == 0:
                 continue
-            artifact_id = item["artifact"]["artifact_id"]
             result = extractor.run_ocr(artifact_id, backend, threshold=threshold, force=False)
             ocr_results[artifact_id] = result.to_dict()
 
@@ -293,7 +306,7 @@ def evaluate(
             f"T11 structured parser mismatch: {build.parser_version} != {contract['parser_version']}"
         )
 
-    artifact_ids = [item["artifact"]["artifact_id"] for item in attachments]
+    artifact_ids = sorted(sources_by_artifact)
     placeholders = ",".join("?" for _ in artifact_ids)
     with store.connection() as connection:
         rows = connection.execute(
@@ -323,14 +336,18 @@ def evaluate(
             raw_text=row["raw_text"],
             normalized_text=row["normalized_text"],
         )
-        source_uri = source_by_artifact[row["artifact_id"]]
+        source_records = sources_by_artifact[row["artifact_id"]]
+        source_uris = [item["source_uri"] for item in source_records]
+        source_uri_hashes = [item["source_uri_sha256"] for item in source_records]
         role_counts[classified["role"]] += 1
-        source_role_counts[source_uri][classified["role"]] += 1
+        for source_uri in source_uris:
+            source_role_counts[source_uri][classified["role"]] += 1
         facts.append(
             {
                 "fact_id": row["fact_id"],
                 "evidence_id": row["evidence_id"],
-                "source_uri": source_uri,
+                "source_uris": source_uris,
+                "source_uri_sha256s": source_uri_hashes,
                 "artifact_id": row["artifact_id"],
                 "locator": row["locator"],
                 "raw_text": row["raw_text"],
@@ -354,18 +371,37 @@ def evaluate(
             }
         )
 
+    post_profiles = {
+        artifact_id: _page_profile(store, artifact_id, threshold=threshold)
+        for artifact_id in artifact_ids
+    }
     for item in attachments:
         artifact_id = item["artifact"]["artifact_id"]
         item["ocr"] = ocr_results.get(artifact_id)
-        item["post_ocr"] = _page_profile(store, artifact_id, threshold=threshold)
+        item["post_ocr"] = post_profiles[artifact_id]
         item["role_counts"] = dict(sorted(source_role_counts[item["source_uri"]].items()))
+
+    duplicate_artifact_groups = []
+    for artifact_id, source_records in sorted(sources_by_artifact.items()):
+        if len(source_records) < 2:
+            continue
+        metadata = _artifact_metadata(store, artifact_id)
+        duplicate_artifact_groups.append(
+            {
+                "artifact_id": artifact_id,
+                "artifact_sha256": metadata["sha256"],
+                "source_count": len(source_records),
+                "source_uris": [item["source_uri"] for item in source_records],
+                "source_uri_sha256s": [item["source_uri_sha256"] for item in source_records],
+            }
+        )
 
     ocr_attempted = sum(result["attempted"] for result in ocr_results.values())
     ocr_added = sum(result["added"] for result in ocr_results.values())
     ocr_failed = sum(result["failed"] for result in ocr_results.values())
     failures = [failure for result in ocr_results.values() for failure in result["failures"]]
-    total_pages = sum(item["post_ocr"]["page_count"] for item in attachments)
-    low_pages = sum(item["post_ocr"]["low_quality_page_count"] for item in attachments)
+    total_pages = sum(profile["page_count"] for profile in post_profiles.values())
+    low_pages = sum(profile["low_quality_page_count"] for profile in post_profiles.values())
     default_role = contract["default_role"]
     unclassified = role_counts.get(default_role, 0)
 
@@ -384,21 +420,26 @@ def evaluate(
         },
         "sample": {
             "attachment_count": len(attachments),
+            "unique_artifact_count": len(artifact_ids),
+            "duplicate_artifact_group_count": len(duplicate_artifact_groups),
+            "duplicate_artifact_groups": duplicate_artifact_groups,
             "selected_source_hashes": selection_sync["selection"]["selected_source_hashes"],
             "selected_signature_sha256": selection_sync["selection"]["selected_signature_sha256"],
             "excluded_source_hashes": selection_sync["selection"]["excluded_source_hashes"],
             "excluded_signature_sha256": selection_sync["selection"]["excluded_signature_sha256"],
             "selection_note": (
                 "The 24 evaluation sources were frozen from source identity only before document content "
-                "was evaluated and explicitly exclude the eight T8 derivation sources."
+                "was evaluated and explicitly exclude the eight T8 derivation sources. Money facts are "
+                "counted once per unique Bronze/Silver evidence artifact even when multiple selected source "
+                "URIs publish byte-identical content."
             ),
         },
         "extraction": {
             "quality_threshold": threshold,
-            "page_count": total_pages,
+            "unique_artifact_page_count": total_pages,
             "post_ocr_low_quality_page_count": low_pages,
             "ocr_requested": run_ocr,
-            "ocr_documents_attempted": len(ocr_results),
+            "ocr_unique_artifacts_attempted": len(ocr_results),
             "ocr_pages_attempted": ocr_attempted,
             "ocr_extractions_added": ocr_added,
             "ocr_failed": ocr_failed,
