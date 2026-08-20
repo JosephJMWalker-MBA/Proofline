@@ -67,7 +67,7 @@ jobs:
             experiments/akron-2026/onbase-plan.json \
             > akron-money-context/sync.json
 
-      - name: Reproduce preferred Silver and structured facts through the T8 pipeline
+      - name: Reproduce preferred Silver and OCR through the current extraction pipeline
         shell: bash
         run: |
           set -euo pipefail
@@ -79,6 +79,26 @@ jobs:
             --language eng \
             --dpi 200 \
             > akron-money-context/t8-profile-stdout.json
+
+      - name: Restore the frozen v1 structured fact contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.structured import StructuredIndex
+
+          result = StructuredIndex(Path('.akron-money-context')).rebuild(
+              parser_version='proofline-structured/v1'
+          )
+          if result.parser_version != 'proofline-structured/v1':
+              raise SystemExit(f'failed to restore frozen parser contract: {result.parser_version}')
+          Path('akron-money-context/v1-structured-build.json').write_text(
+              json.dumps(result.to_dict(), indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+          PY
 
       - name: Emit frozen money-fact local Silver contexts
         shell: bash
@@ -100,6 +120,7 @@ jobs:
           root = Path('akron-money-context')
           sync = json.loads((root / 'sync.json').read_text())
           t8 = json.loads((root / 't8-evidence-profile.json').read_text())
+          v1_build = json.loads((root / 'v1-structured-build.json').read_text())
           profile = json.loads((root / 'money-context-profile.json').read_text())
           frozen = json.loads(Path('experiments/akron-2026/r1_t8_money_facts.json').read_text())
           rejections = json.loads((root / 'rejections.json').read_text())
@@ -124,9 +145,13 @@ jobs:
           if t8.get('schema') != 'proofline-akron-attachment-evidence-profile/v1':
               raise SystemExit('T8 reproduction profile schema changed')
           if len(t8['post_ocr']['facts']['money']) != 31:
-              raise SystemExit('T8 reproduction no longer yields exactly 31 preferred money facts')
+              raise SystemExit('current parser no longer yields 31 preferred money facts on the frozen sample')
           if t8['ocr']['failed'] != 0:
               raise SystemExit(f"T8 reproduction OCR failed: {t8['ocr']['failures']}")
+          if t8['post_ocr']['structured_build']['parser_version'] != 'proofline-structured/v2':
+              raise SystemExit('current extraction profile did not use structured parser v2')
+          if v1_build.get('parser_version') != 'proofline-structured/v1':
+              raise SystemExit('historical T9 reproduction was not rebuilt with parser v1')
 
           if profile.get('schema') != 'proofline-akron-money-context-profile/v1':
               raise SystemExit('unexpected T9 context profile schema')
@@ -167,6 +192,8 @@ jobs:
               'source_count': reproduction['source_count'],
               'fact_count': reproduction['fact_count'],
               'frozen_signature_sha256': expected_signature,
+              'current_parser_version': t8['post_ocr']['structured_build']['parser_version'],
+              'historical_parser_version': v1_build['parser_version'],
               'unique_page_count': profile['preferred_silver']['unique_page_count'],
               'fact_method_counts': profile['preferred_silver']['fact_method_counts'],
               'minimum_quality_score': profile['preferred_silver']['minimum_quality_score'],
