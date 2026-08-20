@@ -39,6 +39,60 @@ def test_structured_parser_is_conservative_about_money_dates_and_identifiers() -
     assert not any(f.numeric_value == 93821.0 for f in prose_facts)
 
 
+def test_money_parser_reconstructs_whitespace_separated_thousands() -> None:
+    text = "Total expenditure (if applicable): $ 51 ,780.00"
+    money = [fact for fact in extract_structured_facts(text) if fact.fact_type == "money"]
+
+    assert len(money) == 1
+    assert money[0].raw_text == "$ 51 ,780.00"
+    assert money[0].normalized_text == "51780.00"
+    assert money[0].numeric_value == 51780.0
+    assert text[money[0].char_start : money[0].char_end] == money[0].raw_text
+
+
+def test_money_parser_expands_supported_magnitude_suffix_without_truncation() -> None:
+    text = "Sold over $138MM since 2013, 466+ transactions"
+    money = [fact for fact in extract_structured_facts(text) if fact.fact_type == "money"]
+
+    assert len(money) == 1
+    assert money[0].raw_text == "$138MM"
+    assert money[0].normalized_text == "138000000.00"
+    assert money[0].numeric_value == 138000000.0
+    assert not any(fact.raw_text == "$138" for fact in money)
+
+
+def test_money_parser_fails_closed_on_unknown_attached_suffix() -> None:
+    facts = extract_structured_facts("Reported exposure: $138XYZ during the period.")
+    assert not any(fact.fact_type == "money" for fact in facts)
+
+
+def test_v1_money_parser_remains_available_for_frozen_receipts() -> None:
+    spaced = extract_structured_facts(
+        "Total expenditure (if applicable): $ 51 ,780.00",
+        parser_version="proofline-structured/v1",
+    )
+    magnitude = extract_structured_facts(
+        "Sold over $138MM since 2013, 466+ transactions",
+        parser_version="proofline-structured/v1",
+    )
+
+    spaced_money = [fact for fact in spaced if fact.fact_type == "money"]
+    magnitude_money = [fact for fact in magnitude if fact.fact_type == "money"]
+    assert [(fact.raw_text, fact.normalized_text) for fact in spaced_money] == [("$ 51", "51.00")]
+    assert [(fact.raw_text, fact.normalized_text) for fact in magnitude_money] == [("$138", "138.00")]
+
+
+def test_structured_index_records_requested_parser_version(tmp_path) -> None:
+    state = tmp_path / "state"
+    source = tmp_path / "memo.txt"
+    source.write_text("Amount: $138MM", encoding="utf-8")
+    Ingestor(state).ingest(source, source_uri="https://fixtures.proofline.local/memo.txt")
+
+    build = StructuredIndex(state).rebuild(parser_version="proofline-structured/v1")
+    assert build.parser_version == "proofline-structured/v1"
+    assert StructuredIndex(state).current_build()["parser_version"] == "proofline-structured/v1"
+
+
 def test_structured_index_queries_ranges_with_provenance(tmp_path) -> None:
     state = tmp_path / "state"
     csv_path = tmp_path / "awards.csv"
@@ -59,6 +113,7 @@ def test_structured_index_queries_ranges_with_provenance(tmp_path) -> None:
     build = index.rebuild()
     assert build.evidence_count == 3
     assert build.fact_count >= 6
+    assert build.parser_version == "proofline-structured/v2"
 
     money = index.money(minimum=300000, maximum=500000)
     assert {hit.raw_text for hit in money} == {"410000"}
