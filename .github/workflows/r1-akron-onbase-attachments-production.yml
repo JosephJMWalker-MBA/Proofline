@@ -1,0 +1,236 @@
+name: r1-akron-onbase-attachments-production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-onbase-attachments-production.yml"
+      - "src/proofline/onbase_attachments.py"
+      - "src/proofline/onbase_attachments_cli.py"
+      - "src/proofline/onbase.py"
+      - "src/proofline/relations.py"
+      - "src/proofline/watcher.py"
+      - "tests/test_onbase_attachments.py"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Verify installed attachment CLI boundary
+        run: proofline-onbase-attachments --help >/dev/null
+
+      - name: Discover full attachment graph and sync only bounded production sample
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p akron-attachment-production
+          proofline-onbase-attachments \
+            --state-dir .akron-attachment-production \
+            --manifest-out akron-attachment-production/attachments.json \
+            --relations-out akron-attachment-production/relations.json \
+            --rejections-out akron-attachment-production/rejections.json \
+            --sync-limit 8 \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-attachment-production/first.json
+          proofline --state-dir .akron-attachment-production status \
+            > akron-attachment-production/first-status.json
+
+      - name: Validate stable identity, bounded transport, and relation provenance
+        run: |
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+          from urllib.parse import parse_qs, urlsplit
+
+          root = Path('akron-attachment-production')
+          first = json.loads((root / 'first.json').read_text())
+          manifest = json.loads((root / 'attachments.json').read_text())
+          relations = json.loads((root / 'relations.json').read_text())
+          rejections = json.loads((root / 'rejections.json').read_text())
+
+          if first.get('schema') != 'proofline-onbase-attachment-run/v1':
+              raise SystemExit('unexpected attachment production schema')
+
+          canonical = first['canonical']
+          if canonical['agenda_item_count'] < 1475:
+              raise SystemExit(f"canonical Akron population regressed: {canonical['agenda_item_count']}")
+          if canonical['sync_counts']['unavailable'] != 0:
+              raise SystemExit('canonical parent corpus had unavailable agenda items')
+
+          attachment = first['attachments']
+          resources = manifest.get('resources') or []
+          if attachment['resource_count'] != len(resources):
+              raise SystemExit('attachment summary differs from serialized manifest')
+          if len(resources) < 2300:
+              raise SystemExit(f'attachment population unexpectedly small: {len(resources)}')
+          if attachment['relation_count'] != len(relations):
+              raise SystemExit('attachment relation summary differs from relation receipt')
+          if attachment['items_with_accepted_links'] < 1400:
+              raise SystemExit('supporting-document parent coverage unexpectedly low')
+          if attachment['rejected_link_count'] != len(rejections):
+              raise SystemExit('rejection summary differs from rejection receipt')
+          if rejections:
+              raise SystemExit(
+                  f'current Akron publisher emitted {len(rejections)} non-promotable supporting links'
+              )
+
+          for resource in resources:
+              uri = resource['source_uri']
+              parsed = urlsplit(uri)
+              query = parse_qs(parsed.query)
+              if '/Documents/DownloadFile/' not in parsed.path:
+                  raise SystemExit(f'attachment source lost stable DownloadFile identity: {uri}')
+              if '/DownloadFileBytes/' in parsed.path:
+                  raise SystemExit(f'byte transport entered source identity: {uri}')
+              if resource.get('fetch_strategy') != 'onbase_download_bytes':
+                  raise SystemExit('attachment resource lost wrapper-validating transport strategy')
+              if resource.get('expected_media_type') != 'application/pdf':
+                  raise SystemExit('attachment resource lost PDF validation contract')
+              if query.get('isAttachment') != ['True'] or query.get('isSection') != ['False']:
+                  raise SystemExit('attachment query no longer matches proven publisher contract')
+
+          sync = first.get('attachment_sync') or {}
+          watch = sync.get('watch') or {}
+          counts = watch.get('counts') or {}
+          if sync.get('resource_count') != 8:
+              raise SystemExit(f"bounded attachment sync changed size: {sync.get('resource_count')}")
+          if counts.get('new') != 8 or counts.get('unavailable') != 0:
+              raise SystemExit(f'fresh bounded attachment sync failed: {counts}')
+          if sync.get('relations_created') != 8 or sync.get('relations_total') != 8:
+              raise SystemExit('fresh bounded attachment relations were not created exactly once')
+
+          connection = sqlite3.connect('.akron-attachment-production/proofline.db')
+          connection.row_factory = sqlite3.Row
+          try:
+              byte_sources = connection.execute(
+                  "SELECT source_uri FROM sources WHERE source_uri LIKE '%/DownloadFileBytes/%'"
+              ).fetchall()
+              attachment_sources = connection.execute(
+                  "SELECT source_uri FROM sources WHERE source_uri LIKE '%/Documents/DownloadFile/%'"
+              ).fetchall()
+              successful_pdf = connection.execute(
+                  """
+                  SELECT COUNT(DISTINCT s.source_id)
+                  FROM sources s
+                  JOIN source_snapshots ss ON ss.source_id = s.source_id
+                  JOIN artifacts a ON a.artifact_id = ss.artifact_id
+                  WHERE s.source_uri LIKE '%/Documents/DownloadFile/%'
+                    AND a.media_type = 'application/pdf'
+                  """
+              ).fetchone()[0]
+              relation_rows = connection.execute(
+                  """
+                  SELECT sr.relation_type, s.source_uri, related.source_uri AS parent_uri,
+                         a.media_type AS evidence_media_type
+                  FROM source_relations sr
+                  JOIN sources s ON s.source_id = sr.source_id
+                  JOIN sources related ON related.source_id = sr.related_source_id
+                  JOIN artifacts a ON a.artifact_id = sr.evidence_artifact_id
+                  WHERE sr.relation_type = 'supporting_document_of'
+                  """
+              ).fetchall()
+          finally:
+              connection.close()
+
+          if byte_sources:
+              raise SystemExit('DownloadFileBytes transport was persisted as source identity')
+          if len(attachment_sources) != 8:
+              raise SystemExit(f'bounded sync created unexpected attachment source count: {len(attachment_sources)}')
+          if successful_pdf != 8:
+              raise SystemExit(f'not every bounded attachment source produced PDF evidence: {successful_pdf}/8')
+          if len(relation_rows) != 8:
+              raise SystemExit(f'expected 8 supporting_document_of relations, got {len(relation_rows)}')
+          if any(row['evidence_media_type'] != 'text/html' for row in relation_rows):
+              raise SystemExit('attachment relation evidence is not the preserved parent HTML artifact')
+          if any('/Meetings/ViewMeetingAgendaItem?' not in row['parent_uri'] for row in relation_rows):
+              raise SystemExit('attachment relation parent is not a canonical agenda item')
+
+          summary = {
+              'canonical_item_count': canonical['agenda_item_count'],
+              'attachment_resource_count': len(resources),
+              'attachment_relation_count': len(relations),
+              'items_with_support_marker': attachment['items_with_support_marker'],
+              'items_with_accepted_links': attachment['items_with_accepted_links'],
+              'rejected_link_count': len(rejections),
+              'attachment_manifest_sha256': attachment['manifest_sha256'],
+              'bounded_sync_counts': counts,
+              'bounded_relation_count': len(relation_rows),
+              'stable_attachment_source_count': len(attachment_sources),
+              'byte_transport_source_count': len(byte_sources),
+              'pdf_attachment_source_count': successful_pdf,
+          }
+          (root / 'first-validation.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+
+      - name: Prove deterministic rediscovery and unchanged bounded attachment rerun
+        shell: bash
+        run: |
+          set -o pipefail
+          proofline-onbase-attachments \
+            --state-dir .akron-attachment-production \
+            --manifest-out akron-attachment-production/attachments-rerun.json \
+            --relations-out akron-attachment-production/relations-rerun.json \
+            --rejections-out akron-attachment-production/rejections-rerun.json \
+            --sync-limit 8 \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-attachment-production/second.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('akron-attachment-production')
+          first = json.loads((root / 'first.json').read_text())
+          second = json.loads((root / 'second.json').read_text())
+
+          if (root / 'attachments.json').read_bytes() != (root / 'attachments-rerun.json').read_bytes():
+              raise SystemExit('full attachment manifest bytes changed on immediate rerun')
+          if (root / 'relations.json').read_bytes() != (root / 'relations-rerun.json').read_bytes():
+              raise SystemExit('publisher-backed attachment relations changed on immediate rerun')
+          if (root / 'rejections.json').read_bytes() != (root / 'rejections-rerun.json').read_bytes():
+              raise SystemExit('attachment rejection receipt changed on immediate rerun')
+          if first['attachments']['manifest_sha256'] != second['attachments']['manifest_sha256']:
+              raise SystemExit('attachment manifest identity changed on immediate rerun')
+
+          sync = second['attachment_sync']
+          counts = sync['watch']['counts']
+          if counts['new'] != 0 or counts['changed'] != 0 or counts['unavailable'] != 0:
+              raise SystemExit(f'bounded attachment rerun was not unchanged: {counts}')
+          if counts['unchanged'] != 8:
+              raise SystemExit(f"expected 8 unchanged bounded attachments, got {counts['unchanged']}")
+          if sync['relations_created'] != 0 or sync['relations_total'] != 8:
+              raise SystemExit('supporting_document_of relation rerun was not idempotent')
+          PY
+
+      - name: Upload Akron attachment production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-onbase-attachments-production
+          path: akron-attachment-production/
+          if-no-files-found: error
+          retention-days: 14
