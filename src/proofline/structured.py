@@ -13,13 +13,29 @@ from pathlib import Path
 from .hashing import stable_id
 from .storage import ProoflineStore
 
-_PARSER_VERSION = "proofline-structured/v1"
+_PARSER_VERSION_V1 = "proofline-structured/v1"
+_PARSER_VERSION = "proofline-structured/v2"
+_SUPPORTED_PARSER_VERSIONS = {_PARSER_VERSION_V1, _PARSER_VERSION}
 
-_MONEY_RE = re.compile(
+_MONEY_RE_V1 = re.compile(
     r"(?<!\w)(?:(?P<usd>USD)\s*|(?P<dollar>\$)\s*)"
     r"(?P<number>\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)",
     re.IGNORECASE,
 )
+_MONEY_RE = re.compile(
+    r"(?<!\w)(?:(?P<usd>USD)\s*|(?P<dollar>\$)\s*)"
+    r"(?P<number>\d{1,3}(?:\s*,\s*\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)"
+    r"(?P<suffix>[A-Za-z]{1,4})?"
+    r"(?!\w)",
+    re.IGNORECASE,
+)
+_MONEY_MAGNITUDES = {
+    "K": Decimal("1000"),
+    "M": Decimal("1000000"),
+    "MM": Decimal("1000000"),
+    "B": Decimal("1000000000"),
+    "BN": Decimal("1000000000"),
+}
 _ISO_DATE_RE = re.compile(
     r"\b(?P<year>19\d{2}|20\d{2})[-/](?P<month>0?[1-9]|1[0-2])[-/](?P<day>0?[1-9]|[12]\d|3[01])\b"
 )
@@ -147,6 +163,14 @@ class StructuredHit:
         return data
 
 
+def _resolve_parser_version(parser_version: str | None) -> str:
+    resolved = parser_version or _PARSER_VERSION
+    if resolved not in _SUPPORTED_PARSER_VERSIONS:
+        supported = ", ".join(sorted(_SUPPORTED_PARSER_VERSIONS))
+        raise ValueError(f"unsupported structured parser version: {resolved}; expected one of {supported}")
+    return resolved
+
+
 def _normalize_field_name(name: str) -> tuple[str, set[str]]:
     normalized = _FIELD_NORMALIZE_RE.sub("_", name.casefold()).strip("_")
     tokens = {token for token in normalized.split("_") if token}
@@ -166,7 +190,7 @@ def _field_kind(name: str) -> str | None:
     return None
 
 
-def _decimal_value(value: str) -> Decimal | None:
+def _decimal_value_v1(value: str) -> Decimal | None:
     cleaned = value.strip().replace(",", "")
     if cleaned.startswith("$"):
         cleaned = cleaned[1:].strip()
@@ -174,6 +198,35 @@ def _decimal_value(value: str) -> Decimal | None:
         cleaned = cleaned[3:].strip()
     try:
         return Decimal(cleaned)
+    except InvalidOperation:
+        return None
+
+
+def _decimal_value(value: str, *, parser_version: str | None = None) -> Decimal | None:
+    resolved = _resolve_parser_version(parser_version)
+    if resolved == _PARSER_VERSION_V1:
+        return _decimal_value_v1(value)
+
+    cleaned = value.strip()
+    if cleaned.startswith("$"):
+        cleaned = cleaned[1:].strip()
+    elif cleaned.upper().startswith("USD"):
+        cleaned = cleaned[3:].strip()
+
+    magnitude = Decimal("1")
+    suffix_match = re.search(r"(?i)([A-Z]{1,4})$", cleaned)
+    if suffix_match:
+        suffix = suffix_match.group(1).upper()
+        magnitude = _MONEY_MAGNITUDES.get(suffix)
+        if magnitude is None:
+            return None
+        cleaned = cleaned[: suffix_match.start()]
+
+    cleaned = re.sub(r"\s+", "", cleaned).replace(",", "")
+    if not cleaned:
+        return None
+    try:
+        return Decimal(cleaned) * magnitude
     except InvalidOperation:
         return None
 
@@ -235,14 +288,21 @@ def _structured_columns(text: str) -> dict[str, str] | None:
     return {str(key): "" if value is None else str(value) for key, value in columns.items()}
 
 
-def extract_structured_facts(text: str) -> tuple[StructuredFact, ...]:
+def extract_structured_facts(
+    text: str, *, parser_version: str | None = None
+) -> tuple[StructuredFact, ...]:
     """Extract conservative deterministic facts from one preferred evidence text.
 
     Structured spreadsheet rows are interpreted from source field semantics.
     Free-form prose is scanned only for explicit currency/date syntax. These
     paths are mutually exclusive so serialized row JSON does not manufacture
     duplicate prose facts from its own representation.
+
+    ``parser_version`` exists so frozen experiment receipts can reproduce the
+    exact deterministic behavior that generated them. New callers default to
+    the latest parser contract.
     """
+    resolved_parser = _resolve_parser_version(parser_version)
     facts: list[StructuredFact] = []
     seen: set[tuple] = set()
 
@@ -268,7 +328,7 @@ def extract_structured_facts(text: str) -> tuple[StructuredFact, ...]:
                 continue
             kind = _field_kind(field_name)
             if kind == "money":
-                parsed = _decimal_value(value)
+                parsed = _decimal_value(value, parser_version=resolved_parser)
                 if parsed is not None:
                     add(
                         StructuredFact(
@@ -302,8 +362,9 @@ def extract_structured_facts(text: str) -> tuple[StructuredFact, ...]:
                 )
         return tuple(facts)
 
-    for match in _MONEY_RE.finditer(text):
-        parsed = _decimal_value(match.group("number"))
+    money_pattern = _MONEY_RE_V1 if resolved_parser == _PARSER_VERSION_V1 else _MONEY_RE
+    for match in money_pattern.finditer(text):
+        parsed = _decimal_value(match.group(0), parser_version=resolved_parser)
         if parsed is None:
             continue
         add(
@@ -367,9 +428,15 @@ class StructuredIndex:
             ).fetchall()
         return tuple(dict(row) for row in rows)
 
-    def rebuild(self, *, batch_size: int = 1000) -> StructuredBuildResult:
+    def rebuild(
+        self,
+        *,
+        batch_size: int = 1000,
+        parser_version: str | None = None,
+    ) -> StructuredBuildResult:
         if batch_size < 1:
             raise ValueError("batch_size must be positive")
+        resolved_parser = _resolve_parser_version(parser_version)
         build_id = f"structured:{uuid.uuid4()}"
         built_at = datetime.now(UTC).isoformat()
         evidence_count = 0
@@ -402,7 +469,9 @@ class StructuredIndex:
                     break
                 for row in rows:
                     evidence_count += 1
-                    facts = extract_structured_facts(row["extracted_text"])
+                    facts = extract_structured_facts(
+                        row["extracted_text"], parser_version=resolved_parser
+                    )
                     for ordinal, fact in enumerate(facts):
                         fact_id = stable_id(
                             "fact",
@@ -447,7 +516,7 @@ class StructuredIndex:
                     build_id, built_at, evidence_count, fact_count, parser_version
                 ) VALUES (?, ?, ?, ?, ?)
                 """,
-                (build_id, built_at, evidence_count, fact_count, _PARSER_VERSION),
+                (build_id, built_at, evidence_count, fact_count, resolved_parser),
             )
 
         return StructuredBuildResult(
@@ -455,6 +524,7 @@ class StructuredIndex:
             built_at=built_at,
             evidence_count=evidence_count,
             fact_count=fact_count,
+            parser_version=resolved_parser,
         )
 
     def current_build(self) -> dict | None:
