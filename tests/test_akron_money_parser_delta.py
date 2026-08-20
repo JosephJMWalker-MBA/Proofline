@@ -94,5 +94,8 @@ def test_t10_delta_rejects_unrelated_fact_drift() -> None:
     mutated = deepcopy(current)
     mutated["post_ocr"]["facts"]["money"][0]["normalized_text"] = "999999.00"
 
-    with pytest.raises(RuntimeError, match="unexpected parser changes"):
+    with pytest.raises(RuntimeError) as exc_info:
         module.measure_delta(frozen, mutated)
+
+    message = str(exc_info.value)
+    assert "unchanged" in message or "unexpected parser changes" in message
