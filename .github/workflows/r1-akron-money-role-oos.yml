@@ -127,10 +127,14 @@ jobs:
           counts = (sync.get('watch') or {}).get('counts') or {}
           if counts.get('new') != 24 or counts.get('unavailable') != 0:
               raise SystemExit(f'T11 exact attachment sync failed: {counts}')
-          if len(sync.get('selected_sources') or []) != 24:
+          selected_sources = sync.get('selected_sources') or []
+          if len(selected_sources) != 24:
               raise SystemExit('T11 sync did not retain exactly 24 selected sources')
-          if len({item['source_uri_sha256'] for item in sync['selected_sources']}) != 24:
+          if len({item['source_uri_sha256'] for item in selected_sources}) != 24:
               raise SystemExit('T11 selected source identities are not unique')
+          selected_uri_to_hash = {
+              item['source_uri']: item['source_uri_sha256'] for item in selected_sources
+          }
 
           if evaluation.get('schema') != 'proofline-akron-money-role-oos-evaluation/v1':
               raise SystemExit('unexpected T11 role-evaluation schema')
@@ -146,6 +150,26 @@ jobs:
               raise SystemExit('T11 evaluated a different source set than the frozen sample')
           if evaluation['sample']['excluded_source_hashes'] != expected_excluded:
               raise SystemExit('T11 lost the T8 exclusion boundary')
+
+          attachment_artifact_ids = [item['artifact']['artifact_id'] for item in evaluation['attachments']]
+          unique_artifact_count = len(set(attachment_artifact_ids))
+          if evaluation['sample']['unique_artifact_count'] != unique_artifact_count:
+              raise SystemExit('T11 unique Bronze artifact count is internally inconsistent')
+          duplicate_groups = evaluation['sample'].get('duplicate_artifact_groups') or []
+          if evaluation['sample']['duplicate_artifact_group_count'] != len(duplicate_groups):
+              raise SystemExit('T11 duplicate Bronze group count is internally inconsistent')
+          duplicate_excess = sum(group['source_count'] - 1 for group in duplicate_groups)
+          if 24 - unique_artifact_count != duplicate_excess:
+              raise SystemExit('T11 duplicate Bronze source/artifact accounting is inconsistent')
+          for group in duplicate_groups:
+              if group['source_count'] != len(group['source_uris']):
+                  raise SystemExit('T11 duplicate Bronze group lost source identities')
+              if len(group['source_uris']) != len(group['source_uri_sha256s']):
+                  raise SystemExit('T11 duplicate Bronze group lost source identity hashes')
+              for uri, digest in zip(group['source_uris'], group['source_uri_sha256s']):
+                  if selected_uri_to_hash.get(uri) != digest:
+                      raise SystemExit('T11 duplicate Bronze group contains non-selected source provenance')
+
           if evaluation['structured_build']['parser_version'] != 'proofline-structured/v2':
               raise SystemExit('T11 did not use the repaired structured parser v2')
           if evaluation['extraction']['ocr_failed'] != 0:
@@ -171,6 +195,13 @@ jobs:
                   raise SystemExit('T11 fact lost preferred-page provenance')
               if len(fact.get('context_sha256') or '') != 64:
                   raise SystemExit('T11 fact lost local-context provenance')
+              source_uris = fact.get('source_uris') or []
+              source_hashes = fact.get('source_uri_sha256s') or []
+              if not source_uris or len(source_uris) != len(source_hashes):
+                  raise SystemExit('T11 fact lost publisher source provenance')
+              for uri, digest in zip(source_uris, source_hashes):
+                  if selected_uri_to_hash.get(uri) != digest:
+                      raise SystemExit('T11 fact contains non-selected source provenance')
               if fact['role'] == contract['default_role']:
                   if fact.get('rule_id') is not None:
                       raise SystemExit('unclassified T11 fact unexpectedly names a semantic rule')
@@ -185,12 +216,14 @@ jobs:
               )
 
           summary = {
-              'attachment_count': evaluation['sample']['attachment_count'],
+              'attachment_source_count': evaluation['sample']['attachment_count'],
+              'unique_artifact_count': evaluation['sample']['unique_artifact_count'],
+              'duplicate_artifact_group_count': evaluation['sample']['duplicate_artifact_group_count'],
               'money_fact_count': evaluation['money_fact_count'],
               'classified_fact_count': evaluation['classified_fact_count'],
               'unclassified_fact_count': evaluation['unclassified_fact_count'],
               'role_counts': evaluation['role_counts'],
-              'page_count': evaluation['extraction']['page_count'],
+              'unique_artifact_page_count': evaluation['extraction']['unique_artifact_page_count'],
               'post_ocr_low_quality_page_count': evaluation['extraction']['post_ocr_low_quality_page_count'],
               'money_facts_below_quality_floor': low_quality_fact_count,
               'ocr_pages_attempted': evaluation['extraction']['ocr_pages_attempted'],
