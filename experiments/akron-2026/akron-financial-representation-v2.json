@@ -1,0 +1,231 @@
+{
+  "schema": "proofline-akron-financial-representation/v2",
+  "contract_id": "akron-financial-representation-v2",
+  "derived_from": [
+    "experiments/akron-2026/R1_T9_MONEY_CONTEXT_PROFILE.md",
+    "experiments/akron-2026/R1_T11_MONEY_ROLE_OOS.md"
+  ],
+  "parser_version": "proofline-structured/v2",
+  "context_radius_chars": 420,
+  "left_context_chars": 220,
+  "right_context_chars": 220,
+  "detector_authorized": false,
+  "event_identity_assigned": false,
+  "independence_assessed": false,
+  "defaults": {
+    "scope": "unknown",
+    "context_type": "unknown",
+    "amount_type": "unknown"
+  },
+  "allowed": {
+    "scope": [
+      "akron_municipal_record_context",
+      "external_reference",
+      "private_background",
+      "unknown"
+    ],
+    "context_type": [
+      "fee_schedule",
+      "municipal_financial_form",
+      "municipal_budget_narrative",
+      "project_estimate",
+      "grant_project",
+      "contract",
+      "assessment",
+      "property_transaction",
+      "external_comparison",
+      "private_background",
+      "unknown"
+    ],
+    "amount_type": [
+      "fee_schedule_threshold",
+      "filing_fee_amount",
+      "city_expenditure_amount",
+      "municipal_form_amount",
+      "total_project_amount",
+      "budget_narrative_amount",
+      "estimated_project_cost",
+      "grant_cash_match_amount",
+      "grant_context_amount",
+      "contract_amount",
+      "assessment_rate",
+      "purchase_price",
+      "unit_rate",
+      "external_comparative_amount",
+      "private_background_amount",
+      "unknown"
+    ]
+  },
+  "scope_by_context_type": {
+    "fee_schedule": "akron_municipal_record_context",
+    "municipal_financial_form": "akron_municipal_record_context",
+    "municipal_budget_narrative": "akron_municipal_record_context",
+    "project_estimate": "akron_municipal_record_context",
+    "grant_project": "akron_municipal_record_context",
+    "contract": "akron_municipal_record_context",
+    "assessment": "akron_municipal_record_context",
+    "property_transaction": "akron_municipal_record_context",
+    "external_comparison": "external_reference",
+    "private_background": "private_background",
+    "unknown": "unknown"
+  },
+  "context_rules": [
+    {
+      "rule_id": "private_background_sales_context",
+      "value": "private_background",
+      "context_all": ["sales volume", "sold over"]
+    },
+    {
+      "rule_id": "external_fire_comparison_context",
+      "value": "external_comparison",
+      "source_name_any": ["metro fire departments nationally", "big picture for metro fire departments"],
+      "context_any": ["fire department", "city deficit", "budget pressure"]
+    },
+    {
+      "rule_id": "fee_schedule_context",
+      "value": "fee_schedule",
+      "context_all": ["applicable fee"],
+      "context_any": [
+        "estimated total project cost",
+        "estimated tot al project cost",
+        "planning commission filing fees chart",
+        "planning commission filing faes chart",
+        "non-refundable filing fee"
+      ]
+    },
+    {
+      "rule_id": "property_transaction_context",
+      "value": "property_transaction",
+      "context_all": ["purchase price", "city property"]
+    },
+    {
+      "rule_id": "assessment_context",
+      "value": "assessment",
+      "context_all": ["resurfacing", "cash assessed"]
+    },
+    {
+      "rule_id": "contract_context",
+      "value": "contract",
+      "context_all": ["contract with"],
+      "context_any": ["funded out of", "funded from", "funded by", "owda loan"]
+    },
+    {
+      "rule_id": "grant_project_context",
+      "value": "grant_project",
+      "context_any": ["cash match", "this grant would cover", "grant would cover"]
+    },
+    {
+      "rule_id": "municipal_budget_narrative_context",
+      "value": "municipal_budget_narrative",
+      "source_name_any": ["responses to questions on executive summary", "responses to questions about executive summary"],
+      "context_any": ["budget", "revenue", "expenditures", "overtime"]
+    },
+    {
+      "rule_id": "project_estimate_context",
+      "value": "project_estimate",
+      "left_regex": "estimated\\s+total\\s+project\\s+cost\\s*:\\s*$"
+    },
+    {
+      "rule_id": "municipal_financial_form_context",
+      "value": "municipal_financial_form",
+      "context_any": [
+        "financial data:",
+        "current estimate appropriation over",
+        "budgeted cost",
+        "current request:",
+        "city expenditures city receipts"
+      ]
+    }
+  ],
+  "amount_rules": [
+    {
+      "rule_id": "private_background_amount",
+      "value": "private_background_amount",
+      "context_types": ["private_background"]
+    },
+    {
+      "rule_id": "external_comparative_amount",
+      "value": "external_comparative_amount",
+      "context_types": ["external_comparison"]
+    },
+    {
+      "rule_id": "fee_schedule_threshold_by_position",
+      "value": "fee_schedule_threshold",
+      "context_types": ["fee_schedule"],
+      "token_before_first_regex": "applicable\\s+fee"
+    },
+    {
+      "rule_id": "fee_schedule_fee_by_position",
+      "value": "filing_fee_amount",
+      "context_types": ["fee_schedule"],
+      "token_after_first_regex": "applicable\\s+fee"
+    },
+    {
+      "rule_id": "property_purchase_price",
+      "value": "purchase_price",
+      "context_types": ["property_transaction"],
+      "left_regex": "purchase\\s+price\\s+of\\s*$"
+    },
+    {
+      "rule_id": "property_unit_rate",
+      "value": "unit_rate",
+      "context_types": ["property_transaction"],
+      "right_regex": "^\\s*(?:per\\b|/)"
+    },
+    {
+      "rule_id": "explicit_city_expenditure",
+      "value": "city_expenditure_amount",
+      "context_types": ["municipal_financial_form"],
+      "left_regex": "(?:amount|total\\s+expenditure(?:\\s*\\(if applicable\\))?)\\s*:\\s*$"
+    },
+    {
+      "rule_id": "explicit_total_project",
+      "value": "total_project_amount",
+      "context_types": ["municipal_financial_form"],
+      "left_regex": "(?:total|total\\s+project(?:\\s*\\(if applicable\\))?)\\s*[:\\-]?\\s*$"
+    },
+    {
+      "rule_id": "grant_cash_match",
+      "value": "grant_cash_match_amount",
+      "context_types": ["grant_project"],
+      "left_regex": "cash\\s+match\\s+of\\s*$"
+    },
+    {
+      "rule_id": "grant_context_amount",
+      "value": "grant_context_amount",
+      "context_types": ["grant_project"]
+    },
+    {
+      "rule_id": "contract_amount",
+      "value": "contract_amount",
+      "context_types": ["contract"]
+    },
+    {
+      "rule_id": "assessment_rate",
+      "value": "assessment_rate",
+      "context_types": ["assessment"]
+    },
+    {
+      "rule_id": "estimated_project_cost",
+      "value": "estimated_project_cost",
+      "context_types": ["project_estimate"]
+    },
+    {
+      "rule_id": "budget_narrative_amount",
+      "value": "budget_narrative_amount",
+      "context_types": ["municipal_budget_narrative"]
+    },
+    {
+      "rule_id": "municipal_form_amount",
+      "value": "municipal_form_amount",
+      "context_types": ["municipal_financial_form"]
+    }
+  ],
+  "non_claims": [
+    "A representation facet is not a transaction, award, anomaly, conflict, or suspiciousness label.",
+    "Scope identifies the record context, not ownership of the money.",
+    "Municipal financial-form amounts may remain field-ambiguous after flat-text extraction.",
+    "Repeated amount occurrences are not independent events unless separately established.",
+    "No detector or lead generation is authorized by this contract."
+  ]
+}

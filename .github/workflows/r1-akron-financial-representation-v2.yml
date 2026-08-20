@@ -1,0 +1,107 @@
+name: r1-akron-financial-representation-v2
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-financial-representation-v2.yml"
+      - "experiments/akron-2026/akron-financial-representation-v2.json"
+      - "experiments/akron-2026/financial_representation_v2.py"
+      - "experiments/akron-2026/r1_t13_disjoint_attachment_sources.json"
+      - "experiments/akron-2026/R1_T12_FINANCIAL_REPRESENTATION_V2.md"
+      - "tests/test_akron_financial_representation_v2.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Validate T12 representation and blind holdout boundary
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import json
+          from pathlib import Path
+
+          def json_keys(value):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      yield key
+                      yield from json_keys(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from json_keys(child)
+
+          root = Path('.')
+          contract_path = root / 'experiments' / 'akron-2026' / 'akron-financial-representation-v2.json'
+          module_path = root / 'experiments' / 'akron-2026' / 'financial_representation_v2.py'
+          holdout_path = root / 'experiments' / 'akron-2026' / 'r1_t13_disjoint_attachment_sources.json'
+
+          spec = importlib.util.spec_from_file_location('financial_representation_v2', module_path)
+          if spec is None or spec.loader is None:
+              raise SystemExit('unable to load T12 representation evaluator')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          contract = json.loads(contract_path.read_text(encoding='utf-8'))
+          module.validate_contract(contract)
+          if contract['detector_authorized'] is not False:
+              raise SystemExit('T12 may not authorize detector semantics')
+          if contract['event_identity_assigned'] is not False:
+              raise SystemExit('T12 may not assign event identity')
+          if contract['independence_assessed'] is not False:
+              raise SystemExit('T12 may not assess occurrence independence')
+          if 'numeric_in' in json.dumps(contract, sort_keys=True):
+              raise SystemExit('T12 v2 may not restore amount-whitelist classification')
+
+          holdout = json.loads(holdout_path.read_text(encoding='utf-8'))
+          if holdout.get('schema') != 'proofline-akron-t13-disjoint-source-set/v1':
+              raise SystemExit('unexpected T13 holdout schema')
+          if holdout.get('content_inspection_status') != 'not_inspected_at_freeze':
+              raise SystemExit('T13 holdout lost its pre-inspection freeze marker')
+          excluded = holdout['excluded']['source_uri_sha256']
+          selected = holdout['selected']['source_uri_sha256']
+          if len(excluded) != 32 or len(set(excluded)) != 32:
+              raise SystemExit('T13 exclusion population is not exactly 32 unique identities')
+          if len(selected) != 32 or len(set(selected)) != 32:
+              raise SystemExit('T13 selected population is not exactly 32 unique identities')
+          if set(excluded) & set(selected):
+              raise SystemExit('T13 holdout overlaps ranks 1-32 development evidence')
+          if holdout['excluded']['original_manifest_ranks'] != [1, 32]:
+              raise SystemExit('T13 exclusion rank boundary changed')
+          if holdout['selected']['original_manifest_ranks'] != [33, 64]:
+              raise SystemExit('T13 holdout rank boundary changed')
+
+          keys = set(json_keys(holdout))
+          for forbidden in ('source_uri', 'source_name', 'document_text'):
+              if forbidden in keys:
+                  raise SystemExit(f'T13 holdout contains content-bearing field: {forbidden}')
+
+          print(json.dumps({
+              'contract_id': contract['contract_id'],
+              'detector_authorized': contract['detector_authorized'],
+              'event_identity_assigned': contract['event_identity_assigned'],
+              'independence_assessed': contract['independence_assessed'],
+              'excluded_development_sources': len(excluded),
+              'frozen_holdout_sources': len(selected),
+              'holdout_ranks': holdout['selected']['original_manifest_ranks'],
+          }, indent=2, sort_keys=True))
+          PY
