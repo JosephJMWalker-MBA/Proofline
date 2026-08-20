@@ -155,7 +155,7 @@ jobs:
           print(json.dumps(profile, indent=2, sort_keys=True))
           PY
 
-      - name: Prove deterministic discovery and unchanged canonical rerun
+      - name: Prove deterministic discovery and audit canonical rerun
         shell: bash
         run: |
           set -o pipefail
@@ -165,26 +165,111 @@ jobs:
             experiments/akron-2026/onbase-plan.json > akron-results/second-sync.json
           python - <<'PY'
           import json
+          import sqlite3
           from pathlib import Path
 
-          first = json.loads(Path('akron-results/first-sync.json').read_text())
-          second = json.loads(Path('akron-results/second-sync.json').read_text())
-          first_manifest = Path('akron-results/agenda-items.json').read_bytes()
-          second_manifest = Path('akron-results/agenda-items-rerun.json').read_bytes()
+          root = Path('akron-results')
+          first = json.loads((root / 'first-sync.json').read_text())
+          second = json.loads((root / 'second-sync.json').read_text())
+          first_manifest = (root / 'agenda-items.json').read_bytes()
+          second_manifest = (root / 'agenda-items-rerun.json').read_bytes()
 
           if first['manifest_sha256'] != second['manifest_sha256']:
               raise SystemExit('OnBase canonical manifest identity changed on immediate rerun')
           if first_manifest != second_manifest:
               raise SystemExit('OnBase canonical manifest bytes changed on immediate rerun')
-          counts = second['canonical_sync']['counts']
+
+          canonical = second['canonical_sync']
+          counts = canonical['counts']
+          total = second['onbase']['agenda_item_count']
           if counts['unavailable'] != 0:
               raise SystemExit('canonical OnBase rerun produced unavailable resources')
-          if counts['changed'] != 0 or counts['new'] != 0:
-              raise SystemExit(
-                  f"canonical OnBase rerun unexpectedly changed/new: {counts['changed']}/{counts['new']}"
+          if counts['new'] != 0:
+              raise SystemExit(f"canonical OnBase rerun unexpectedly produced new resources: {counts['new']}")
+          if counts['changed'] + counts['unchanged'] != total:
+              raise SystemExit('canonical rerun counts do not account for every discovered item')
+
+          manifest_uris = {
+              resource['source_uri']
+              for resource in json.loads((root / 'agenda-items-rerun.json').read_text())['resources']
+          }
+          changed = [result for result in canonical['results'] if result['state'] == 'changed']
+          if len(changed) != counts['changed']:
+              raise SystemExit('changed result count differs from watcher summary')
+
+          connection = sqlite3.connect('.akron/proofline.db')
+          connection.row_factory = sqlite3.Row
+
+          def artifact_text(artifact_id: str) -> tuple[tuple[str, str, float | None], ...]:
+              rows = connection.execute(
+                  """
+                  SELECT eu.locator, best.extracted_text, best.quality_score
+                  FROM evidence_units eu
+                  JOIN evidence_extractions best ON best.extraction_id = (
+                      SELECT ee.extraction_id
+                      FROM evidence_extractions ee
+                      WHERE ee.evidence_id = eu.evidence_id
+                      ORDER BY COALESCE(ee.quality_score, -1.0) DESC,
+                               ee.occurred_at DESC,
+                               ee.rowid DESC
+                      LIMIT 1
+                  )
+                  WHERE eu.artifact_id = ?
+                  ORDER BY eu.locator
+                  """,
+                  (artifact_id,),
+              ).fetchall()
+              return tuple(
+                  (str(row['locator']), str(row['extracted_text'] or ''), row['quality_score'])
+                  for row in rows
               )
-          if counts['unchanged'] != second['onbase']['agenda_item_count']:
-              raise SystemExit('not every canonical OnBase item was unchanged on immediate rerun')
+
+          shell_only = 0
+          silver_changed = 0
+          changed_by_meeting: dict[str, int] = {}
+          try:
+              for result in changed:
+                  source_uri = result['source_uri']
+                  current = result.get('artifact_id')
+                  previous = result.get('previous_artifact_id')
+                  if source_uri not in manifest_uris:
+                      raise SystemExit(f'changed source left deterministic manifest: {source_uri}')
+                  if not current or not previous or current == previous:
+                      raise SystemExit(f'changed source lost distinct prior/current artifact IDs: {source_uri}')
+                  previous_text = artifact_text(previous)
+                  current_text = artifact_text(current)
+                  if not previous_text or not current_text:
+                      raise SystemExit(f'changed source lost Silver evidence on one version: {source_uri}')
+                  if previous_text == current_text:
+                      shell_only += 1
+                  else:
+                      silver_changed += 1
+                  marker = 'meetingId='
+                  meeting = source_uri.split(marker, 1)[1].split('&', 1)[0] if marker in source_uri else 'unknown'
+                  changed_by_meeting[meeting] = changed_by_meeting.get(meeting, 0) + 1
+          finally:
+              connection.close()
+
+          summary = {
+              'manifest_sha256': second['manifest_sha256'],
+              'total_items': total,
+              'watch_counts': counts,
+              'changed_item_count': len(changed),
+              'shell_only_change_count': shell_only,
+              'silver_changed_item_count': silver_changed,
+              'changed_by_meeting': [
+                  {'meeting_id': key, 'count': changed_by_meeting[key]}
+                  for key in sorted(changed_by_meeting, key=lambda value: int(value) if value.isdigit() else value)
+              ],
+          }
+          (root / 'rerun-profile.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, indent=2, sort_keys=True))
+
+          # A live public record may legitimately version between two passes. The invariant is
+          # deterministic source discovery plus complete append-only capture of any A -> B change,
+          # not the assumption that publisher bytes can never change while CI is running.
           PY
 
       - name: Upload Akron production-transfer evidence

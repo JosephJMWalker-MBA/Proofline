@@ -24,6 +24,7 @@ dev = [
 [project.scripts]
 proofline = "proofline.cli:main"
 proofline-onbase = "proofline.onbase_cli:main"
+proofline-onbase-attachments = "proofline.onbase_attachments_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/proofline"]
