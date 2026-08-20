@@ -1,0 +1,21 @@
+{
+  "schema": "proofline-akron-t8-derivation-bronze-audit/v1",
+  "purpose": "Post-hoc contamination audit only. These hashes do not alter, replace, or resample the frozen T11 source identities.",
+  "provenance": {
+    "workflow_run_id": 32382105638,
+    "workflow_artifact_id": 9411607002,
+    "workflow_artifact_digest": "sha256:36a8402a45567cae5a9c18ee2c7bbc94b7b15a2437cccf38f94b6ed4a01e1af2",
+    "receipt": "experiments/akron-2026/R1_T8_ATTACHMENT_EVIDENCE_PROFILE.md"
+  },
+  "artifact_count": 8,
+  "artifact_sha256": [
+    "2014544978a992b40b4d805df63fe74984d46a68042bfe4a041af624062348cb",
+    "2f6c910f02e0b3b6d8b1880f67307f9df5abfe5f515a7046daa40bdd2bacf9c5",
+    "446060594dc237b9b3373d0b059c5534a8776dcc0087f4826b71d3c24e00fb2e",
+    "4c5cea19f103675557d9abef93c4ba1f0b7a9d89aa66ff5e55bff0b93f6efe02",
+    "5a359bb75403a4a376a72184b046314bef1bbce6ecd7350cde272e8adc99abf2",
+    "6e73c6d666c599b6b74b3100d2906735a99406463914f8e37a4bc008358b67ad",
+    "7f3a9b77d6b385f8eec3b610af88a6dab0700bdef99793bbfb5ec82e13844b64",
+    "9e1a310c95b0dcb3969bf081f03eecc48f1d9d14db42e60ab9f2e36dae1af688"
+  ]
+}
