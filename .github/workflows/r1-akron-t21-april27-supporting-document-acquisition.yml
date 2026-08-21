@@ -32,6 +32,7 @@ jobs:
           test "$(git hash-object experiments/akron-2026/r1_t21_april27_supporting_document_selection.json)" = "cd197f9e39d110f724a6c4437b311c1d86e9d904"
           test "$(git hash-object experiments/akron-2026/acquire_t21_april27_supporting_documents.py)" = "2af981af1a0f1e2624af2fe0d95d14ba9f6c4212"
           test "$(git hash-object tests/test_t21_april27_supporting_document_acquisition.py)" = "2f60a6c037ef3dafddbfa287f5210dc91115016c"
+          test "$(git hash-object tests/test_t21_april27_supporting_document_selection.py)" = "50197d16a251d2f1b13be203e8ce5f9594436397"
           test "$(git hash-object src/proofline/onbase_attachments.py)" = "629421673d8d7a47ab0580c6e0f08cbc2d62ea26"
           test "$(git hash-object src/proofline/onbase_attachments_cli.py)" = "eb3ec92694a877a6b4365db04271974392e9a402"
           test "$(git hash-object src/proofline/storage.py)" = "755acd6b5a9d52e6edd93a5aab740df4ac4e19c5"
