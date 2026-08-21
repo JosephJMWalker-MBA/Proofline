@@ -4,20 +4,13 @@ on:
   pull_request:
     paths:
       - ".github/workflows/r1-akron-v2-precision-audit.yml"
-      - "experiments/akron-2026/R1_T14_REPRESENTATION_PRECISION_AUDIT.md"
-      - "experiments/akron-2026/r1_t13b_blind_result_summary.json"
-      - "experiments/akron-2026/r1_t14_known_amount_type_audit.json"
-      - "experiments/akron-2026/akron-financial-representation-v2.json"
-      - "tests/test_akron_v2_precision_audit.py"
-      - "src/proofline/structured.py"
-      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  audit:
+  repair-t15:
     runs-on: ubuntu-latest
     steps:
       - name: Check out T15 branch
@@ -30,34 +23,69 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
 
-      - name: Install package and tests
-        run: python -m pip install -e ".[dev]"
-
-      - name: Run full test suite
-        run: pytest
-
-      - name: Re-run T14 audit boundary explicitly
-        run: pytest -q tests/test_akron_v2_precision_audit.py
-
-      - name: Pin historical parser contracts and restore workflow
+      - name: Repair fixture, pin historical parsers, restore workflow
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
+
           test "$(git hash-object experiments/akron-2026/profile_attachment_evidence.py)" = "c68aec3dfe890da7e962181073abb63290b85e5f"
           test "$(git hash-object experiments/akron-2026/evaluate_money_roles.py)" = "c706a3f94343e49429ac3710cb6f87c544a1c4f5"
           test "$(git hash-object experiments/akron-2026/evaluate_financial_representation_v2_oos.py)" = "459fdfdb6ce39a12a82a672a6d0c47dee3026a1e"
           test "$(git hash-object .github/workflows/r1-akron-money-parser-integrity.yml)" = "49c9d61491ed0e23cc345f5564fabce0ff9c41ab"
           test "$(git hash-object .github/workflows/r1-akron-money-context-profile.yml)" = "3eac4e0228a097dc881c7458ea4335fdf00e9ad2"
+
           python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import re
           from pathlib import Path
+
+          fixture_path = Path("experiments/akron-2026/r1_t13b_money_anchor_fixture.json")
+          raw = fixture_path.read_bytes()
+          fixture = json.JSONDecoder(strict=False).decode(raw.decode("utf-8"))
+          if fixture.get("schema") != "proofline-akron-t15-t13b-money-anchor-fixture/v1":
+              raise SystemExit("unexpected T15 fixture schema")
+          if fixture.get("fact_count") != 194 or len(fixture.get("facts") or []) != 194:
+              raise SystemExit("T15 fixture no longer contains exactly 194 anchors")
+          repaired = (json.dumps(fixture, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+          json.loads(repaired)
+          fixture_path.write_bytes(repaired)
+          digest = hashlib.sha256(repaired).hexdigest()
+          print(f"repaired fixture sha256={digest}")
+
+          measure_path = Path("experiments/akron-2026/measure_money_parser_v3_delta.py")
+          measure = measure_path.read_text(encoding="utf-8")
+          measure, count = re.subn(
+              r'EXPECTED_FIXTURE_SHA256 = "[0-9a-f]{64}"',
+              f'EXPECTED_FIXTURE_SHA256 = "{digest}"',
+              measure,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("could not update T15 fixture integrity constant exactly once")
+          measure_path.write_text(measure, encoding="utf-8")
+
+          receipt_path = Path("experiments/akron-2026/R1_T15_MONEY_PARSER_V3_INTEGRITY.md")
+          receipt = receipt_path.read_text(encoding="utf-8")
+          receipt, count = re.subn(
+              r'fixture SHA-256: `[0-9a-f]{64}`',
+              f'fixture SHA-256: `{digest}`',
+              receipt,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("could not update T15 receipt fixture hash exactly once")
+          receipt_path.write_text(receipt, encoding="utf-8")
 
           def replace_once(path_str: str, old: str, new: str) -> None:
               path = Path(path_str)
               text = path.read_text(encoding="utf-8")
               if text.count(old) != 1:
-                  raise SystemExit(f"{path_str}: expected exact replacement once, found {text.count(old)}")
+                  raise SystemExit(f"{path_str}: expected replacement once, found {text.count(old)}")
               path.write_text(text.replace(old, new), encoding="utf-8")
 
           profile = Path("experiments/akron-2026/profile_attachment_evidence.py")
@@ -70,8 +98,14 @@ jobs:
               raise SystemExit("native structured rebuild did not match once")
           if text.count("    post_build = structured.rebuild()\n") != 1:
               raise SystemExit("post-OCR structured rebuild did not match once")
-          text = text.replace("    native_build = structured.rebuild()\n", "    native_build = structured.rebuild(parser_version=parser_version)\n")
-          text = text.replace("    post_build = structured.rebuild()\n", "    post_build = structured.rebuild(parser_version=parser_version)\n")
+          text = text.replace(
+              "    native_build = structured.rebuild()\n",
+              "    native_build = structured.rebuild(parser_version=parser_version)\n",
+          )
+          text = text.replace(
+              "    post_build = structured.rebuild()\n",
+              "    post_build = structured.rebuild(parser_version=parser_version)\n",
+          )
           old = '    parser.add_argument("--dpi", type=int, default=200)\n'
           if text.count(old) != 1:
               raise SystemExit("profile CLI dpi argument did not match once")
@@ -79,7 +113,10 @@ jobs:
           old = "        dpi=args.dpi,\n    )\n"
           if text.count(old) != 1:
               raise SystemExit("profile build call did not match once")
-          text = text.replace(old, "        dpi=args.dpi,\n        parser_version=args.parser_version,\n    )\n")
+          text = text.replace(
+              old,
+              "        dpi=args.dpi,\n        parser_version=args.parser_version,\n    )\n",
+          )
           profile.write_text(text, encoding="utf-8")
 
           replace_once(
@@ -103,60 +140,31 @@ jobs:
                   "            --parser-version proofline-structured/v2 \\\n            --threshold 0.70 \\\n",
               )
           PY
+
+          git show origin/main:.github/workflows/r1-akron-v2-precision-audit.yml > .github/workflows/r1-akron-v2-precision-audit.yml
+
+          python -m pip install -e ".[dev]"
           python -m py_compile \
             experiments/akron-2026/profile_attachment_evidence.py \
             experiments/akron-2026/evaluate_money_roles.py \
-            experiments/akron-2026/evaluate_financial_representation_v2_oos.py
-          cat > .github/workflows/r1-akron-v2-precision-audit.yml <<'YAML'
-          name: r1-akron-v2-precision-audit
+            experiments/akron-2026/evaluate_financial_representation_v2_oos.py \
+            experiments/akron-2026/measure_money_parser_v3_delta.py
+          pytest
+          python experiments/akron-2026/measure_money_parser_v3_delta.py \
+            --fixture experiments/akron-2026/r1_t13b_money_anchor_fixture.json \
+            --output /tmp/t15-delta.json
 
-          on:
-            pull_request:
-              paths:
-                - ".github/workflows/r1-akron-v2-precision-audit.yml"
-                - "experiments/akron-2026/R1_T14_REPRESENTATION_PRECISION_AUDIT.md"
-                - "experiments/akron-2026/r1_t13b_blind_result_summary.json"
-                - "experiments/akron-2026/r1_t14_known_amount_type_audit.json"
-                - "experiments/akron-2026/akron-financial-representation-v2.json"
-                - "tests/test_akron_v2_precision_audit.py"
-                - "src/proofline/structured.py"
-                - "pyproject.toml"
-            workflow_dispatch:
-
-          permissions:
-            contents: read
-
-          jobs:
-            audit:
-              runs-on: ubuntu-latest
-              steps:
-                - name: Check out repository
-                  uses: actions/checkout@v4
-
-                - name: Set up Python
-                  uses: actions/setup-python@v5
-                  with:
-                    python-version: "3.12"
-                    cache: pip
-
-                - name: Install package and tests
-                  run: python -m pip install -e ".[dev]"
-
-                - name: Run full test suite
-                  run: pytest
-
-                - name: Re-run T14 audit boundary explicitly
-                  run: pytest -q tests/test_akron_v2_precision_audit.py
-          YAML
-          sed -i 's/^          //' .github/workflows/r1-akron-v2-precision-audit.yml
           git config user.name "Joseph Walker"
           git config user.email "joseph@decisionpointinitiative.com"
           git add -- \
+            experiments/akron-2026/r1_t13b_money_anchor_fixture.json \
+            experiments/akron-2026/measure_money_parser_v3_delta.py \
+            experiments/akron-2026/R1_T15_MONEY_PARSER_V3_INTEGRITY.md \
             experiments/akron-2026/profile_attachment_evidence.py \
             experiments/akron-2026/evaluate_money_roles.py \
             experiments/akron-2026/evaluate_financial_representation_v2_oos.py \
             .github/workflows/r1-akron-money-parser-integrity.yml \
             .github/workflows/r1-akron-money-context-profile.yml \
             .github/workflows/r1-akron-v2-precision-audit.yml
-          git commit -m "R1.T15: pin historical parser contracts"
+          git commit -m "R1.T15: repair fixture and pin historical parsers"
           git push origin HEAD:agent/r1-money-parser-v3-integrity
