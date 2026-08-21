@@ -1,0 +1,101 @@
+name: r1-akron-t21-explicit-reference-probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-explicit-reference-probe.yml"
+      - "experiments/akron-2026/probe_t21_explicit_reference_family.py"
+      - "src/proofline/explicit_references.py"
+      - "tests/test_explicit_references.py"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite and probe smoke gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/probe_t21_explicit_reference_family.py --help >/dev/null
+
+      - name: Rebuild canonical Akron attachment identity graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-t21-reference-probe akron-t21-reference-probe
+          mkdir -p akron-t21-reference-probe
+          proofline-onbase-attachments \
+            --state-dir .akron-t21-reference-probe \
+            --manifest-out akron-t21-reference-probe/attachment-manifest.json \
+            --relations-out akron-t21-reference-probe/discovered-relations.json \
+            --rejections-out akron-t21-reference-probe/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-t21-reference-probe/discovery.json
+          test "$(sha256sum akron-t21-reference-probe/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+          test "$(python - <<'PY'
+          import json
+          print(len(json.load(open('akron-t21-reference-probe/rejections.json'))))
+          PY
+          )" = "0"
+
+      - name: Probe exact reference recurrence from audited citizen source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/probe_t21_explicit_reference_family.py \
+            --state-dir .akron-t21-reference-probe \
+            --attachment-manifest akron-t21-reference-probe/attachment-manifest.json \
+            --target-source-hash 0d4825b3ecb9a0a34438153573a03551219ced97625044c7b959bad30a1cdf79 \
+            --reference-key PC-2025-80-CU \
+            --output akron-t21-reference-probe/reference-probe.json \
+            > akron-t21-reference-probe/reference-probe-stdout.json
+          cat akron-t21-reference-probe/reference-probe-stdout.json
+
+      - name: Validate authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          p = json.load(open('akron-t21-reference-probe/reference-probe.json'))
+          assert p['schema'] == 'proofline-akron-t21-explicit-reference-probe/v1'
+          assert p['reference'] == {'kind': 'planning_case', 'normalized_key': 'PC-2025-80-CU'}
+          assert p['counts']['target_matching_evidence_units'] >= 1
+          b = p['authority_boundary']
+          assert b['source_relation_created'] is False
+          assert b['source_family_modified'] is False
+          assert b['event_identity_assigned'] is False
+          assert b['outcome_assigned'] is False
+          assert b['detector_authorized'] is False
+          assert b['lead_count'] is None
+          PY
+
+      - name: Upload descriptive T21 reference evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-explicit-reference-probe
+          path: |
+            akron-t21-reference-probe/reference-probe.json
+            akron-t21-reference-probe/reference-probe-stdout.json
+            akron-t21-reference-probe/attachment-manifest.json
+            akron-t21-reference-probe/discovered-relations.json
+            akron-t21-reference-probe/rejections.json
+          if-no-files-found: error
+          retention-days: 14
