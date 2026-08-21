@@ -8,14 +8,17 @@
     "t16_artifact_digest": "sha256:989fd15cbe01f0b65d995d1f86d4ff9da255753a9ea7e004594edbe496187684",
     "t13b_workflow_run_id": 32440471169,
     "t13b_artifact_id": 9432387690,
-    "t13b_artifact_digest": "sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338"
+    "t13b_artifact_digest": "sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338",
+    "t13b_source_artifact_mapping_signature_sha256": "797f8986110664bf23019536a3c9721c7e283cd81b730e3eb867459b34848edf"
   },
   "sample": {
     "status": "already_opened_t13b_development_data_not_new_holdout",
     "source_identity_count": 32,
     "unique_artifact_count": 28,
     "unique_artifact_page_count": 270,
-    "selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966"
+    "selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966",
+    "exact_source_to_bronze_identity_match_to_preserved_t13b": true,
+    "bronze_identity_drift_count": 0
   },
   "runtime": {
     "python": "3.12.14",
@@ -73,7 +76,7 @@
     "next_boundary": "preserve deterministic spatial word geometry for both native and OCR text before deriving table or field structure"
   },
   "non_claims": [
-    "T16 is not an out-of-sample accuracy estimate; it reuses already-opened T13b and T14 development evidence.",
+    "T16 is not an out-of-sample accuracy estimate; it reuses exactly the preserved T13b source identities and Bronze artifact identities plus the opened T14 audit.",
     "The 52 detected tables show native table detection has real capability, not that detected cells carry trusted financial semantics.",
     "Zero structural separation on the six fee groups is a negative capability result, not evidence that the source documents lack visual table structure.",
     "The assessment counterexample shows that high-quality native text can still lose field relationships when only flat text or native ruled-table detection is preserved.",
