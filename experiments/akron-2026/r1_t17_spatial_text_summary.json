@@ -1,0 +1,73 @@
+{
+  "schema": "proofline-akron-t17-spatial-text-summary/v1",
+  "stage": "post_hoc_common_spatial_text_capability_probe_on_opened_t13b_t14",
+  "source_evidence": {
+    "t17_workflow_run_id": 32490067725,
+    "t17_workflow_head_sha": "ee85e5bd27856bbd4b5fe7ce79b682e0cddee1e5",
+    "t17_artifact_id": 9449926547,
+    "t17_artifact_digest": "sha256:6dce2fa8198bb6d3d9c8537bcd86acad1b39a2ff49c6fe575bec45a316662dc9",
+    "t16_summary_schema": "proofline-akron-t16-native-pdf-structure-summary/v1",
+    "t13b_source_artifact_mapping_signature_sha256": "797f8986110664bf23019536a3c9721c7e283cd81b730e3eb867459b34848edf"
+  },
+  "sample": {
+    "status": "already_opened_t13b_t14_development_data_not_new_holdout",
+    "source_identity_count": 32,
+    "unique_artifact_count": 28,
+    "selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966",
+    "exact_source_to_bronze_match_count": 32,
+    "bronze_byte_identity_drift_count": 0
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pymupdf": "1.28.2",
+    "tesseract": "5.3.4",
+    "ocr_language": "eng",
+    "ocr_dpi": 200,
+    "full_test_count": 194,
+    "full_test_result": "passed"
+  },
+  "spatial_contract": {
+    "target_spatial_page_count": 7,
+    "native_target_page_count": 1,
+    "ocr_target_page_count": 6,
+    "total_word_count": 929,
+    "total_line_count": 370,
+    "canonical_silver_changed": false,
+    "sqlite_storage_changed": false,
+    "search_changed": false,
+    "structured_index_changed": false,
+    "financial_semantics_changed": false,
+    "event_identity_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "post_hoc_t14_characterization": {
+    "fee_schedule_group_count": 6,
+    "fee_schedule_complete_geometry_count": 6,
+    "fee_schedule_x_band_separable_count": 0,
+    "assessment_target_money_match_count": 1,
+    "assessment_cash_assessed_label_match_count": 1,
+    "assessment_same_line_label_value_pair_exists": false,
+    "assessment_same_line_label_left_of_value_pair_exists": false
+  },
+  "stage_decision": {
+    "common_native_and_ocr_spatial_geometry_is_viable_evidence_infrastructure": true,
+    "simple_global_x_band_separation_sufficient_for_fee_schedule_failure_population": false,
+    "pymupdf_line_identity_sufficient_for_cash_assessed_relationship": false,
+    "canonical_silver_changed": false,
+    "structured_index_changed": false,
+    "financial_semantics_changed": false,
+    "detector_authorized": false,
+    "event_identity_assigned": false,
+    "lead_count": null,
+    "next_boundary": "derive bounded local layout relationships from spatial evidence without treating PyMuPDF line or global x-band identity as financial semantics"
+  },
+  "non_claims": [
+    "T17 is not an out-of-sample accuracy estimate; it reuses already-opened T13b/T14 development evidence.",
+    "Complete word geometry for all six fee groups does not mean the filing-fee and threshold/range roles are structurally resolved.",
+    "Zero global x-band separation does not mean the source pages lack local visual organization; it only rejects that simple heuristic on this frozen failure population.",
+    "The CASH ASSESSED label and target value both exist in spatial evidence, but PyMuPDF line identity does not preserve their relationship on the frozen counterexample.",
+    "Spatial words and lines are extraction evidence, not trusted table, field, financial, transaction, event, anomaly, conflict, wrongdoing, or lead semantics.",
+    "No transaction identity, event independence, anomaly, conflict, suspiciousness, wrongdoing, or lead conclusion is authorized."
+  ]
+}
