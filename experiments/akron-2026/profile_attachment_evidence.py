@@ -170,6 +170,7 @@ def build_profile(
     run_ocr: bool,
     language: str,
     dpi: int,
+    parser_version: str | None = None,
 ) -> dict:
     store = ProoflineStore(state_dir / "proofline.db")
     watcher = WatcherStore(state_dir / "proofline.db")
@@ -214,7 +215,7 @@ def build_profile(
         )
 
     structured = StructuredIndex(state_dir)
-    native_build = structured.rebuild()
+    native_build = structured.rebuild(parser_version=parser_version)
     artifact_ids = [item["artifact"]["artifact_id"] for item in attachments]
     native_facts = _facts_for_artifacts(
         store,
@@ -242,7 +243,7 @@ def build_profile(
             )
             ocr_results[artifact_id] = result.to_dict()
 
-    post_build = structured.rebuild()
+    post_build = structured.rebuild(parser_version=parser_version)
     post_facts = _facts_for_artifacts(
         store,
         build_id=post_build.build_id,
@@ -331,6 +332,7 @@ def main() -> int:
     parser.add_argument("--ocr", action="store_true")
     parser.add_argument("--language", default="eng")
     parser.add_argument("--dpi", type=int, default=200)
+    parser.add_argument("--parser-version")
     args = parser.parse_args()
     if not 0.0 <= args.threshold <= 1.0:
         raise SystemExit("--threshold must be between 0 and 1")
@@ -343,6 +345,7 @@ def main() -> int:
         run_ocr=args.ocr,
         language=args.language,
         dpi=args.dpi,
+        parser_version=args.parser_version,
     )
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)

@@ -50,7 +50,7 @@ A compact anchor fixture was derived from the already-opened T13b evidence artif
 - T13b artifact digest: `sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338`
 - fixture schema: `proofline-akron-t15-t13b-money-anchor-fixture/v1`
 - fixture money-fact count: **194**
-- committed fixture SHA-256: `016a149d5d1f092f87533be012961a0f9b3a310beb4af0c6b25540159b1ec2f9`
+- committed fixture SHA-256: `630d39ba9b8cc90476c6dd053c1af5459b85e9fd7173f43f4560952ae58eacb0`
 
 Each fixture record preserves a small local text window and the exact v2 character anchor. Before any v3 comparison, explicit v2 is required to reproduce all 194 historical anchors exactly.
 
