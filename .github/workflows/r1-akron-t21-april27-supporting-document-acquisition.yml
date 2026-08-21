@@ -12,6 +12,7 @@ on:
       - "src/proofline/storage.py"
       - "src/proofline/watcher.py"
       - "tests/test_t21_april27_supporting_document_acquisition.py"
+      - "tests/test_t21_april27_supporting_document_selection.py"
 
 permissions:
   contents: read
