@@ -1,0 +1,82 @@
+{
+  "schema": "proofline-akron-t20-spatial-anchor-v2-development-summary/v1",
+  "stage": "post_hoc_t19b_exact_byte_development_replay_before_t20_holdout_open",
+  "representation": {
+    "anchor_method": "proofline-spatial-text-anchor/source-span-v2",
+    "grouping_method": "proofline-local-grouping/nearest-components-v1",
+    "parser_version": "proofline-structured/v3",
+    "quality_floor": 0.7,
+    "ocr_language": "eng",
+    "ocr_dpi": 200
+  },
+  "development_evidence": {
+    "selection_signature_sha256": "5116c4ec5a23346138fc3dd809458fc124e64b79fead51c8bad3e3e08d56807b",
+    "source_artifact_map_signature_sha256": "8e4bedc043544c701d2c2e6fee5dcb1fcda92d2322fbd98a5bba7b01f0a5c14d",
+    "workflow_run_id": 32504366821,
+    "workflow_head_sha": "46a02176f06cb7b8ba66771ebdc89affcb35ae82",
+    "artifact_id": 9455028858,
+    "artifact_digest": "sha256:d537514fd76eca9e9f8ece24dd4d9787159fe502a769f0b8cf97d3f86ec94000",
+    "tests_passed": 224,
+    "page_count": 171,
+    "money_bearing_page_count": 29,
+    "page_parser_money_fact_count": 375,
+    "anchored_money_fact_count": 375,
+    "anchor_failure_count": 0,
+    "cross_line_anchor_count": 285,
+    "same_line_anchor_count": 90,
+    "boundary_expanded_anchor_count": 6,
+    "boundary_punctuation_counts": {
+      ",": 3,
+      ".": 3
+    },
+    "spatial_money_region_count": 375,
+    "grouped_page_count": 29,
+    "component_count": 176,
+    "component_size_counts": {
+      "1": 6,
+      "2": 150,
+      "3": 13,
+      "4": 5,
+      "5": 2
+    },
+    "nearest_directed_edge_count": 369,
+    "mutual_nearest_directed_edge_count": 340,
+    "unsupported_preferred_method_page_count": 0
+  },
+  "frozen_code_blobs": {
+    "src/proofline/spatial_anchor.py": "14bef1af09f785796787eac6aef07d393a17a5d9",
+    "tests/test_spatial_anchor.py": "4f7870523a327de7a1e6697bc081a0b1f6e94095",
+    "experiments/akron-2026/evaluate_spatial_anchor_t19b_development.py": "2ad707c671320251a721b9eabb26867725d31929",
+    "experiments/akron-2026/validate_spatial_anchor_t19b_development.py": "3fd30abc6ebc1258e90b91006d1ffe28bba1fd9b",
+    ".github/workflows/r1-akron-spatial-anchor-t19b-development.yml": "90cef96f42c63482cf73003678eea47c8b57f7b6",
+    "src/proofline/spatial_text.py": "bc424f586d394f61db3b42a9dfa90a3943e1ec27",
+    "src/proofline/structured.py": "10ab05b933005d7cd686dd026331393a03658026",
+    "src/proofline/local_grouping.py": "c931c7ea631444f18fa780164deadd126bd47160",
+    "src/proofline/ocr.py": "8337c251aa8facd3074242c6c375136146c1e2e3",
+    "src/proofline/progressive.py": "4c65f7840271fffd3fa8afa7b8d45a40ad2481d5",
+    "experiments/akron-2026/r1_t20_future_holdout_sources.json": "aec139abeb9c29cc3082f682faf6a16f7f09e3dd"
+  },
+  "future_holdout": {
+    "status": "unopened_at_freeze",
+    "ranks": "97-128",
+    "selected_source_identity_count": 32,
+    "selected_signature_sha256": "2977671e9680305dfde595d13c77ca31197613eae0c1813f6d7a0b2218938bf3",
+    "excluded_ranks_1_96_signature_sha256": "e6288eeda9d527ffcc9189b01cf0c101e5f42d122070fc563ebe798ce1189b61",
+    "combined_ranks_1_128_signature_sha256": "8620cf0dab2126035dfccebb82fa6e83f4d44d68c44ae90993455ec36faabaf1"
+  },
+  "stage_decision": {
+    "source_span_v2_development_complete": true,
+    "open_ranks_97_128_for_blind_validation_after_freeze": true,
+    "parser_change_authorized": false,
+    "grouping_change_authorized": false,
+    "financial_semantics_authorized": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "non_claims": [
+    "375/375 is an exact-byte post-hoc development replay on already-opened ranks 65-96, not out-of-sample validation.",
+    "Punctuation boundary expansion is geometry anchoring, not financial or field semantics.",
+    "Nearest-component topology remains geometric evidence and does not imply transaction, event, anomaly, conflict, suspiciousness, wrongdoing, or lead meaning.",
+    "Ranks 97-128 must be evaluated without tuning source-span-v2 after their content is opened."
+  ]
+}
