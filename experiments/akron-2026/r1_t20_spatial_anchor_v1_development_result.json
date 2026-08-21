@@ -1,0 +1,87 @@
+{
+  "schema": "proofline-akron-t20-spatial-anchor-v1-development-result/v1",
+  "stage": "post_hoc_t19b_development_result_before_anchor_v2_refinement",
+  "run": {
+    "workflow_run_id": 32501978519,
+    "head_sha": "b1f84824fba73ba79ea039a1ee6a9e16b0acddb7",
+    "artifact_id": 9454036743,
+    "artifact_digest": "sha256:5eb741beb393fb660cd26de4e90c3f54b9bb4ab67bfbbfbdb83be9fab544c3f5",
+    "evaluation_sha256": "01b115c39b1abd8b5cec28738da9361f8e51ae7f78e6091e31e5aa316cd72a98",
+    "summary_sha256": "8738dfda766bc2a3cd01d328d1cb3be8f5918935ac924c89ad9b6b8306066513"
+  },
+  "frozen_opened_sample": {
+    "selection_signature_sha256": "5116c4ec5a23346138fc3dd809458fc124e64b79fead51c8bad3e3e08d56807b",
+    "source_artifact_map_signature_sha256": "8e4bedc043544c701d2c2e6fee5dcb1fcda92d2322fbd98a5bba7b01f0a5c14d",
+    "role": "opened T19b development evidence only; not validation"
+  },
+  "representation": {
+    "anchor_method": "proofline-spatial-text-anchor/source-span-v1",
+    "anchor_git_blob": "a19a2db2de74b172cb0769221ae4cbee7ee1e8a5",
+    "parser_version": "proofline-structured/v3",
+    "grouping_method": "proofline-local-grouping/nearest-components-v1"
+  },
+  "result": {
+    "page_count": 171,
+    "money_bearing_page_count": 29,
+    "page_parser_money_fact_count": 375,
+    "anchored_money_fact_count": 369,
+    "anchor_failure_count": 6,
+    "cross_line_anchor_count": 285,
+    "same_line_anchor_count": 84,
+    "spatial_money_region_count": 369,
+    "grouped_page_count": 29,
+    "component_count": 175,
+    "component_size_counts": {
+      "1": 6,
+      "2": 152,
+      "3": 11,
+      "4": 4,
+      "5": 2
+    },
+    "nearest_directed_edge_count": 363,
+    "mutual_nearest_directed_edge_count": 338,
+    "unsupported_preferred_method_page_count": 0
+  },
+  "development_interpretation": {
+    "motivating_cross_line_failure_count": 285,
+    "motivating_cross_line_failures_recovered": 285,
+    "motivating_cross_line_recovery_complete": true,
+    "same_line_facts_previously_spatial_in_t19b": 90,
+    "same_line_facts_anchored_by_v1": 84,
+    "same_line_regression_count": 6,
+    "v1_ready_to_freeze_for_new_holdout": false
+  },
+  "v1_failure_localization": {
+    "reason": "spatial anchor span ends inside a spatial word",
+    "count": 6,
+    "outside_span_content_is_adjacent_punctuation_only": true,
+    "suffix_counts": {
+      ",": 3,
+      ".": 3
+    },
+    "raw_fact_texts": [
+      "$57,988.38",
+      "$54,725.60",
+      "$73,185.45",
+      "$132,113.53",
+      "$318,012.96",
+      "$1,000"
+    ],
+    "mechanism": "The structured parser validly terminates the money span before adjacent prose punctuation, while PyMuPDF retains that punctuation inside the same spatial word token. V1 rejects any non-whitespace word-boundary expansion, so these otherwise exact spans fail geometric anchoring."
+  },
+  "next_refinement": {
+    "method_version_must_change": true,
+    "target_method": "proofline-spatial-text-anchor/source-span-v2",
+    "rule": "Permit deterministic word-boundary expansion only across adjacent Unicode punctuation; continue rejecting expansion across letters, digits, or other non-punctuation content; record expansion in the anchor evidence.",
+    "future_holdout_ranks": [97, 128],
+    "future_holdout_remains_unopened": true
+  },
+  "semantic_boundary": {
+    "table_semantics_assigned": false,
+    "field_semantics_assigned": false,
+    "financial_semantics_authorized": false,
+    "event_identity_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  }
+}
