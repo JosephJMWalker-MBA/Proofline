@@ -1,0 +1,58 @@
+name: t15-bootstrap
+
+on:
+  push:
+    branches:
+      - agent/r1-money-parser-v3-integrity
+    paths:
+      - ".github/workflows/t15-bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/r1-money-parser-v3-integrity
+          fetch-depth: 0
+      - name: Apply exact parser v3 edit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object src/proofline/structured.py)" = "b394c6dfd43691ec8416f25feb00d38f760f0e7c"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/proofline/structured.py")
+          text = path.read_text(encoding="utf-8")
+
+          old = '''_PARSER_VERSION_V1 = "proofline-structured/v1"\n_PARSER_VERSION = "proofline-structured/v2"\n_SUPPORTED_PARSER_VERSIONS = {_PARSER_VERSION_V1, _PARSER_VERSION}\n'''
+          new = '''_PARSER_VERSION_V1 = "proofline-structured/v1"\n_PARSER_VERSION_V2 = "proofline-structured/v2"\n_PARSER_VERSION = "proofline-structured/v3"\n_SUPPORTED_PARSER_VERSIONS = {_PARSER_VERSION_V1, _PARSER_VERSION_V2, _PARSER_VERSION}\n'''
+          if text.count(old) != 1:
+              raise SystemExit("parser-version block did not match exactly once")
+          text = text.replace(old, new)
+
+          old = '''_MONEY_RE = re.compile(\n    r"(?<!\\w)(?:(?P<usd>USD)\\s*|(?P<dollar>\\$)\\s*)"\n    r"(?P<number>\\d{1,3}(?:\\s*,\\s*\\d{3})+(?:\\.\\d{1,2})?|\\d+(?:\\.\\d{1,2})?)"\n    r"(?P<suffix>[A-Za-z]{1,4})?"\n    r"(?!\\w)",\n    re.IGNORECASE,\n)\n'''
+          new = '''_MONEY_RE_V2 = re.compile(\n    r"(?<!\\w)(?:(?P<usd>USD)\\s*|(?P<dollar>\\$)\\s*)"\n    r"(?P<number>\\d{1,3}(?:\\s*,\\s*\\d{3})+(?:\\.\\d{1,2})?|\\d+(?:\\.\\d{1,2})?)"\n    r"(?P<suffix>[A-Za-z]{1,4})?"\n    r"(?!\\w)",\n    re.IGNORECASE,\n)\n_MONEY_RE = re.compile(\n    r"(?<!\\w)(?:(?P<usd>USD)\\s*|(?P<dollar>\\$)\\s*)"\n    r"(?P<number>(?>\\d{1,3}(?:\\s*,\\s*\\d{3})+(?:\\.\\d{1,2})?|\\d+(?:\\.\\d{1,2})?))"\n    r"(?P<suffix>[A-Za-z]{1,4})?"\n    r"(?!\\w)",\n    re.IGNORECASE,\n)\n'''
+          if text.count(old) != 1:
+              raise SystemExit("money-regex block did not match exactly once")
+          text = text.replace(old, new)
+
+          old = '''    money_pattern = _MONEY_RE_V1 if resolved_parser == _PARSER_VERSION_V1 else _MONEY_RE\n'''
+          new = '''    if resolved_parser == _PARSER_VERSION_V1:\n        money_pattern = _MONEY_RE_V1\n    elif resolved_parser == _PARSER_VERSION_V2:\n        money_pattern = _MONEY_RE_V2\n    else:\n        money_pattern = _MONEY_RE\n'''
+          if text.count(old) != 1:
+              raise SystemExit("money-pattern dispatch did not match exactly once")
+          text = text.replace(old, new)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+          python -m py_compile src/proofline/structured.py
+          rm .github/workflows/t15-bootstrap.yml
+          git config user.name "Joseph Walker"
+          git config user.email "joseph@decisionpointinitiative.com"
+          git add -- src/proofline/structured.py .github/workflows/t15-bootstrap.yml
+          git commit -m "R1.T15: introduce structured parser v3"
+          git push origin HEAD:agent/r1-money-parser-v3-integrity
