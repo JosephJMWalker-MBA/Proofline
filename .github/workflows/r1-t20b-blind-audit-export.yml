@@ -1,0 +1,66 @@
+name: r1-t20b-blind-audit-export
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-t20b-blind-audit-export.yml"
+      - "experiments/akron-2026/export_t20b_blind_candidate.py"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Rebuild preserved Akron attachment identity graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .blind-audit blind-audit
+          mkdir -p blind-audit
+          proofline-onbase-attachments \
+            --state-dir .blind-audit \
+            --manifest-out blind-audit/attachment-manifest.json \
+            --relations-out blind-audit/discovered-relations.json \
+            --rejections-out blind-audit/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > blind-audit/discovery.json
+          test "$(sha256sum blind-audit/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+          test "$(python - <<'PY'
+          import json
+          print(len(json.load(open('blind-audit/rejections.json'))))
+          PY
+          )" = "0"
+
+      - name: Export neutral blind inspection PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/export_t20b_blind_candidate.py \
+            --state-dir .blind-audit \
+            --manifest blind-audit/attachment-manifest.json \
+            --source-hash 0d4825b3ecb9a0a34438153573a03551219ced97625044c7b959bad30a1cdf79 \
+            --output blind-audit/blind_document.pdf
+          test -s blind-audit/blind_document.pdf
+
+      - name: Upload blind inspection PDF only
+        uses: actions/upload-artifact@v4
+        with:
+          name: blind-inspection-document
+          path: blind-audit/blind_document.pdf
+          if-no-files-found: error
+          retention-days: 2
