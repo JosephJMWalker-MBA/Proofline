@@ -1,0 +1,85 @@
+{
+  "schema": "proofline-akron-t16-native-pdf-structure-summary/v1",
+  "stage": "post_hoc_native_structure_capability_probe_on_opened_t13b",
+  "source_evidence": {
+    "t16_workflow_run_id": 32446939703,
+    "t16_workflow_head_sha": "fd3aa067a09355b295323d10fc5732d8b2da262c",
+    "t16_artifact_id": 9434556487,
+    "t16_artifact_digest": "sha256:989fd15cbe01f0b65d995d1f86d4ff9da255753a9ea7e004594edbe496187684",
+    "t13b_workflow_run_id": 32440471169,
+    "t13b_artifact_id": 9432387690,
+    "t13b_artifact_digest": "sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338",
+    "t13b_source_artifact_mapping_signature_sha256": "797f8986110664bf23019536a3c9721c7e283cd81b730e3eb867459b34848edf"
+  },
+  "sample": {
+    "status": "already_opened_t13b_development_data_not_new_holdout",
+    "source_identity_count": 32,
+    "unique_artifact_count": 28,
+    "unique_artifact_page_count": 270,
+    "selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966",
+    "exact_source_to_bronze_identity_match_to_preserved_t13b": true,
+    "bronze_identity_drift_count": 0
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pymupdf": "1.28.2",
+    "full_test_count": 190,
+    "full_test_result": "passed"
+  },
+  "native_structure": {
+    "method": "pymupdf_find_tables_default_lines/v1",
+    "artifacts_with_any_table": 9,
+    "artifacts_with_no_table": 19,
+    "pages_with_detected_tables": 23,
+    "detected_table_count": 52,
+    "detected_cell_count": 762,
+    "page_detection_failure_count": 0
+  },
+  "post_hoc_t14_characterization": {
+    "ground_truth_status": "assistant_contextual_audit_not_human_ground_truth",
+    "fee_schedule_group_count": 6,
+    "fee_schedule_structurally_separable_count": 0,
+    "fee_schedule_target_artifacts_with_any_native_table": 0,
+    "fee_schedule_target_artifacts_with_no_native_table": 6,
+    "fee_schedule_target_extraction": {
+      "all_target_facts_ocr_backed": true,
+      "method": "pymupdf_tesseract_ocr",
+      "target_page_locators_in_group_order": [
+        "page:2",
+        "page:2",
+        "page:2",
+        "page:2",
+        "page:4",
+        "page:13"
+      ],
+      "all_six_artifacts_native_nonblank_page_count": 0
+    },
+    "assessment_counterexample": {
+      "source_name": "Supporting Document for - ()",
+      "artifact_id": "artifact:d7ca1617be6a2d6138c7d279abcc93d63934798c24f33528762a7cbe2c0cd2c2",
+      "raw_text": "$220,682.90",
+      "locator": "page:5",
+      "extraction_method": "pymupdf_native_text",
+      "quality_score": 1.0,
+      "detected_table_match_count": 0,
+      "structurally_supports_cash_assessed": false
+    }
+  },
+  "stage_decision": {
+    "native_table_detection_sufficient_for_t14_failure_population": false,
+    "canonical_silver_changed": false,
+    "structured_index_changed": false,
+    "financial_semantics_changed": false,
+    "detector_authorized": false,
+    "event_identity_assigned": false,
+    "lead_count": null,
+    "next_boundary": "preserve deterministic spatial word geometry for both native and OCR text before deriving table or field structure"
+  },
+  "non_claims": [
+    "T16 is not an out-of-sample accuracy estimate; it reuses exactly the preserved T13b source identities and Bronze artifact identities plus the opened T14 audit.",
+    "The 52 detected tables show native table detection has real capability, not that detected cells carry trusted financial semantics.",
+    "Zero structural separation on the six fee groups is a negative capability result, not evidence that the source documents lack visual table structure.",
+    "The assessment counterexample shows that high-quality native text can still lose field relationships when only flat text or native ruled-table detection is preserved.",
+    "No transaction identity, event independence, anomaly, conflict, suspiciousness, wrongdoing, or lead conclusion is authorized."
+  ]
+}
