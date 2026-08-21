@@ -1,0 +1,69 @@
+{
+  "schema": "proofline-akron-t19-future-holdout-source-set/v1",
+  "provenance": {
+    "source_manifest_sha256": "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a",
+    "source_manifest_resource_count": 2327,
+    "derivation_evidence_run_id": 32493548953,
+    "derivation_evidence_artifact_id": 9451052950,
+    "derivation_evidence_artifact_digest": "sha256:7f8cc2ba38033b19c32a2f785190e876c773f95a09a3ccfbe7910caa7be737a6"
+  },
+  "identity_hash": "sha256(UTF-8 source_uri)",
+  "ranking": "identity_hash ascending, then source_uri",
+  "signature_method": "sha256(UTF-8 newline-joined ordered identity hashes with terminal newline)",
+  "already_opened_exclusion": {
+    "count": 64,
+    "original_manifest_ranks": [1, 64],
+    "signature_sha256": "ce876915836a86c914ca837964a95fcc4f4857d423eaadfa91749978eb9715a0"
+  },
+  "selected": {
+    "count": 32,
+    "original_manifest_ranks": [65, 96],
+    "source_uri_sha256": [
+      "0730fe0c969f8ccd00c4d5e9b4f1cfc4ba23d1d1d427f058dc8717107c5d4190",
+      "073b273eca161cacdbd46248cb45a235653e81b8b1e1d376664cc06bfd2d89a2",
+      "0776d02df4026a4a836d9696882c91e9edd72425551ba31fdb091cd98ef30c66",
+      "07a050c24777555617917dcf567e5a4cd00c6c513aa6034cc7f46a57a41576f8",
+      "07d57d1725ec96b0b30705abc5e5b50844d3965fdda692e3fd598030552fe0e9",
+      "083e84c05a731676ad921a85b42afbfa4fc82824d25f95f75c16b64382aef399",
+      "083f69870e755896f49efb0d94d5a7250e22e01ec7f894e2ce9ed58ffc0eed82",
+      "08a5db0d0026c2c65763e93d0bd678979bf92fd9193c5f79830b2d05d2367ff2",
+      "09329cb492541aa4e33cd6b7200bea2108044ae44ed8d8c4ad8fa7cf91176b17",
+      "0935d29ecb084e6c8e521536d31be4ad66e9834a667ce7a58be3e268c06f52d4",
+      "099fc297a0313be67fbe248a234af9d600e3726875b4b909b1bc17e2596d114e",
+      "09c670d2f9d90157384877fbc4190c20a8379cd0cdbd4d621c7391a49c5f35e0",
+      "09e432a79f254739db46b32a728cfca25b65c27bfb6ef9b8b351db89e25b534d",
+      "0a0475ca6e3b8b9d0d495d3418413365dbebd958fa97be032b0f5b708908c0d2",
+      "0a07cc3fa03569b401ab9db83bd24b8e1760f27886e0147e0fd053b599bfe230",
+      "0a0c3631faf3f42cf90672cb15e001c7b5b258c01ccfb25e4fd2724e6c9fdc89",
+      "0a0d62d4014d1c9de20c50b0208030671f51ac06ab981bf3f5121c486f0572ab",
+      "0a18648c331c2a62cc904b6634ceabfe67d1b37b37f6f691a04906cd4803ecb7",
+      "0a5b2086e3d7cc1f63d80754d483cd6ebd99534e10a9f19e6dde357979a6eafa",
+      "0a9da04e83d4ca9f7831eebabf5f2f0d3c14bebe627cb4f177d7150b6434a167",
+      "0ab1a62833513fc21581fa9a37a4ea2b512d11f7526e8e3644b10274b1b7c123",
+      "0b02097373fb9c29e796d590b89736786c57d582e0743a0486128bac6fe7bd71",
+      "0b2f250765f1f29f9623edbff1d13fefdf57f2c13e9ac7090a51a4a1ab825238",
+      "0b378c40e014ed2abe43fa8bac8a379afe290030bfa34245d0743c9146512764",
+      "0b3ea47ada4279fd15eb4aa66afbb097499371f6b67824021294cd622df4d130",
+      "0b5f5b01095951410067ee245d5ba18cbdbf97a25911072b0a5165f3e97da397",
+      "0b6449e4d84cb83bb229a83d19da8f5a035f1b9964d4f4900b19e61233d4c308",
+      "0b720306b1f8d255de712ea2816ce3177fb5b37f280141b42788041944bb8497",
+      "0b787f48a33f77b946f85c5576f356812b80e135e7c4004c379c851d78331f26",
+      "0bade63c47beeb9e424de96e79833784853229d681fcce060212003a52fcc6e4",
+      "0bc0f21dddcc99143ce36c17c1380a73e6b0b956c93cd8c86f7d8881590be7e8",
+      "0bd4b8c3dc1e24709c44f6557ee5d04b437a3674523b293595b38786059fa8fe"
+    ],
+    "signature_sha256": "5116c4ec5a23346138fc3dd809458fc124e64b79fead51c8bad3e3e08d56807b"
+  },
+  "combined_rank_1_96_signature_sha256": "e6288eeda9d527ffcc9189b01cf0c101e5f42d122070fc563ebe798ce1189b61",
+  "content_inspection_status": "identity_hash_only_not_resolved_or_inspected",
+  "forbidden_at_freeze": [
+    "source_uri",
+    "source_name",
+    "document_text",
+    "document_bytes",
+    "money_facts",
+    "layout_features",
+    "semantic_labels"
+  ],
+  "purpose": "Freeze the next untouched 32-source validation block before T19 local-grouping representation development. Only identity hashes derived mechanically from the preserved publisher source manifest were retained."
+}

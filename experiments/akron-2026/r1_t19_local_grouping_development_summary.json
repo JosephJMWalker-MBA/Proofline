@@ -1,0 +1,112 @@
+{
+  "development_population": {
+    "fee_page_count": 6,
+    "fee_region_count": 49,
+    "status": "already_opened_development_evidence_not_new_holdout",
+    "t18_selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966"
+  },
+  "future_holdout": {
+    "opened_for_this_measurement": false,
+    "ranks": [65, 96],
+    "selection_signature_sha256": "5116c4ec5a23346138fc3dd809458fc124e64b79fead51c8bad3e3e08d56807b",
+    "source_count": 32
+  },
+  "non_claims": [
+    "The post-hoc purity measurement uses T14 audit disposition only after component topology has been emitted.",
+    "This is development evidence from already-opened T18 geometry, not an out-of-sample validation result.",
+    "No hard geometric distance threshold is inferred from this result.",
+    "The ranks 65-96 future holdout remains unopened by this measurement."
+  ],
+  "page_results": [
+    {
+      "component_count": 3,
+      "component_size_counts": {"2": 1, "3": 2},
+      "evidence_id": "evidence:17a789c1dea8df21e45ad0cf3b36e4b3932a0eda3f70b74185f6d015d05cebc7",
+      "fee_region_count": 8,
+      "mutual_nearest_directed_edge_count": 6,
+      "mutual_nearest_pair_count": 3,
+      "post_hoc_component_disposition_counts": {"contradicted": 2, "supported": 1},
+      "spatial_id": "spatial:76615d2e46baf279577c99866a105fcc72e0bea6b0a3a82ddd295bb7f1c9d7f5"
+    },
+    {
+      "component_count": 3,
+      "component_size_counts": {"2": 1, "3": 2},
+      "evidence_id": "evidence:57f9dfca4b13212fd6903ba7e0637b3166aba29c0e9a542f3da6d6d93324b0f4",
+      "fee_region_count": 8,
+      "mutual_nearest_directed_edge_count": 6,
+      "mutual_nearest_pair_count": 3,
+      "post_hoc_component_disposition_counts": {"contradicted": 2, "supported": 1},
+      "spatial_id": "spatial:f2bd3a5116c69aa3bba1254820447df08976109f92b1244f808ec918ffaef0c4"
+    },
+    {
+      "component_count": 2,
+      "component_size_counts": {"2": 1, "3": 1},
+      "evidence_id": "evidence:86676f59e50965a0165cd45b3911f194e70b29b72ce25268308dc6cf3bd80fa9",
+      "fee_region_count": 5,
+      "mutual_nearest_directed_edge_count": 4,
+      "mutual_nearest_pair_count": 2,
+      "post_hoc_component_disposition_counts": {"contradicted": 1, "supported": 1},
+      "spatial_id": "spatial:2aa1cc91b14c7f4836d833ccbb2a0e9f8ec7518b4126ba284a31c164bb127c96"
+    },
+    {
+      "component_count": 3,
+      "component_size_counts": {"2": 1, "3": 2},
+      "evidence_id": "evidence:ce9ab38b2c3d9b60cf51fd2cd2b2a40f99350b409ba833b46764fa30097c6db6",
+      "fee_region_count": 8,
+      "mutual_nearest_directed_edge_count": 6,
+      "mutual_nearest_pair_count": 3,
+      "post_hoc_component_disposition_counts": {"contradicted": 2, "supported": 1},
+      "spatial_id": "spatial:80aeffbeb848136d11457ad0e01a4b5997c810df8c8b0c667b81c0b0127068e8"
+    },
+    {
+      "component_count": 3,
+      "component_size_counts": {"2": 1, "3": 2},
+      "evidence_id": "evidence:e3e267b4913df0734093b4c147f81e2183854e895600deef8068fada6c6bffac",
+      "fee_region_count": 8,
+      "mutual_nearest_directed_edge_count": 6,
+      "mutual_nearest_pair_count": 3,
+      "post_hoc_component_disposition_counts": {"contradicted": 2, "supported": 1},
+      "spatial_id": "spatial:f664230701a69957076819267afc7e4dbd358cdd9fb640851d42b7a300b07621"
+    },
+    {
+      "component_count": 5,
+      "component_size_counts": {"2": 3, "3": 2},
+      "evidence_id": "evidence:ea79aef655f1e559982f211e551be51e6d7efdfa0eca97ed555714387301b379",
+      "fee_region_count": 12,
+      "mutual_nearest_directed_edge_count": 10,
+      "mutual_nearest_pair_count": 5,
+      "post_hoc_component_disposition_counts": {"contradicted": 3, "supported": 2},
+      "spatial_id": "spatial:122a80883d4c496d0f810ddc02f69148125386830935125b80d15757d7aabd07"
+    }
+  ],
+  "representation": {
+    "component_rule": "one nearest geometric peer per region, selected edges treated as an undirected graph, connected components emitted",
+    "financial_values_are_grouping_inputs": false,
+    "method": "proofline-local-grouping/nearest-components-v1",
+    "semantic_labels_are_grouping_inputs": false,
+    "threshold_free": true
+  },
+  "result": {
+    "component_count": 19,
+    "component_membership_signature_sha256": "f92b1c6e4a4797118bbffe542307491864b9d20b441783407fc3342e712b4043",
+    "component_size_counts": {"2": 8, "3": 11},
+    "mutual_nearest_directed_edge_count": 38,
+    "mutual_nearest_pair_count": 19,
+    "nearest_directed_edge_count": 49,
+    "post_hoc_contradicted_only_component_count": 12,
+    "post_hoc_mixed_component_count": 0,
+    "post_hoc_pure_component_count": 19,
+    "post_hoc_pure_component_rate": 1.0,
+    "post_hoc_supported_only_component_count": 7
+  },
+  "schema": "proofline-akron-t19-local-grouping-development/v1",
+  "semantic_boundary": {
+    "detector_authorized": false,
+    "event_identity_assigned": false,
+    "field_semantics_assigned": false,
+    "financial_semantics_authorized": false,
+    "lead_count": null,
+    "table_semantics_assigned": false
+  },
+  "stage": "development_only_topology_replay_on_already_opened_t18_fee_geometry"
+}
