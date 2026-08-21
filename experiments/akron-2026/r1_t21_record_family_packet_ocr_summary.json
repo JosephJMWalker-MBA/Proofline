@@ -1,0 +1,130 @@
+{
+  "canonical_run": {
+    "artifact_digest": "sha256:6c7a8d418663728b3fb3263d46fd1cf8233b7184e9d7a3ab3d751d808aae9274",
+    "artifact_id": 9463263931,
+    "harness_commit": "7f3e4e76e7ca502193ae02f6e0c8079ac9cdf23e",
+    "head_sha": "979299502a4a8b209865b5e4d1e29150d14276a1",
+    "job_id": 96916303071,
+    "raw_packet_ocr_sha256": "d806ada4f1ea2848b1f8f14193459881d6f590e2a0f7f7172eff574e5fe6648f",
+    "run_id": 32528744848
+  },
+  "frozen_inputs": {
+    "bronze_artifact_id": "artifact:87e0ab7f1a3bb6f3b0e5a37dc311cfb909cf081d1bfe28297421c294bc00386a",
+    "bronze_byte_size": 1151866,
+    "bronze_page_count": 3,
+    "bronze_sha256": "87e0ab7f1a3bb6f3b0e5a37dc311cfb909cf081d1bfe28297421c294bc00386a",
+    "evolution_selector_blob": "da7335a4072a145c5b2e61e49de04a7faf15081a",
+    "ocr_backend_blob": "8337c251aa8facd3074242c6c375136146c1e2e3",
+    "ocr_dpi": 200,
+    "ocr_language": "eng",
+    "packet_ocr_evaluator_blob": "41daa4a5dbe167e88f8a33a4990c685bff5ecf0d",
+    "progressive_extractor_blob": "4c65f7840271fffd3fa8afa7b8d45a40ad2481d5",
+    "quality_floor": 0.7,
+    "record_family_evolution_receipt_blob": "da1c9c2431c5f423b0c0b72d6e9801638d45797f",
+    "review_selection_blob": "4bd49ce877178d294167074cbb1aa31e6ed49e4b",
+    "selection_blob": "a6db311cf19b3fcb1f6856142df03866b91b0923",
+    "selection_signature_sha256": "b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921"
+  },
+  "interpretation_boundary": {
+    "detector_authorized": false,
+    "disposition": "Unknown",
+    "event_identity_assigned": false,
+    "lead_count": null,
+    "meeting_occurrence_asserted": false,
+    "ocr_text_read_contextually_before_this_receipt": false,
+    "outcome_assigned": false,
+    "packet_content_interpreted": false
+  },
+  "lineage_reuse": {
+    "publisher_source_identity_count": 24,
+    "silver_extracted_once_for_content_addressed_artifact": true,
+    "source_family_modified": false,
+    "source_relation_created": false,
+    "unique_bronze_artifact_count": 1
+  },
+  "non_claims": [
+    "OCR quality and nonblank text do not establish factual correctness of every token.",
+    "The packet has not been contextually interpreted in this receipt.",
+    "The 24 publisher source identities remain distinct provenance lineages even though they share one content-addressed Bronze artifact.",
+    "No meeting occurrence, event identity, outcome, anomaly, wrongdoing, detector, or lead semantics are assigned."
+  ],
+  "ocr_result": {
+    "added": 3,
+    "attempted": 3,
+    "backend": "pymupdf_tesseract_ocr",
+    "candidates": 3,
+    "failed": 0,
+    "failure_count": 0,
+    "skipped": 0
+  },
+  "representative_source": {
+    "item_id": 46485,
+    "meeting_id": 668,
+    "publish_id": 100240,
+    "publisher_relation_proven_before_acquisition": true,
+    "reproduced_frozen_bronze": true,
+    "selection_rule": "first identity in frozen ordered 24-packet population",
+    "source_uri_sha256": "a107c2c3331a4f6f6511b7031dcbef193b92d638692580e904d87b0068f454cc"
+  },
+  "schema": "proofline-akron-t21-record-family-packet-ocr-summary/v1",
+  "silver_result": {
+    "nonblank_page_count": 3,
+    "page_count": 3,
+    "page_metadata_signature_sha256": "57842c8f8c211193011580e5d78a7448aad77cedec06f771f6464865a9f87a32",
+    "pages": [
+      {
+        "character_count": 1962,
+        "evidence_id": "evidence:bd6416b6f21851d5128f829cf59b76a2e59eecd75052f6c96e28f4bf16166a35",
+        "extraction_id": "extraction:49a099a768126b8898b249f3d7740bcb6c453e3b6315e33d231adc652f505033",
+        "line_count": 53,
+        "locator": "page:1",
+        "meets_quality_floor": true,
+        "method": "pymupdf_tesseract_ocr",
+        "model_version": "language=eng;dpi=200",
+        "nonblank": true,
+        "page_number": 1,
+        "quality_score": 1.0,
+        "software_version": "PyMuPDF 1.28.2; Tesseract via PyMuPDF",
+        "text_sha256": "0cb8d94d8ac4b452f9e9af627a150cd755b39d278ebe2848048dffeb79539b98",
+        "warnings": []
+      },
+      {
+        "character_count": 853,
+        "evidence_id": "evidence:df5aa1b52fcd9b28680634428cd1007ca121408c7fcde9d32b58a26a2b6c9889",
+        "extraction_id": "extraction:11dee4418e07883620f95bab436fa2bd7b5c295d96bb8cc91e4ce39b42d78fd8",
+        "line_count": 51,
+        "locator": "page:2",
+        "meets_quality_floor": true,
+        "method": "pymupdf_tesseract_ocr",
+        "model_version": "language=eng;dpi=200",
+        "nonblank": true,
+        "page_number": 2,
+        "quality_score": 1.0,
+        "software_version": "PyMuPDF 1.28.2; Tesseract via PyMuPDF",
+        "text_sha256": "5f92672868553054c3cb376fa6f7948cc0c429bad878000b0b1df808bc4a73cd",
+        "warnings": []
+      },
+      {
+        "character_count": 444,
+        "evidence_id": "evidence:f8626286ca3974341d2cee44a8643494b17fe01f5def88740f8d3717466f3332",
+        "extraction_id": "extraction:d6203c56d0fca60875f7a9063bf2fea66d5b8ac9e594f9117b0ea651b841cf13",
+        "line_count": 78,
+        "locator": "page:3",
+        "meets_quality_floor": true,
+        "method": "pymupdf_tesseract_ocr",
+        "model_version": "language=eng;dpi=200",
+        "nonblank": true,
+        "page_number": 3,
+        "quality_score": 1.0,
+        "software_version": "PyMuPDF 1.28.2; Tesseract via PyMuPDF",
+        "text_sha256": "ca95e84f7ab01d9fc2cf7d2065757c89900649f48e0fea71a267a2b3fb71b25e",
+        "warnings": []
+      }
+    ],
+    "preferred_ocr_page_count": 3,
+    "quality_floor_page_count": 3,
+    "total_character_count": 3259,
+    "total_line_count": 182
+  },
+  "stage": "post_raw_packet_ocr_receipt_before_contextual_interpretation"
+}
