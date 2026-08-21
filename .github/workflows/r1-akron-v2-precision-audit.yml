@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  repair-t15:
+  pin-profile-helper:
     runs-on: ubuntu-latest
     steps:
       - name: Check out T15 branch
@@ -24,81 +24,31 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Repair fixture and pin historical parser code
+      - name: Pin historical profile helper to v2 and verify
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object experiments/akron-2026/profile_attachment_evidence.py)" = "c68aec3dfe890da7e962181073abb63290b85e5f"
-          test "$(git hash-object experiments/akron-2026/evaluate_money_roles.py)" = "c706a3f94343e49429ac3710cb6f87c544a1c4f5"
-          test "$(git hash-object experiments/akron-2026/evaluate_financial_representation_v2_oos.py)" = "459fdfdb6ce39a12a82a672a6d0c47dee3026a1e"
-
+          test "$(git hash-object experiments/akron-2026/profile_attachment_evidence.py)" = "5bb49f9866b12a15af041793025d218626c3d82c"
           python - <<'PY'
-          from __future__ import annotations
-          import hashlib, json, re
           from pathlib import Path
-
-          fixture_path = Path("experiments/akron-2026/r1_t13b_money_anchor_fixture.json")
-          fixture = json.JSONDecoder(strict=False).decode(fixture_path.read_text(encoding="utf-8"))
-          if fixture.get("schema") != "proofline-akron-t15-t13b-money-anchor-fixture/v1":
-              raise SystemExit("unexpected T15 fixture schema")
-          if fixture.get("fact_count") != 194 or len(fixture.get("facts") or []) != 194:
-              raise SystemExit("T15 fixture no longer contains exactly 194 anchors")
-          repaired = (json.dumps(fixture, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
-          json.loads(repaired)
-          fixture_path.write_bytes(repaired)
-          digest = hashlib.sha256(repaired).hexdigest()
-          print(f"repaired fixture sha256={digest}")
-
-          measure_path = Path("experiments/akron-2026/measure_money_parser_v3_delta.py")
-          measure = measure_path.read_text(encoding="utf-8")
-          measure, n = re.subn(r'EXPECTED_FIXTURE_SHA256 = "[0-9a-f]{64}"', f'EXPECTED_FIXTURE_SHA256 = "{digest}"', measure, count=1)
-          if n != 1:
-              raise SystemExit("failed to update fixture hash constant")
-          measure_path.write_text(measure, encoding="utf-8")
-
-          receipt_path = Path("experiments/akron-2026/R1_T15_MONEY_PARSER_V3_INTEGRITY.md")
-          receipt = receipt_path.read_text(encoding="utf-8")
-          receipt, n = re.subn(r'fixture SHA-256: `[0-9a-f]{64}`', f'fixture SHA-256: `{digest}`', receipt, count=1)
-          if n != 1:
-              raise SystemExit("failed to update receipt fixture hash")
-          receipt_path.write_text(receipt, encoding="utf-8")
-
-          def replace_once(path_str: str, old: str, new: str) -> None:
-              path = Path(path_str)
-              text = path.read_text(encoding="utf-8")
-              if text.count(old) != 1:
-                  raise SystemExit(f"{path_str}: expected replacement once, found {text.count(old)}")
-              path.write_text(text.replace(old, new), encoding="utf-8")
-
-          profile = Path("experiments/akron-2026/profile_attachment_evidence.py")
-          text = profile.read_text(encoding="utf-8")
-          old = "    dpi: int,\n) -> dict:\n"
+          path = Path("experiments/akron-2026/profile_attachment_evidence.py")
+          text = path.read_text(encoding="utf-8")
+          old = '    parser_version: str | None = None,\n'
+          new = '    parser_version: str | None = "proofline-structured/v2",\n'
           if text.count(old) != 1:
-              raise SystemExit("profile signature did not match once")
-          text = text.replace(old, "    dpi: int,\n    parser_version: str | None = None,\n) -> dict:\n")
-          text = text.replace("    native_build = structured.rebuild()\n", "    native_build = structured.rebuild(parser_version=parser_version)\n", 1)
-          text = text.replace("    post_build = structured.rebuild()\n", "    post_build = structured.rebuild(parser_version=parser_version)\n", 1)
-          old = '    parser.add_argument("--dpi", type=int, default=200)\n'
+              raise SystemExit(f"profile default matched {text.count(old)} times")
+          text = text.replace(old, new)
+          old = '    parser.add_argument("--parser-version")\n'
+          new = '    parser.add_argument("--parser-version", default="proofline-structured/v2")\n'
           if text.count(old) != 1:
-              raise SystemExit("profile CLI dpi argument did not match once")
-          text = text.replace(old, old + '    parser.add_argument("--parser-version")\n')
-          old = "        dpi=args.dpi,\n    )\n"
-          if text.count(old) != 1:
-              raise SystemExit("profile build call did not match once")
-          text = text.replace(old, "        dpi=args.dpi,\n        parser_version=args.parser_version,\n    )\n")
-          profile.write_text(text, encoding="utf-8")
-
-          replace_once("experiments/akron-2026/evaluate_money_roles.py", "    build = structured.rebuild()\n", '    build = structured.rebuild(parser_version=contract["parser_version"])\n')
-          replace_once("experiments/akron-2026/evaluate_financial_representation_v2_oos.py", "    build = structured.rebuild()\n", '    build = structured.rebuild(parser_version=contract["parser_version"])\n')
+              raise SystemExit(f"CLI parser-version argument matched {text.count(old)} times")
+          text = text.replace(old, new)
+          path.write_text(text, encoding="utf-8")
           PY
-
           python -m pip install -e ".[dev]"
-          python -m py_compile experiments/akron-2026/profile_attachment_evidence.py experiments/akron-2026/evaluate_money_roles.py experiments/akron-2026/evaluate_financial_representation_v2_oos.py experiments/akron-2026/measure_money_parser_v3_delta.py
           pytest
-          python experiments/akron-2026/measure_money_parser_v3_delta.py --fixture experiments/akron-2026/r1_t13b_money_anchor_fixture.json --output /tmp/t15-delta.json
-
           git config user.name "Joseph Walker"
           git config user.email "joseph@decisionpointinitiative.com"
-          git add -- experiments/akron-2026/r1_t13b_money_anchor_fixture.json experiments/akron-2026/measure_money_parser_v3_delta.py experiments/akron-2026/R1_T15_MONEY_PARSER_V3_INTEGRITY.md experiments/akron-2026/profile_attachment_evidence.py experiments/akron-2026/evaluate_money_roles.py experiments/akron-2026/evaluate_financial_representation_v2_oos.py
-          git commit -m "R1.T15: repair fixture and pin historical parser code"
+          git add -- experiments/akron-2026/profile_attachment_evidence.py
+          git commit -m "R1.T15: pin historical attachment profile to v2"
           git push origin HEAD:agent/r1-money-parser-v3-integrity
