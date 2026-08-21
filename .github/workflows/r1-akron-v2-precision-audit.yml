@@ -4,51 +4,36 @@ on:
   pull_request:
     paths:
       - ".github/workflows/r1-akron-v2-precision-audit.yml"
+      - "experiments/akron-2026/R1_T14_REPRESENTATION_PRECISION_AUDIT.md"
+      - "experiments/akron-2026/r1_t13b_blind_result_summary.json"
+      - "experiments/akron-2026/r1_t14_known_amount_type_audit.json"
+      - "experiments/akron-2026/akron-financial-representation-v2.json"
+      - "tests/test_akron_v2_precision_audit.py"
+      - "src/proofline/structured.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  pin-profile-helper:
+  audit:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out T15 branch
+      - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: agent/r1-money-parser-v3-integrity
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
-      - name: Pin historical profile helper to v2 and verify
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git hash-object experiments/akron-2026/profile_attachment_evidence.py)" = "5bb49f9866b12a15af041793025d218626c3d82c"
-          python - <<'PY'
-          from pathlib import Path
-          path = Path("experiments/akron-2026/profile_attachment_evidence.py")
-          text = path.read_text(encoding="utf-8")
-          old = '    parser_version: str | None = None,\n'
-          new = '    parser_version: str | None = "proofline-structured/v2",\n'
-          if text.count(old) != 1:
-              raise SystemExit(f"profile default matched {text.count(old)} times")
-          text = text.replace(old, new)
-          old = '    parser.add_argument("--parser-version")\n'
-          new = '    parser.add_argument("--parser-version", default="proofline-structured/v2")\n'
-          if text.count(old) != 1:
-              raise SystemExit(f"CLI parser-version argument matched {text.count(old)} times")
-          text = text.replace(old, new)
-          path.write_text(text, encoding="utf-8")
-          PY
-          python -m pip install -e ".[dev]"
-          pytest
-          git config user.name "Joseph Walker"
-          git config user.email "joseph@decisionpointinitiative.com"
-          git add -- experiments/akron-2026/profile_attachment_evidence.py
-          git commit -m "R1.T15: pin historical attachment profile to v2"
-          git push origin HEAD:agent/r1-money-parser-v3-integrity
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Re-run T14 audit boundary explicitly
+        run: pytest -q tests/test_akron_v2_precision_audit.py
