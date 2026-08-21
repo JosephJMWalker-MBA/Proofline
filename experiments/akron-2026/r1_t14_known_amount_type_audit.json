@@ -1,0 +1,151 @@
+{
+  "schema": "proofline-akron-t14-known-amount-type-audit/v1",
+  "stage": "post_hoc_contextual_precision_audit",
+  "ground_truth_status": "assistant_contextual_audit_not_human_ground_truth",
+  "semantic_contract_changed": false,
+  "detector_authorized": false,
+  "event_identity_assigned": false,
+  "independence_assessed": false,
+  "source_evidence": {
+    "t13b_workflow_run_id": 32440471169,
+    "t13b_workflow_head_sha": "abf3bbfa7eb3b1e9329f0baa9dae72b3416c7b4f",
+    "t13b_artifact_id": 9432387690,
+    "t13b_artifact_digest": "sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338",
+    "selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966",
+    "money_fact_count": 194,
+    "amount_type_known_fact_count": 70,
+    "fully_unknown_fact_count": 124
+  },
+  "audit_population": "All 70 T13b facts whose frozen v2 amount_type was non-unknown.",
+  "disposition_definitions": {
+    "supported": "Preserved local context directly supports the assigned amount type.",
+    "generic_by_design": "The broad assigned type is contextually supported but intentionally does not resolve precise field or event semantics.",
+    "contradicted": "Preserved local context directly indicates a different field or amount meaning than the assigned amount type."
+  },
+  "counts": {
+    "supported": 25,
+    "generic_by_design": 13,
+    "contradicted": 32
+  },
+  "by_amount_type": {
+    "filing_fee_amount": {
+      "total": 50,
+      "supported": 19,
+      "contradicted": 31
+    },
+    "municipal_form_amount": {
+      "total": 13,
+      "generic_by_design": 13
+    },
+    "total_project_amount": {
+      "total": 2,
+      "supported": 2
+    },
+    "estimated_project_cost": {
+      "total": 1,
+      "supported": 1
+    },
+    "grant_context_amount": {
+      "total": 1,
+      "supported": 1
+    },
+    "purchase_price": {
+      "total": 1,
+      "supported": 1
+    },
+    "unit_rate": {
+      "total": 1,
+      "supported": 1
+    },
+    "assessment_rate": {
+      "total": 1,
+      "contradicted": 1
+    }
+  },
+  "fee_schedule_audit": {
+    "finding": "Frozen v2 identified fee-schedule context but flattened row/column text caused every money token after the first Applicable Fee header to receive filing_fee_amount, including project-cost threshold/range values.",
+    "groups": [
+      {
+        "source_name": "2025 - D-132 - PETITION OF CRASI HOMES FOR A CONDITIONAL USE TO CONSTRUCT TWO-FAMILY DWELLINGS AT 940 PITKIN STREET AND 953 DAYTON STREET PC-2025-37-CU",
+        "observed_money_tokens_in_text_order": ["$0", "$20,000", "$250", "$20,001", "$100,000", "$750", "$101,001", "$1,500"],
+        "supported_filing_fee_tokens": ["$250", "$750", "$1,500"],
+        "contradicted_threshold_or_range_tokens_mislabeled_filing_fee": ["$0", "$20,000", "$20,001", "$100,000", "$101,001"],
+        "supported_count": 3,
+        "contradicted_count": 5
+      },
+      {
+        "source_name": "2025 - D-225 - PETITION OF OPC CULTIVATION, LLC, FOR A CONDITIONAL USE TO ESTABLISH A DUAL-USE MARIJUANA DISPENSARY AT 1140 W PORTAGE TRAIL PC-2025-76-CU",
+        "observed_money_tokens_in_text_order": ["$0", "$20,000", "$250", "$20,001", "$100,000", "$750", "$101,001", "$1,500"],
+        "supported_filing_fee_tokens": ["$250", "$750", "$1,500"],
+        "contradicted_threshold_or_range_tokens_mislabeled_filing_fee": ["$0", "$20,000", "$20,001", "$100,000", "$101,001"],
+        "supported_count": 3,
+        "contradicted_count": 5
+      },
+      {
+        "source_name": "2026 - D-125 - PETITION OF BALBIR SINGH FOR A CONDITIONAL USE TO ESTABLISH AN AUTOMOBILE SERVICE STATION AT 944 BROWN STREET PC-2026-18-CU",
+        "observed_money_tokens_in_text_order": ["$0", "$20,000", "$250", "$20", "$100,000", "$1,500"],
+        "supported_filing_fee_tokens": ["$250", "$1,500"],
+        "contradicted_threshold_or_range_tokens_mislabeled_filing_fee": ["$0", "$20,000", "$20", "$100,000"],
+        "supported_count": 2,
+        "contradicted_count": 4
+      },
+      {
+        "source_name": "2026 - D-38 - PETITION OF AKRON SUMMIT COMMUNITY ACTION INC. FOR A CONDITIONAL USE TO EXPAND PARKING AT 839 S. ARLINGTON STREET AND 1037 WYLEY AVENUE PC-2026-01-CU",
+        "observed_money_tokens_in_text_order": ["$0", "$20,000", "$250", "$20,001", "$100,000", "$750", "$101,001", "$1,500"],
+        "supported_filing_fee_tokens": ["$250", "$750", "$1,500"],
+        "contradicted_threshold_or_range_tokens_mislabeled_filing_fee": ["$0", "$20,000", "$20,001", "$100,000", "$101,001"],
+        "supported_count": 3,
+        "contradicted_count": 5
+      },
+      {
+        "source_name": "Supporting Document for - Information from Petitioner ()",
+        "observed_money_tokens_in_text_order": ["$0", "$20,000", "$250", "$20,001", "$100,000", "$750", "$101,001", "$1,500"],
+        "supported_filing_fee_tokens": ["$250", "$750", "$1,500"],
+        "contradicted_threshold_or_range_tokens_mislabeled_filing_fee": ["$0", "$20,000", "$20,001", "$100,000", "$101,001"],
+        "supported_count": 3,
+        "contradicted_count": 5
+      },
+      {
+        "source_name": "Supporting Document for - ORDINANCE authorizing a Conditional Use to construct a parking lot on the east side of W. Center Street (PN 6716587); and declaring an emergency. (Public Hearing was held October 21, 2019) ()",
+        "observed_money_tokens_in_text_order": ["$0", "$6,000", "$100", "$5,001", "$20,000", "$150", "$100,001", "$200,000", "$500", "$200,001", "$1,000", "$250"],
+        "supported_filing_fee_tokens": ["$100", "$150", "$500", "$1,000", "$250"],
+        "contradicted_threshold_or_range_tokens_mislabeled_filing_fee": ["$0", "$6,000", "$5,001", "$20,000", "$100,001", "$200,000", "$200,001"],
+        "supported_count": 5,
+        "contradicted_count": 7
+      }
+    ]
+  },
+  "assessment_audit": {
+    "assigned_amount_type": "assessment_rate",
+    "raw_text": "$220,682.90",
+    "locator": "page:5",
+    "finding": "contradicted",
+    "evidence_excerpt": "CASH RESIDENTIAL USE RATE PER LINEAR FOOT 6.65; CHARITABLE USE RATE PER LINEAR FOOT 6.65; OTHER USE RATE PER LINEAR FOOT 8.40; CASH ASSESSED: $220,682.90",
+    "reason": "The currency token is explicitly the total cash assessed. The actual rates are separate non-currency numerals."
+  },
+  "new_numeric_integrity_observation": {
+    "source_name": "2026 - D-125 - PETITION OF BALBIR SINGH FOR A CONDITIONAL USE TO ESTABLISH AN AUTOMOBILE SERVICE STATION AT 944 BROWN STREET PC-2026-18-CU",
+    "locator": "page:2",
+    "char_start": 535,
+    "frozen_v2_raw_text": "$20",
+    "frozen_v2_normalized_text": "20.00",
+    "preserved_context_fragment": "$20,001___- $100,000",
+    "finding": "Structured parser v2 backtracked to a shorter valid-looking currency prefix when OCR-added trailing underscore characters prevented the full numeric token from satisfying the terminal boundary.",
+    "implication": "Numeric integrity is still not fully fail-closed. This parser defect must be repaired generically before representation semantics are expanded."
+  },
+  "stage_decision": {
+    "detector_authorization": "denied",
+    "next_boundary": "repair generic partial-token numeric integrity, then add structure-aware table/field extraction before further semantic expansion",
+    "do_not_do": [
+      "Do not tune v2 regexes against T13b and call the same holdout out-of-sample again.",
+      "Do not authorize transaction/event identity or a financial detector from v2 coverage counts.",
+      "Do not treat flattened table order as reliable row/column identity."
+    ]
+  },
+  "non_claims": [
+    "This is a post-hoc contextual audit, not a preregistered accuracy estimate.",
+    "The audit is assistant-conducted and is not human-labeled ground truth.",
+    "The audit does not alter or retroactively tune financial-representation v2.",
+    "A supported representation facet is not transaction identity, event independence, anomaly, conflict, suspiciousness, wrongdoing, or a lead."
+  ]
+}

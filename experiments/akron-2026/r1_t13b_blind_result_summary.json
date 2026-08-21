@@ -1,0 +1,77 @@
+{
+  "extraction": {
+    "money_facts_below_quality_floor": 0,
+    "ocr_extractions_added": 94,
+    "ocr_failed": 0,
+    "ocr_pages_attempted": 94,
+    "post_ocr_low_quality_page_count": 1,
+    "unique_artifact_page_count": 270
+  },
+  "frozen_semantics": {
+    "contract_git_blob": "45e535ececb882f77293e7ddc757a83de1c9031d",
+    "evaluator_git_blob": "7724694c2a9d2c2e3606a18c3ea1c47d02f8154e",
+    "parser_version": "proofline-structured/v2",
+    "semantic_contract_changed_after_holdout_opened": false
+  },
+  "non_claims": [
+    "This compact summary is derived from the preserved T13b workflow artifact; it is not a substitute for the full evidence artifact.",
+    "Non-unknown representation output is not an accuracy claim.",
+    "No detector, event identity, independence, anomaly, conflict, wrongdoing, or lead conclusion is authorized."
+  ],
+  "representation": {
+    "amount_type_counts": {
+      "assessment_rate": 1,
+      "estimated_project_cost": 1,
+      "filing_fee_amount": 50,
+      "grant_context_amount": 1,
+      "municipal_form_amount": 13,
+      "purchase_price": 1,
+      "total_project_amount": 2,
+      "unit_rate": 1,
+      "unknown": 124
+    },
+    "amount_type_known_fact_count": 70,
+    "context_known_amount_unknown_fact_count": 0,
+    "context_type_counts": {
+      "assessment": 1,
+      "fee_schedule": 50,
+      "grant_project": 1,
+      "municipal_financial_form": 15,
+      "project_estimate": 1,
+      "property_transaction": 2,
+      "unknown": 124
+    },
+    "fully_unknown_fact_count": 124,
+    "money_fact_count": 194,
+    "scope_counts": {
+      "akron_municipal_record_context": 70,
+      "unknown": 124
+    },
+    "source_name_context_status_counts": {
+      "shared_nonblank": 194
+    }
+  },
+  "sample": {
+    "attachment_source_count": 32,
+    "duplicate_artifact_group_count": 4,
+    "excluded_signature_sha256": "e0e72779fb4e88f1720ff5f00dcb7ac90a11c83ed56094c32a1da2f478383afb",
+    "global_discovery_rejection_count": 0,
+    "live_attachment_graph_size": 2327,
+    "selected_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966",
+    "unique_artifact_count": 28
+  },
+  "schema": "proofline-akron-t13b-blind-result-summary/v1",
+  "semantic_boundary": {
+    "detector_authorized": false,
+    "event_identity_assigned": false,
+    "independence_assessed": false,
+    "lead_count": null
+  },
+  "workflow": {
+    "artifact_digest": "sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338",
+    "artifact_id": 9432387690,
+    "artifact_name": "r1-akron-financial-representation-v2-oos",
+    "head_sha": "abf3bbfa7eb3b1e9329f0baa9dae72b3416c7b4f",
+    "run_id": 32440471169
+  }
+}

@@ -1,0 +1,39 @@
+name: r1-akron-v2-precision-audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-v2-precision-audit.yml"
+      - "experiments/akron-2026/R1_T14_REPRESENTATION_PRECISION_AUDIT.md"
+      - "experiments/akron-2026/r1_t13b_blind_result_summary.json"
+      - "experiments/akron-2026/r1_t14_known_amount_type_audit.json"
+      - "experiments/akron-2026/akron-financial-representation-v2.json"
+      - "tests/test_akron_v2_precision_audit.py"
+      - "src/proofline/structured.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Re-run T14 audit boundary explicitly
+        run: pytest -q tests/test_akron_v2_precision_audit.py
