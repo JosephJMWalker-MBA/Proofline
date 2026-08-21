@@ -1,0 +1,185 @@
+name: r1-akron-t21-april27-supporting-document-acquisition
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-april27-supporting-document-acquisition.yml"
+      - "experiments/akron-2026/acquire_t21_april27_supporting_documents.py"
+      - "experiments/akron-2026/r1_t21_april27_supporting_document_selection.json"
+      - "experiments/akron-2026/r1_t21_packet_contextual_audit.json"
+      - "src/proofline/onbase_attachments.py"
+      - "src/proofline/onbase_attachments_cli.py"
+      - "src/proofline/storage.py"
+      - "src/proofline/watcher.py"
+      - "tests/test_t21_april27_supporting_document_acquisition.py"
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify frozen T21 contextual audit, expansion set, and acquisition machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object experiments/akron-2026/r1_t21_packet_contextual_audit.json)" = "7f046aecbb0af4f4c3fee5605a8485a69f9e8ef0"
+          test "$(git hash-object experiments/akron-2026/r1_t21_april27_supporting_document_selection.json)" = "cd197f9e39d110f724a6c4437b311c1d86e9d904"
+          test "$(git hash-object experiments/akron-2026/acquire_t21_april27_supporting_documents.py)" = "2af981af1a0f1e2624af2fe0d95d14ba9f6c4212"
+          test "$(git hash-object tests/test_t21_april27_supporting_document_acquisition.py)" = "2f60a6c037ef3dafddbfa287f5210dc91115016c"
+          test "$(git hash-object src/proofline/onbase_attachments.py)" = "629421673d8d7a47ab0580c6e0f08cbc2d62ea26"
+          test "$(git hash-object src/proofline/onbase_attachments_cli.py)" = "eb3ec92694a877a6b4365db04271974392e9a402"
+          test "$(git hash-object src/proofline/storage.py)" = "755acd6b5a9d52e6edd93a5aab740df4ac4e19c5"
+          test "$(git hash-object src/proofline/watcher.py)" = "3393f20ace7a32ec0e61d8e36edb1a3e2092ff1f"
+          python - <<'PY'
+          import json
+          p = json.load(open('experiments/akron-2026/r1_t21_april27_supporting_document_selection.json'))
+          assert p['schema'] == 'proofline-akron-t21-april27-supporting-document-selection/v1'
+          assert p['stage'] == 'post_packet_contextual_audit_pre_supporting_document_acquisition'
+          assert p['selected_document_count'] == 20
+          assert p['selection_signature_sha256'] == '0f58180207c3bf55e90a8494ddd15d1606f53281d2dad2df133b5db9ea60485d'
+          assert p['basis']['parent_meeting_id'] == 682
+          assert p['basis']['parent_item_id'] == 47559
+          PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite and acquisition helper smoke gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/acquire_t21_april27_supporting_documents.py --help >/dev/null
+
+      - name: Rebuild canonical Akron parents and attachment relation graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-t21-april27-supporting-docs akron-t21-april27-supporting-docs
+          mkdir -p akron-t21-april27-supporting-docs
+          proofline-onbase-attachments \
+            --state-dir .akron-t21-april27-supporting-docs \
+            --manifest-out akron-t21-april27-supporting-docs/attachment-manifest.json \
+            --relations-out akron-t21-april27-supporting-docs/discovered-relations.json \
+            --rejections-out akron-t21-april27-supporting-docs/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-t21-april27-supporting-docs/discovery.json
+          test "$(sha256sum akron-t21-april27-supporting-docs/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+          test "$(python - <<'PY'
+          import json
+          print(len(json.load(open('akron-t21-april27-supporting-docs/rejections.json'))))
+          PY
+          )" = "0"
+
+      - name: Prove frozen 20-document set against publisher relations before acquisition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import importlib.util
+          import json
+          from pathlib import Path
+
+          path = Path('experiments/akron-2026/acquire_t21_april27_supporting_documents.py')
+          spec = importlib.util.spec_from_file_location('t21_april27_acquisition', path)
+          assert spec and spec.loader
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          selection = json.load(open('experiments/akron-2026/r1_t21_april27_supporting_document_selection.json'))
+          relations = json.load(open('akron-t21-april27-supporting-docs/discovered-relations.json'))
+          manifest = json.load(open('akron-t21-april27-supporting-docs/attachment-manifest.json'))
+
+          verified = module.verify_publisher_relations(selection, relations)
+          bounded = module.selected_manifest(selection, verified, manifest)
+          assert len(verified) == 20
+          assert len(bounded.resources) == 20
+          assert [row['publish_id'] for row in module.selection_rows(selection)] == list(range(102587, 102607))
+          PY
+
+      - name: Acquire frozen April 27 supporting-document set and inventory Bronze
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/acquire_t21_april27_supporting_documents.py \
+            --state-dir .akron-t21-april27-supporting-docs \
+            --selection experiments/akron-2026/r1_t21_april27_supporting_document_selection.json \
+            --relations akron-t21-april27-supporting-docs/discovered-relations.json \
+            --attachment-manifest akron-t21-april27-supporting-docs/attachment-manifest.json \
+            --threshold 0.70 \
+            --output akron-t21-april27-supporting-docs/acquisition.json \
+            > akron-t21-april27-supporting-docs/acquisition-stdout.json
+          cat akron-t21-april27-supporting-docs/acquisition-stdout.json
+
+      - name: Validate raw inventory accounting and authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+
+          p = json.load(open('akron-t21-april27-supporting-docs/acquisition.json'))
+          assert p['schema'] == 'proofline-akron-t21-april27-supporting-document-acquisition/v1'
+          assert p['stage'] == 'raw_publisher_bounded_bronze_inventory_before_document_contextual_reading'
+          assert p['selection']['selection_signature_sha256'] == '0f58180207c3bf55e90a8494ddd15d1606f53281d2dad2df133b5db9ea60485d'
+          assert p['selection']['selected_document_count'] == 20
+          assert p['selection']['parent_meeting_id'] == 682
+          assert p['selection']['parent_item_id'] == 47559
+          a = p['acquisition']
+          assert a['requested_source_count'] == 20
+          assert a['available_source_count'] + a['unavailable_source_count'] == 20
+          assert len(p['documents']) == 20
+          assert p['inventory']['unique_bronze_artifact_count'] <= a['available_source_count']
+          assert sum(group['source_identity_count'] for group in p['artifact_groups']) == a['available_source_count']
+          assert p['inventory']['duplicate_bronze_artifact_group_count'] <= p['inventory']['unique_bronze_artifact_count']
+
+          def walk(value):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      assert key not in {'text', 'extracted_text'}
+                      walk(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      walk(child)
+          walk(p)
+
+          assert p['authority_boundary'] == {
+              'publisher_relations_reused': True,
+              'source_relation_created': False,
+              'source_family_modified': False,
+              'supporting_document_content_interpreted': False,
+              'event_identity_assigned': False,
+              'meeting_occurrence_asserted': False,
+              'hearing_occurrence_asserted': False,
+              'outcome_assigned': False,
+              'detector_authorized': False,
+              'lead_count': None,
+          }
+          PY
+
+      - name: Upload raw pre-reading April 27 supporting-document inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-april27-supporting-document-acquisition
+          path: |
+            akron-t21-april27-supporting-docs/acquisition.json
+            akron-t21-april27-supporting-docs/acquisition-stdout.json
+            akron-t21-april27-supporting-docs/discovery.json
+            akron-t21-april27-supporting-docs/attachment-manifest.json
+            akron-t21-april27-supporting-docs/discovered-relations.json
+            akron-t21-april27-supporting-docs/rejections.json
+            experiments/akron-2026/r1_t21_april27_supporting_document_selection.json
+          if-no-files-found: error
+          retention-days: 14
