@@ -66,6 +66,27 @@ def test_money_parser_fails_closed_on_unknown_attached_suffix() -> None:
     assert not any(fact.fact_type == "money" for fact in facts)
 
 
+def test_money_parser_v3_fails_closed_on_malformed_ocr_continuation() -> None:
+    text = "Estimated TOTAL Project Cost $20,001___- $100,000 Applicable Fee $500"
+    money = [fact for fact in extract_structured_facts(text) if fact.fact_type == "money"]
+
+    assert [(fact.raw_text, fact.normalized_text) for fact in money] == [
+        ("$100,000", "100000.00"),
+        ("$500", "500.00"),
+    ]
+    assert not any(fact.raw_text == "$20" for fact in money)
+
+
+def test_money_parser_v3_preserves_valid_thousands_ranges() -> None:
+    text = "Estimated TOTAL Project Cost $20,001 - $100,000"
+    money = [fact for fact in extract_structured_facts(text) if fact.fact_type == "money"]
+
+    assert [(fact.raw_text, fact.normalized_text) for fact in money] == [
+        ("$20,001", "20001.00"),
+        ("$100,000", "100000.00"),
+    ]
+
+
 def test_v1_money_parser_remains_available_for_frozen_receipts() -> None:
     spaced = extract_structured_facts(
         "Total expenditure (if applicable): $ 51 ,780.00",
@@ -80,6 +101,22 @@ def test_v1_money_parser_remains_available_for_frozen_receipts() -> None:
     magnitude_money = [fact for fact in magnitude if fact.fact_type == "money"]
     assert [(fact.raw_text, fact.normalized_text) for fact in spaced_money] == [("$ 51", "51.00")]
     assert [(fact.raw_text, fact.normalized_text) for fact in magnitude_money] == [("$138", "138.00")]
+
+
+def test_v2_money_parser_remains_available_for_t13b_receipt() -> None:
+    money = [
+        fact
+        for fact in extract_structured_facts(
+            "$20,001___- $100,000",
+            parser_version="proofline-structured/v2",
+        )
+        if fact.fact_type == "money"
+    ]
+
+    assert [(fact.raw_text, fact.normalized_text) for fact in money] == [
+        ("$20", "20.00"),
+        ("$100,000", "100000.00"),
+    ]
 
 
 def test_structured_index_records_requested_parser_version(tmp_path) -> None:
@@ -113,7 +150,7 @@ def test_structured_index_queries_ranges_with_provenance(tmp_path) -> None:
     build = index.rebuild()
     assert build.evidence_count == 3
     assert build.fact_count >= 6
-    assert build.parser_version == "proofline-structured/v2"
+    assert build.parser_version == "proofline-structured/v3"
 
     money = index.money(minimum=300000, maximum=500000)
     assert {hit.raw_text for hit in money} == {"410000"}

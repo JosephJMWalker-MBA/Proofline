@@ -1,0 +1,115 @@
+name: r1-money-parser-v3-integrity
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-money-parser-v3-integrity.yml"
+      - "experiments/akron-2026/R1_T15_MONEY_PARSER_V3_INTEGRITY.md"
+      - "experiments/akron-2026/r1_t13b_money_anchor_fixture.json"
+      - "experiments/akron-2026/measure_money_parser_v3_delta.py"
+      - "tests/test_akron_money_parser_v3_integrity.py"
+      - "tests/test_structured_search.py"
+      - "src/proofline/structured.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Measure exact T13b v2 to v3 parser delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p t15-money-parser-v3
+          python experiments/akron-2026/measure_money_parser_v3_delta.py \
+            --fixture experiments/akron-2026/r1_t13b_money_anchor_fixture.json \
+            --output t15-money-parser-v3/parser-delta.json \
+            > t15-money-parser-v3/parser-delta-stdout.json
+
+      - name: Validate T15 numeric-integrity boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from proofline.structured import StructuredIndex, extract_structured_facts
+
+          result = json.loads(Path('t15-money-parser-v3/parser-delta.json').read_text())
+          if result.get('schema') != 'proofline-akron-money-parser-v3-delta/v1':
+              raise SystemExit('unexpected T15 delta schema')
+          if result.get('old_parser_version') != 'proofline-structured/v2':
+              raise SystemExit('T15 historical parser boundary changed')
+          if result.get('new_parser_version') != 'proofline-structured/v3':
+              raise SystemExit('T15 current parser boundary changed')
+          if result.get('fact_count') != 194:
+              raise SystemExit(f"T15 fixture population changed: {result.get('fact_count')}")
+          if result.get('unchanged_fact_count') != 193:
+              raise SystemExit(f"T15 expected 193 unchanged anchors: {result.get('unchanged_fact_count')}")
+          if result.get('removed_fact_count') != 1:
+              raise SystemExit(f"T15 expected one removed malformed anchor: {result.get('removed_fact_count')}")
+          if result.get('changed_fact_count') != 0 or result.get('changed'):
+              raise SystemExit(f"T15 contains unexpected changed anchors: {result.get('changed')}")
+          removed = result['removed'][0]
+          if removed['old_raw_text'] != '$20' or '$20,001___' not in removed['snippet']:
+              raise SystemExit(f'T15 removed unexpected anchor: {removed}')
+          if result.get('semantic_contract_changed') is not False:
+              raise SystemExit('T15 improperly changed semantic contract status')
+          if result.get('detector_authorized') is not False or result.get('lead_count') is not None:
+              raise SystemExit('T15 improperly authorized detector/lead output')
+
+          default_money = [
+              fact for fact in extract_structured_facts('$20,001___- $100,000')
+              if fact.fact_type == 'money'
+          ]
+          if [(fact.raw_text, fact.normalized_text) for fact in default_money] != [
+              ('$100,000', '100000.00')
+          ]:
+              raise SystemExit(f'default parser is not fail-closed v3: {default_money}')
+
+          v2_money = [
+              fact for fact in extract_structured_facts(
+                  '$20,001___- $100,000', parser_version='proofline-structured/v2'
+              ) if fact.fact_type == 'money'
+          ]
+          if [(fact.raw_text, fact.normalized_text) for fact in v2_money] != [
+              ('$20', '20.00'), ('$100,000', '100000.00')
+          ]:
+              raise SystemExit('explicit v2 no longer reproduces the frozen T13b behavior')
+
+          print(json.dumps({
+              'parser_version': 'proofline-structured/v3',
+              'fact_count': result['fact_count'],
+              'unchanged_fact_count': result['unchanged_fact_count'],
+              'removed_fact_count': result['removed_fact_count'],
+              'changed_fact_count': result['changed_fact_count'],
+              'detector_authorized': result['detector_authorized'],
+              'lead_count': result['lead_count'],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload T15 parser integrity evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-money-parser-v3-integrity
+          path: t15-money-parser-v3/
+          if-no-files-found: error
+          retention-days: 14

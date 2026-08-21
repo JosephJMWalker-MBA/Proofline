@@ -300,7 +300,7 @@ def evaluate(
             ocr_results[artifact_id] = result.to_dict()
 
     structured = StructuredIndex(state_dir)
-    build = structured.rebuild()
+    build = structured.rebuild(parser_version=contract["parser_version"])
     if build.parser_version != contract["parser_version"]:
         raise RuntimeError(
             f"T11 structured parser mismatch: {build.parser_version} != {contract['parser_version']}"
