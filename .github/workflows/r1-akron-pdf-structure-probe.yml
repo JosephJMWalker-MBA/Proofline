@@ -4,9 +4,12 @@ on:
   pull_request:
     paths:
       - ".github/workflows/r1-akron-pdf-structure-probe.yml"
+      - "experiments/akron-2026/R1_T16_NATIVE_PDF_STRUCTURE_PROBE.md"
       - "experiments/akron-2026/profile_pdf_table_structure.py"
       - "experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json"
+      - "experiments/akron-2026/r1_t13b_source_artifact_map.json"
       - "experiments/akron-2026/r1_t14_known_amount_type_audit.json"
+      - "experiments/akron-2026/r1_t16_native_structure_summary.json"
       - "experiments/akron-2026/sync_frozen_attachment_holdout.py"
       - "experiments/akron-2026/onbase-plan.json"
       - "src/proofline/pdf_structure.py"
@@ -83,6 +86,7 @@ jobs:
       - name: Validate provenance and non-semantic boundary
         run: |
           python - <<'PY'
+          import hashlib
           import json
           from pathlib import Path
 
@@ -90,6 +94,9 @@ jobs:
           profile = json.loads((root / 'native-table-profile.json').read_text())
           sync = json.loads((root / 'selection-sync.json').read_text())
           rejections = json.loads((root / 'rejections.json').read_text())
+          frozen_bronze = json.loads(
+              Path('experiments/akron-2026/r1_t13b_source_artifact_map.json').read_text()
+          )
 
           if profile.get('schema') != 'proofline-akron-native-pdf-table-structure-profile/v1':
               raise SystemExit('unexpected T16 structure profile schema')
@@ -111,6 +118,35 @@ jobs:
           if sample['selection_status'] != 'already_opened_t13b_development_data_not_new_holdout':
               raise SystemExit('T16 incorrectly claims a new holdout')
 
+          if frozen_bronze.get('schema') != 'proofline-akron-t13b-source-artifact-map/v1':
+              raise SystemExit('unexpected frozen T13b Bronze map schema')
+          if frozen_bronze.get('source_count') != 32 or frozen_bronze.get('unique_artifact_count') != 28:
+              raise SystemExit('frozen T13b Bronze map population changed')
+          if frozen_bronze.get('provenance', {}).get('selected_signature_sha256') != expected_signature:
+              raise SystemExit('frozen T13b Bronze map names a different source population')
+          frozen_map = frozen_bronze.get('source_artifacts') or {}
+          mapping_payload = json.dumps(frozen_map, sort_keys=True, separators=(',', ':')).encode()
+          mapping_signature = hashlib.sha256(mapping_payload).hexdigest()
+          if mapping_signature != '797f8986110664bf23019536a3c9721c7e283cd81b730e3eb867459b34848edf':
+              raise SystemExit('frozen T13b source-to-Bronze mapping signature changed')
+          if frozen_bronze.get('mapping_signature_sha256') != mapping_signature:
+              raise SystemExit('stored T13b source-to-Bronze mapping signature is inconsistent')
+
+          current_map = {
+              item['source_id'].removeprefix('source:'): item['artifact_id']
+              for item in sync['watch']['results']
+          }
+          if current_map != frozen_map:
+              drift = {
+                  key: {'frozen': frozen_map.get(key), 'current': current_map.get(key)}
+                  for key in sorted(set(frozen_map) | set(current_map))
+                  if frozen_map.get(key) != current_map.get(key)
+              }
+              raise SystemExit(
+                  'T16 live source bytes no longer reproduce the already-opened T13b Bronze identities: '
+                  + json.dumps(drift, sort_keys=True)
+              )
+
           for key in ('canonical_silver_changed', 'structured_index_changed', 'financial_semantics_changed', 'detector_authorized', 'event_identity_assigned'):
               if profile.get(key) is not False:
                   raise SystemExit(f'T16 semantic boundary changed: {key}={profile.get(key)!r}')
@@ -122,6 +158,8 @@ jobs:
               value = native.get(key)
               if not isinstance(value, int) or value < 0:
                   raise SystemExit(f'T16 invalid native-structure count {key}={value!r}')
+          if native['unique_artifact_page_count'] != 270:
+              raise SystemExit(f"T16 page population changed: {native['unique_artifact_page_count']}")
           if native['artifacts_with_any_table'] + native['artifacts_with_no_table'] != 28:
               raise SystemExit('T16 artifact table/null accounting is incomplete')
 
@@ -139,6 +177,7 @@ jobs:
           summary = {
               'source_identity_count': sample['source_identity_count'],
               'unique_artifact_count': sample['unique_artifact_count'],
+              'bronze_identity_match': True,
               'unique_artifact_page_count': native['unique_artifact_page_count'],
               'pages_with_detected_tables': native['pages_with_detected_tables'],
               'detected_table_count': native['detected_table_count'],
