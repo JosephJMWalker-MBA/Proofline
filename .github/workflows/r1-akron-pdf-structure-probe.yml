@@ -1,0 +1,165 @@
+name: r1-akron-pdf-structure-probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-pdf-structure-probe.yml"
+      - "experiments/akron-2026/profile_pdf_table_structure.py"
+      - "experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json"
+      - "experiments/akron-2026/r1_t14_known_amount_type_audit.json"
+      - "experiments/akron-2026/sync_frozen_attachment_holdout.py"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "src/proofline/pdf_structure.py"
+      - "src/proofline/onbase_attachments.py"
+      - "src/proofline/onbase_attachments_cli.py"
+      - "src/proofline/storage.py"
+      - "src/proofline/watch_storage.py"
+      - "src/proofline/structured.py"
+      - "tests/test_pdf_structure.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest
+
+      - name: Rebuild canonical Akron parents and full attachment identity graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-pdf-structure akron-pdf-structure
+          mkdir -p akron-pdf-structure
+          proofline-onbase-attachments \
+            --state-dir .akron-pdf-structure \
+            --manifest-out akron-pdf-structure/attachment-manifest.json \
+            --relations-out akron-pdf-structure/discovered-relations.json \
+            --rejections-out akron-pdf-structure/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-pdf-structure/discovery.json
+          test "$(sha256sum akron-pdf-structure/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+
+      - name: Sync exact already-opened T13b ranks 33-64 source set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/sync_frozen_attachment_holdout.py \
+            --state-dir .akron-pdf-structure \
+            --manifest akron-pdf-structure/attachment-manifest.json \
+            --relations akron-pdf-structure/discovered-relations.json \
+            --selection experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json \
+            --output akron-pdf-structure/selection-sync.json \
+            > akron-pdf-structure/selection-sync-stdout.json
+
+      - name: Probe native PDF table geometry without changing Silver
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/profile_pdf_table_structure.py \
+            --state-dir .akron-pdf-structure \
+            --selection-sync akron-pdf-structure/selection-sync.json \
+            --audit experiments/akron-2026/r1_t14_known_amount_type_audit.json \
+            --output akron-pdf-structure/native-table-profile.json \
+            > akron-pdf-structure/native-table-profile-stdout.json
+
+      - name: Validate provenance and non-semantic boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('akron-pdf-structure')
+          profile = json.loads((root / 'native-table-profile.json').read_text())
+          sync = json.loads((root / 'selection-sync.json').read_text())
+          rejections = json.loads((root / 'rejections.json').read_text())
+
+          if profile.get('schema') != 'proofline-akron-native-pdf-table-structure-profile/v1':
+              raise SystemExit('unexpected T16 structure profile schema')
+          if profile.get('stage') != 'post_hoc_native_structure_capability_probe_on_opened_t13b':
+              raise SystemExit('T16 stage boundary changed')
+          if rejections:
+              raise SystemExit(f'T16 source graph contains rejected publisher links: {len(rejections)}')
+
+          sample = profile['sample']
+          if sample['source_identity_count'] != 32:
+              raise SystemExit(f"T16 source population changed: {sample['source_identity_count']}")
+          if sample['unique_artifact_count'] != 28:
+              raise SystemExit(f"T16 Bronze population changed: {sample['unique_artifact_count']}")
+          expected_signature = 'b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966'
+          if sample['selection_signature_sha256'] != expected_signature:
+              raise SystemExit('T16 no longer uses the frozen T13b source population')
+          if sync['selection']['selected_signature_sha256'] != expected_signature:
+              raise SystemExit('T16 selection sync signature changed')
+          if sample['selection_status'] != 'already_opened_t13b_development_data_not_new_holdout':
+              raise SystemExit('T16 incorrectly claims a new holdout')
+
+          for key in ('canonical_silver_changed', 'structured_index_changed', 'financial_semantics_changed', 'detector_authorized', 'event_identity_assigned'):
+              if profile.get(key) is not False:
+                  raise SystemExit(f'T16 semantic boundary changed: {key}={profile.get(key)!r}')
+          if profile.get('lead_count') is not None:
+              raise SystemExit('T16 emitted leads')
+
+          native = profile['native_structure']
+          for key in ('unique_artifact_page_count', 'pages_with_detected_tables', 'detected_table_count', 'detected_cell_count', 'page_detection_failure_count', 'artifacts_with_any_table', 'artifacts_with_no_table'):
+              value = native.get(key)
+              if not isinstance(value, int) or value < 0:
+                  raise SystemExit(f'T16 invalid native-structure count {key}={value!r}')
+          if native['artifacts_with_any_table'] + native['artifacts_with_no_table'] != 28:
+              raise SystemExit('T16 artifact table/null accounting is incomplete')
+
+          audit = profile['post_hoc_t14_characterization']
+          if audit['fee_schedule_group_count'] != 6:
+              raise SystemExit(f"T16 no longer characterizes six known T14 fee groups: {audit['fee_schedule_group_count']}")
+          if len(audit['fee_schedule_groups']) != 6:
+              raise SystemExit('T16 fee-group records are incomplete')
+          if any(group['matching_unique_artifact_count'] < 1 for group in audit['fee_schedule_groups']):
+              raise SystemExit('T16 lost a T14 fee-schedule artifact mapping')
+          removed = sum(len(group['tokens_removed_as_t15_numeric_integrity_issue']) for group in audit['fee_schedule_groups'])
+          if removed != 1:
+              raise SystemExit(f'T16 expected exactly one T15-resolved token exclusion, found {removed}')
+
+          summary = {
+              'source_identity_count': sample['source_identity_count'],
+              'unique_artifact_count': sample['unique_artifact_count'],
+              'unique_artifact_page_count': native['unique_artifact_page_count'],
+              'pages_with_detected_tables': native['pages_with_detected_tables'],
+              'detected_table_count': native['detected_table_count'],
+              'detected_cell_count': native['detected_cell_count'],
+              'page_detection_failure_count': native['page_detection_failure_count'],
+              'artifacts_with_any_table': native['artifacts_with_any_table'],
+              'artifacts_with_no_table': native['artifacts_with_no_table'],
+              'fee_schedule_structurally_separable_count': audit['fee_schedule_structurally_separable_count'],
+              'assessment_structurally_supports_cash_assessed': audit['assessment']['structurally_supports_cash_assessed'],
+              'detector_authorized': profile['detector_authorized'],
+              'lead_count': profile['lead_count'],
+          }
+          (root / 'summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload T16 native-structure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-pdf-structure-probe
+          path: akron-pdf-structure/
+          if-no-files-found: error
+          retention-days: 14
