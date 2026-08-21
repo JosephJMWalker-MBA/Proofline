@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Sync the exact frozen R1.T13 attachment holdout by source identity only.
+"""Sync the corrected R1.T13b attachment holdout by source identity only.
 
-The holdout was frozen in R1.T12 before document content was inspected. Resolution uses
-only SHA-256(source_uri) against the live OnBase attachment manifest. Document bytes,
-source names, and extracted text do not participate in sample selection.
+R1.T13 failed closed because the T12 materialized hash list did not faithfully encode
+its already-declared ranks 33-64 rule. T13b preserves that rule and mechanically
+re-derives the exact ranks from the same preserved manifest. Resolution uses only
+SHA-256(source_uri); document bytes, source names, and extracted text do not participate
+in sample selection.
 """
 
 from __future__ import annotations
@@ -23,10 +25,13 @@ from proofline.onbase_attachments import (
 from proofline.relations import RelationStore
 from proofline.watcher import ManifestResource, SourceManifest
 
-SELECTION_SCHEMA = "proofline-akron-t13-disjoint-source-set/v1"
-OUTPUT_SCHEMA = "proofline-akron-t13-frozen-attachment-sync/v1"
+SELECTION_SCHEMA = "proofline-akron-t13b-disjoint-source-set/v1"
+OUTPUT_SCHEMA = "proofline-akron-t13b-frozen-attachment-sync/v1"
 EXPECTED_EXCLUDED = 32
 EXPECTED_SELECTED = 32
+EXPECTED_MANIFEST_SHA256 = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+EXPECTED_EXCLUDED_SIGNATURE = "e0e72779fb4e88f1720ff5f00dcb7ac90a11c83ed56094c32a1da2f478383afb"
+EXPECTED_SELECTED_SIGNATURE = "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966"
 
 
 def _load(path: str | Path):
@@ -44,9 +49,15 @@ def _signature(hashes: list[str]) -> str:
 
 def resolve_selection(manifest_payload: dict, selection_payload: dict) -> tuple[list[dict], dict]:
     if selection_payload.get("schema") != SELECTION_SCHEMA:
-        raise ValueError("unexpected T13 frozen selection schema")
-    if selection_payload.get("content_inspection_status") != "not_inspected_at_freeze":
-        raise ValueError("T13 holdout lost its pre-inspection freeze marker")
+        raise ValueError("unexpected T13b corrected selection schema")
+    if selection_payload.get("content_inspection_status") != "not_inspected_for_correction":
+        raise ValueError("T13b correction lost its no-content-inspection marker")
+    provenance = selection_payload.get("provenance") or {}
+    if provenance.get("source_manifest_sha256") != EXPECTED_MANIFEST_SHA256:
+        raise ValueError("T13b correction no longer names the preserved source manifest")
+    correction = selection_payload.get("correction") or {}
+    if correction.get("representation_applied_in_failed_run") is not False:
+        raise ValueError("T13b correction lost the failed-run no-representation boundary")
 
     resources = manifest_payload.get("resources")
     if not isinstance(resources, list):
@@ -58,19 +69,27 @@ def resolve_selection(manifest_payload: dict, selection_payload: dict) -> tuple[
     selected = list(selected_block.get("source_uri_sha256") or [])
 
     if excluded_block.get("original_manifest_ranks") != [1, 32]:
-        raise ValueError("T13 exclusion rank boundary changed")
+        raise ValueError("T13b exclusion rank boundary changed")
     if selected_block.get("original_manifest_ranks") != [33, 64]:
-        raise ValueError("T13 holdout rank boundary changed")
+        raise ValueError("T13b holdout rank boundary changed")
     if len(excluded) != EXPECTED_EXCLUDED or len(set(excluded)) != EXPECTED_EXCLUDED:
-        raise ValueError("T13 exclusion set must contain exactly 32 unique source hashes")
+        raise ValueError("T13b exclusion set must contain exactly 32 unique source hashes")
     if len(selected) != EXPECTED_SELECTED or len(set(selected)) != EXPECTED_SELECTED:
-        raise ValueError("T13 holdout must contain exactly 32 unique source hashes")
+        raise ValueError("T13b holdout must contain exactly 32 unique source hashes")
     if set(excluded) & set(selected):
-        raise ValueError("T13 development and holdout source sets overlap")
+        raise ValueError("T13b development and holdout source sets overlap")
     if excluded != sorted(excluded) or selected != sorted(selected):
-        raise ValueError("T13 frozen source hashes are not in deterministic rank order")
+        raise ValueError("T13b source hashes are not in deterministic rank order")
     if excluded[-1] >= selected[0]:
-        raise ValueError("T13 original rank boundary is not strictly disjoint")
+        raise ValueError("T13b original rank boundary is not strictly disjoint")
+    if _signature(excluded) != EXPECTED_EXCLUDED_SIGNATURE:
+        raise ValueError("T13b rank 1-32 signature changed")
+    if _signature(selected) != EXPECTED_SELECTED_SIGNATURE:
+        raise ValueError("T13b rank 33-64 signature changed")
+    if excluded_block.get("signature_sha256") != EXPECTED_EXCLUDED_SIGNATURE:
+        raise ValueError("T13b stored exclusion signature is inconsistent")
+    if selected_block.get("signature_sha256") != EXPECTED_SELECTED_SIGNATURE:
+        raise ValueError("T13b stored holdout signature is inconsistent")
 
     by_hash: dict[str, dict] = {}
     live_ranked: list[tuple[str, str]] = []
@@ -89,12 +108,19 @@ def resolve_selection(manifest_payload: dict, selection_payload: dict) -> tuple[
     missing_selected = [digest for digest in selected if digest not in by_hash]
     if missing_excluded or missing_selected:
         raise ValueError(
-            "live discovery cannot reproduce frozen T13 source identities: "
+            "live discovery cannot reproduce corrected T13b source identities: "
             f"missing_excluded={missing_excluded}, missing_selected={missing_selected}"
         )
 
     live_ranked.sort()
     live_position = {digest: index + 1 for index, (digest, _) in enumerate(live_ranked)}
+    live_excluded_ranks = [live_position[digest] for digest in excluded]
+    live_selected_ranks = [live_position[digest] for digest in selected]
+    if live_excluded_ranks != list(range(1, 33)):
+        raise ValueError(f"live T13b exclusion ranks drifted: {live_excluded_ranks}")
+    if live_selected_ranks != list(range(33, 65)):
+        raise ValueError(f"live T13b selected ranks drifted: {live_selected_ranks}")
+
     selected_resources = [by_hash[digest] for digest in selected]
     metadata = {
         "excluded_source_hashes": excluded,
@@ -103,10 +129,11 @@ def resolve_selection(manifest_payload: dict, selection_payload: dict) -> tuple[
         "selected_signature_sha256": _signature(selected),
         "original_excluded_ranks": [1, 32],
         "original_selected_ranks": [33, 64],
-        "live_excluded_ranks": [live_position[digest] for digest in excluded],
-        "live_selected_ranks": [live_position[digest] for digest in selected],
+        "live_excluded_ranks": live_excluded_ranks,
+        "live_selected_ranks": live_selected_ranks,
         "live_manifest_resource_count": len(resources),
-        "selection_basis": "sha256(source_uri) only",
+        "selection_basis": "sha256(source_uri) only; corrected materialization of predeclared ranks 33-64",
+        "failed_t13_run_id": correction.get("failed_run_id"),
     }
     return selected_resources, metadata
 
@@ -126,7 +153,7 @@ def main() -> int:
     selected_resources, selection = resolve_selection(manifest_payload, selection_payload)
 
     manifest = SourceManifest(
-        name="akron-t13-disjoint-32",
+        name="akron-t13b-disjoint-32",
         resources=tuple(
             ManifestResource(
                 source_uri=item["source_uri"],
@@ -147,7 +174,7 @@ def main() -> int:
     related_sources = {item.get("source_uri") for item in matching_relations}
     missing_relations = sorted(selected_uris - related_sources)
     if missing_relations:
-        raise RuntimeError(f"T13 selected sources lack publisher-backed parent relations: {missing_relations}")
+        raise RuntimeError(f"T13b selected sources lack publisher-backed parent relations: {missing_relations}")
 
     created = 0
     for relation in matching_relations:
@@ -192,9 +219,9 @@ def main() -> int:
 
     counts = watched.get("counts") or {}
     if counts.get("unavailable"):
-        raise SystemExit("one or more frozen T13 attachments were unavailable")
+        raise SystemExit("one or more corrected T13b attachments were unavailable")
     if counts.get("new") != EXPECTED_SELECTED:
-        raise SystemExit(f"T13 exact sync did not ingest 32 new sources: {counts}")
+        raise SystemExit(f"T13b exact sync did not ingest 32 new sources: {counts}")
     return 0
 
 
