@@ -170,7 +170,7 @@ def build_profile(
     run_ocr: bool,
     language: str,
     dpi: int,
-    parser_version: str | None = None,
+    parser_version: str | None = "proofline-structured/v2",
 ) -> dict:
     store = ProoflineStore(state_dir / "proofline.db")
     watcher = WatcherStore(state_dir / "proofline.db")
@@ -332,7 +332,7 @@ def main() -> int:
     parser.add_argument("--ocr", action="store_true")
     parser.add_argument("--language", default="eng")
     parser.add_argument("--dpi", type=int, default=200)
-    parser.add_argument("--parser-version")
+    parser.add_argument("--parser-version", default="proofline-structured/v2")
     args = parser.parse_args()
     if not 0.0 <= args.threshold <= 1.0:
         raise SystemExit("--threshold must be between 0 and 1")
