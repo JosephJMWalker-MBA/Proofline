@@ -1,0 +1,75 @@
+{
+  "already_opened_exclusion": {
+    "count": 96,
+    "original_manifest_ranks": [
+      1,
+      96
+    ],
+    "signature_sha256": "e6288eeda9d527ffcc9189b01cf0c101e5f42d122070fc563ebe798ce1189b61"
+  },
+  "combined_rank_1_128_signature_sha256": "8620cf0dab2126035dfccebb82fa6e83f4d44d68c44ae90993455ec36faabaf1",
+  "content_inspection_status": "identity_hash_only_not_resolved_or_inspected",
+  "forbidden_at_freeze": [
+    "source_uri",
+    "source_name",
+    "document_text",
+    "document_bytes",
+    "money_facts",
+    "layout_features",
+    "semantic_labels"
+  ],
+  "identity_hash": "sha256(UTF-8 source_uri)",
+  "provenance": {
+    "derivation_evidence_artifact_digest": "sha256:4033ea05fbd122504e0dadf005f200ae32e30f646d086cfdfb2399b0bbb36320",
+    "derivation_evidence_artifact_id": 9452336639,
+    "derivation_evidence_run_id": 32497051480,
+    "source_manifest_resource_count": 2327,
+    "source_manifest_sha256": "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+  },
+  "purpose": "Freeze the next untouched 32-source validation block before T20 cross-line spatial money anchoring development. Only identity hashes derived mechanically from the preserved publisher source manifest were retained.",
+  "ranking": "identity_hash ascending, then source_uri",
+  "schema": "proofline-akron-t20-future-holdout-source-set/v1",
+  "selected": {
+    "count": 32,
+    "original_manifest_ranks": [
+      97,
+      128
+    ],
+    "signature_sha256": "2977671e9680305dfde595d13c77ca31197613eae0c1813f6d7a0b2218938bf3",
+    "source_uri_sha256": [
+      "0be1476592f259586449eab37ab714712e5153c6abb6fa7f3653085ae713bffd",
+      "0bf0b6ea7661107f9e7014cd31e5654e2957b3ba0dcc8a5e088f04302f770ea4",
+      "0c0ffdf34c02b8648b3fd5fece82955b260ff9e5d99fb142c0a485973ce416a0",
+      "0c1c0faee47c62ba704f07ce431c18902db52213118b752430a84d28dbeec027",
+      "0c2d40607a44228fdb0e2e639f428bf65728920283c22267683569e60ebe18c0",
+      "0c2d69157658b85263f38d8d4938b066dd384c02e178139f624b899aae65ed25",
+      "0c5aa4d8f4dcd54467fb5360a0ea2f731eb5497e300ee801ca3ae100c0f9cb36",
+      "0c60432c752ad69bbd4901f3fe713c26362afa4eed5d2cbf5e51f6476be37e56",
+      "0d054359a702785ef83f11d160cc0b1c77fa922c811237c1d41f1e1fa267032d",
+      "0d14dc90432f4982b135427e351d0fcf068e8fc69fee6df7626c32b90699af8d",
+      "0d22b5340cd5b4ba0187dce53cc9e95e1bd58e905521360ecb88fbeb73006964",
+      "0d4825b3ecb9a0a34438153573a03551219ced97625044c7b959bad30a1cdf79",
+      "0d66d6a094da3a4c82274540977299ea3b2712a096c88253b5f9d23a96594765",
+      "0d6c83fac873c6148a80a8582377f676be24293f620d0cc09a765ebe513a9727",
+      "0d76918519cb10ab5f9c7ac1d548a1cdb0a589d9d86feae9110790fdd39d9e4a",
+      "0d7e999e00493054a2a90cc271c465b1bc86f61b25e1933efa0619d5f0deba8a",
+      "0d8de76d6780dc586aed73ef5f6f45bf9fd22ee335561ede3ca83f0f19c76d8e",
+      "0da213ec63cb7545322ad13fb0c0235c0fcf3ac0c7fb3752ef73f6045b88d838",
+      "0dbd8153198555fdc888d9b84d656e08f9b7ea3a7777d4d5e72378edadccbb7e",
+      "0dc723e7bb3a81b8f7bab6e159bf38b2e2d95fc6a0f9dc17d8cf5a6fc51a365f",
+      "0dce10f48b2751caf1ef1c86606a5f20fe6559fb059bc7047f3f36f1991cddd9",
+      "0de3a4c28a1938c5cd0c170f807ab1733e088c3dd47fe29cffaab71eb1fc9594",
+      "0df24fd8eb89eebd9f6ae79380413ff224b19178cc8201d833a74f040bd125f8",
+      "0e242ced11890d49ffc8eb118c571f36ed4b0c218a2248fb364b099d66ce9994",
+      "0e399d2fed0084d530033059e7cef5c0adec014e0b0c76067ea293334f5346ff",
+      "0e4dcdbf1026980794e2016df7488d80918eb587d54a9671c63d35b290da8d19",
+      "0e639fcf23a79bc2dd389c0480a7c4c3dab8e4869f16249cd3466c5d6a8170ad",
+      "0e64f212f1c1f8868d543e5d29f08ae72c7d1c14d2ddd2d45617b944fa99d68f",
+      "0e8105481d8ed103fb8269fcebd13d0130e04319b0e3787f391366625b937cf9",
+      "0e8b5d5b1f5669f5af133e4ee943fde0566550e7a4ef572da9b9a7c260be7070",
+      "0e949c87bf1073ce1e54ad0f7c9111b1a223c1953c3ff72e5ceeb64d3af1b22f",
+      "0e95cba88de3e48fd41a94e2548d642be624e7a8fcaa3fa99a4941f82a5d8b5b"
+    ]
+  },
+  "signature_method": "sha256(UTF-8 newline-joined ordered identity hashes with terminal newline)"
+}
