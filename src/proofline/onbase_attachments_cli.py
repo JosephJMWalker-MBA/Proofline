@@ -5,8 +5,22 @@ from __future__ import annotations
 import argparse
 import json
 
-from .onbase import OnBaseAgendaDiscoverer, load_onbase_agenda_plan
+from .onbase import OnBaseAgendaDiscoverer, OnBaseDiscoveryResult, load_onbase_agenda_plan
 from .onbase_attachments import OnBaseAttachmentDiscoverer
+
+
+def _canonical_payload(
+    agenda_result: OnBaseDiscoveryResult,
+    canonical_sync: dict,
+) -> dict:
+    """Preserve publisher meeting metadata alongside canonical sync accounting."""
+    return {
+        "meeting_count": len(agenda_result.meetings),
+        "meetings": [meeting.to_dict() for meeting in agenda_result.meetings],
+        "agenda_item_count": agenda_result.agenda_item_count,
+        "manifest_sha256": agenda_result.discovery.manifest_sha256,
+        "sync_counts": canonical_sync["counts"],
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -65,12 +79,7 @@ def main(argv: list[str] | None = None) -> int:
 
     payload = {
         "schema": "proofline-onbase-attachment-run/v1",
-        "canonical": {
-            "meeting_count": len(agenda_result.meetings),
-            "agenda_item_count": agenda_result.agenda_item_count,
-            "manifest_sha256": agenda_result.discovery.manifest_sha256,
-            "sync_counts": canonical_sync["counts"],
-        },
+        "canonical": _canonical_payload(agenda_result, canonical_sync),
         "attachments": {
             "manifest": result.manifest.name,
             "manifest_sha256": result.manifest_sha256,
