@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Blindly evaluate the frozen Akron financial-representation v2 on R1.T13.
+"""Blindly evaluate frozen Akron financial-representation v2 on corrected R1.T13b.
 
-T13 is representation evaluation only. The frozen v2 contract may describe context facets,
+T13b is representation evaluation only. The frozen v2 contract may describe context facets,
 but this stage never assigns transaction identity, event independence, anomaly, conflict,
 suspiciousness, wrongdoing, or investigative leads. Unknown and null outcomes are valid.
 """
@@ -25,7 +25,7 @@ from proofline.structured import StructuredIndex
 from proofline.watch_storage import WatcherStore
 
 SCHEMA = "proofline-akron-financial-representation-v2-oos-evaluation/v1"
-SELECTION_SYNC_SCHEMA = "proofline-akron-t13-frozen-attachment-sync/v1"
+SELECTION_SYNC_SCHEMA = "proofline-akron-t13b-frozen-attachment-sync/v1"
 EXPECTED_SOURCES = 32
 
 
@@ -166,10 +166,10 @@ def evaluate(
     contract = load_contract(contract_path)
     validate_contract(contract)
     if selection_sync.get("schema") != SELECTION_SYNC_SCHEMA:
-        raise ValueError("unexpected T13 frozen attachment sync schema")
+        raise ValueError("unexpected T13b frozen attachment sync schema")
     selected_sources = selection_sync.get("selected_sources") or []
     if len(selected_sources) != EXPECTED_SOURCES:
-        raise ValueError("T13 requires exactly 32 frozen disjoint attachment sources")
+        raise ValueError("T13b requires exactly 32 corrected disjoint attachment sources")
 
     store = ProoflineStore(state_dir / "proofline.db")
     watcher = WatcherStore(state_dir / "proofline.db")
@@ -188,12 +188,12 @@ def evaluate(
         if artifact_id is None:
             artifact_id = store.latest_artifact_for_source(source_id)
         if artifact_id is None:
-            raise RuntimeError(f"T13 selected source has no successful artifact: {source_uri}")
+            raise RuntimeError(f"T13b selected source has no successful artifact: {source_uri}")
         metadata = _artifact_metadata(store, artifact_id)
         if metadata["media_type"] != "application/pdf":
-            raise RuntimeError(f"T13 selected attachment is not PDF: {source_uri}")
+            raise RuntimeError(f"T13b selected attachment is not PDF: {source_uri}")
         if not relations_by_source.get(source_uri):
-            raise RuntimeError(f"T13 selected attachment has no publisher-backed relation: {source_uri}")
+            raise RuntimeError(f"T13b selected attachment has no publisher-backed relation: {source_uri}")
 
         native = artifact_profiles.get(artifact_id)
         if native is None:
@@ -229,7 +229,7 @@ def evaluate(
     ocr_results = {}
     if run_ocr:
         if tesseract_version is None:
-            raise RuntimeError("Tesseract is unavailable; cannot run requested T13 OCR")
+            raise RuntimeError("Tesseract is unavailable; cannot run requested T13b OCR")
         extractor = ProgressiveExtractor(state_dir)
         backend = PyMuPDFTesseractBackend(language=language, dpi=dpi)
         for artifact_id in sorted(sources_by_artifact):
@@ -243,7 +243,7 @@ def evaluate(
     build = structured.rebuild()
     if build.parser_version != contract["parser_version"]:
         raise RuntimeError(
-            f"T13 structured parser mismatch: {build.parser_version} != {contract['parser_version']}"
+            f"T13b structured parser mismatch: {build.parser_version} != {contract['parser_version']}"
         )
 
     artifact_ids = sorted(sources_by_artifact)
@@ -273,7 +273,7 @@ def evaluate(
         extraction = _preferred_extraction(store, row["evidence_id"])
         page_text = extraction["extracted_text"] or ""
         if row["char_start"] is None or row["char_end"] is None:
-            raise RuntimeError("T13 free-form money fact lost its source character anchors")
+            raise RuntimeError("T13b free-form money fact lost its source character anchors")
 
         source_records = sources_by_artifact[row["artifact_id"]]
         representation_source_name, name_status, original_source_names = _source_name_context(source_records)
@@ -288,7 +288,7 @@ def evaluate(
         )
         context_text = page_text[represented["context_start"] : represented["context_end"]]
         if _sha256_text(context_text) != represented["context_sha256"]:
-            raise RuntimeError("T13 representation context hash is inconsistent")
+            raise RuntimeError("T13b representation context hash is inconsistent")
 
         source_uris = [item["source_uri"] for item in source_records]
         source_uri_hashes = [item["source_uri_sha256"] for item in source_records]
@@ -385,6 +385,7 @@ def evaluate(
     return {
         "schema": SCHEMA,
         "stage": "out_of_sample_representation_evaluation_only",
+        "execution_label": "R1.T13b",
         "representation_assigned": True,
         "detector_authorized": False,
         "event_identity_assigned": False,
@@ -409,10 +410,11 @@ def evaluate(
             "excluded_source_hashes": selection_sync["selection"]["excluded_source_hashes"],
             "excluded_signature_sha256": selection_sync["selection"]["excluded_signature_sha256"],
             "selection_note": (
-                "The 32 T13 sources were frozen by source identity before v2 rules were written or "
-                "holdout content was inspected. Money facts are counted once per unique Bronze/Silver "
-                "artifact. If duplicate publisher identities have divergent source names, source-name "
-                "classification context is omitted rather than arbitrarily selected."
+                "The T13b sources mechanically materialize the predeclared ranks 33-64 rule after "
+                "T13 failed closed on an erroneous stored hash list. No document content or source-name "
+                "feature was used to correct the identities. Money facts are counted once per unique "
+                "Bronze/Silver artifact. Divergent duplicate source names are omitted from classification "
+                "context rather than arbitrarily selected."
             ),
         },
         "extraction": {
