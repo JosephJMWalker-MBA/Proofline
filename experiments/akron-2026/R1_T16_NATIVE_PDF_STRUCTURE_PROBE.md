@@ -30,6 +30,20 @@ No T12/T13b financial-representation rule was changed. `src/proofline/pdf_struct
 - live attachment manifest SHA-256 remained `7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a`
 - global rejected publisher links: **0**
 
+### Exact Bronze continuity
+
+Because a stable publisher URI does not imply stable source bytes, T16 also compared every selected source identity against the preserved T13b source-to-Bronze mapping rather than relying only on URI continuity.
+
+- preserved T13b artifact: **9432387690**
+- preserved T13b artifact digest: `sha256:d7b6a90f6133b4e457ebea201d866dcc9b465aac2fd3ba0dfa93f7d44b43e338`
+- frozen map: `experiments/akron-2026/r1_t13b_source_artifact_map.json`
+- source-to-Bronze mapping signature: `797f8986110664bf23019536a3c9721c7e283cd81b730e3eb867459b34848edf`
+- exact source identities compared: **32 / 32**
+- exact source-to-Bronze matches: **32 / 32**
+- byte-identity drift: **0**
+
+The dedicated T16 workflow now enforces this frozen mapping on reproduction runs. If any selected publisher source later serves different bytes, T16 fails closed instead of treating the new artifact as the original T13b evidence.
+
 ## Native structure result
 
 Using `page.find_tables()` with default line-based PyMuPDF detection, T16 measured:
