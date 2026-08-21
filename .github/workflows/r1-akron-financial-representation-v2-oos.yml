@@ -4,12 +4,15 @@ on:
   pull_request:
     paths:
       - ".github/workflows/r1-akron-financial-representation-v2-oos.yml"
+      - "experiments/akron-2026/R1_T13_HOLDOUT_FREEZE_AUDIT.md"
       - "experiments/akron-2026/R1_T13_FINANCIAL_REPRESENTATION_V2_OOS.md"
       - "experiments/akron-2026/r1_t13_disjoint_attachment_sources.json"
+      - "experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json"
       - "experiments/akron-2026/akron-financial-representation-v2.json"
       - "experiments/akron-2026/financial_representation_v2.py"
       - "experiments/akron-2026/sync_frozen_attachment_holdout.py"
       - "experiments/akron-2026/evaluate_financial_representation_v2_oos.py"
+      - "experiments/akron-2026/validate_financial_representation_v2_oos.py"
       - "experiments/akron-2026/onbase-plan.json"
       - "tests/test_akron_financial_representation_v2_oos.py"
       - "src/proofline/onbase_attachments.py"
@@ -34,13 +37,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Verify exact frozen T12 inputs
+      - name: Verify frozen v2 and holdout provenance
         shell: bash
         run: |
           set -euo pipefail
+          # R1.T12 semantic inputs must remain byte-identical.
           test "$(git hash-object experiments/akron-2026/akron-financial-representation-v2.json)" = "45e535ececb882f77293e7ddc757a83de1c9031d"
           test "$(git hash-object experiments/akron-2026/financial_representation_v2.py)" = "7724694c2a9d2c2e3606a18c3ea1c47d02f8154e"
+          # Preserve the invalid T13 materialization as historical evidence.
           test "$(git hash-object experiments/akron-2026/r1_t13_disjoint_attachment_sources.json)" = "06f86cb6b64d03e38774f9b97909bc3b69048976"
+          # T13b is the mechanically corrected realization of the predeclared rank rule.
+          test "$(git hash-object experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json)" = "8f3353769c769ff9329d95761712c0d9862dda02"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -77,8 +84,9 @@ jobs:
             --rejections-out akron-financial-v2-oos/rejections.json \
             experiments/akron-2026/onbase-plan.json \
             > akron-financial-v2-oos/discovery.json
+          test "$(sha256sum akron-financial-v2-oos/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
 
-      - name: Sync the exact frozen ranks 33-64 holdout
+      - name: Sync corrected predeclared ranks 33-64 holdout
         shell: bash
         run: |
           set -euo pipefail
@@ -86,11 +94,11 @@ jobs:
             --state-dir .akron-financial-v2-oos \
             --manifest akron-financial-v2-oos/attachment-manifest.json \
             --relations akron-financial-v2-oos/discovered-relations.json \
-            --selection experiments/akron-2026/r1_t13_disjoint_attachment_sources.json \
+            --selection experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json \
             --output akron-financial-v2-oos/selection-sync.json \
             > akron-financial-v2-oos/selection-sync-stdout.json
 
-      - name: Apply unchanged v2 representation to blind holdout
+      - name: Apply unchanged v2 representation to T13b holdout
         shell: bash
         run: |
           set -euo pipefail
@@ -105,219 +113,15 @@ jobs:
             --dpi 200 \
             > akron-financial-v2-oos/representation-evaluation-stdout.json
 
-      - name: Validate blind result and semantic boundary
+      - name: Validate T13b blind result and semantic boundary
         run: |
-          python - <<'PY'
-          import hashlib
-          import json
-          from pathlib import Path
+          python experiments/akron-2026/validate_financial_representation_v2_oos.py \
+            --root akron-financial-v2-oos \
+            --selection experiments/akron-2026/r1_t13b_disjoint_attachment_sources.json \
+            --contract experiments/akron-2026/akron-financial-representation-v2.json \
+            --summary-out akron-financial-v2-oos/summary.json
 
-          root = Path('akron-financial-v2-oos')
-          frozen = json.loads(Path('experiments/akron-2026/r1_t13_disjoint_attachment_sources.json').read_text())
-          contract = json.loads(Path('experiments/akron-2026/akron-financial-representation-v2.json').read_text())
-          discovery = json.loads((root / 'discovery.json').read_text())
-          sync = json.loads((root / 'selection-sync.json').read_text())
-          evaluation = json.loads((root / 'representation-evaluation.json').read_text())
-          rejections = json.loads((root / 'rejections.json').read_text())
-
-          expected_selected = frozen['selected']['source_uri_sha256']
-          expected_excluded = frozen['excluded']['source_uri_sha256']
-          if len(expected_selected) != 32 or len(set(expected_selected)) != 32:
-              raise SystemExit('frozen T13 selected set is not exactly 32 unique identities')
-          if len(expected_excluded) != 32 or len(set(expected_excluded)) != 32:
-              raise SystemExit('frozen T13 development exclusion is not exactly 32 unique identities')
-          if set(expected_selected) & set(expected_excluded):
-              raise SystemExit('T13 holdout overlaps development source identities')
-
-          if sync.get('schema') != 'proofline-akron-t13-frozen-attachment-sync/v1':
-              raise SystemExit('unexpected T13 sync schema')
-          if sync['selection']['selected_source_hashes'] != expected_selected:
-              raise SystemExit('live T13 selection differs from frozen source identities')
-          if sync['selection']['excluded_source_hashes'] != expected_excluded:
-              raise SystemExit('live T13 development exclusion differs from frozen identities')
-          if sync['selection'].get('selection_basis') != 'sha256(source_uri) only':
-              raise SystemExit('T13 selection was not identity-only')
-          counts = (sync.get('watch') or {}).get('counts') or {}
-          if counts.get('new') != 32 or counts.get('unavailable') != 0:
-              raise SystemExit(f'T13 exact attachment sync failed: {counts}')
-          selected_sources = sync.get('selected_sources') or []
-          if len(selected_sources) != 32:
-              raise SystemExit('T13 sync did not retain exactly 32 selected sources')
-          if len({item['source_uri_sha256'] for item in selected_sources}) != 32:
-              raise SystemExit('T13 selected source identities are not unique')
-          selected_uri_to_hash = {
-              item['source_uri']: item['source_uri_sha256'] for item in selected_sources
-          }
-
-          if evaluation.get('schema') != 'proofline-akron-financial-representation-v2-oos-evaluation/v1':
-              raise SystemExit('unexpected T13 evaluation schema')
-          if evaluation.get('stage') != 'out_of_sample_representation_evaluation_only':
-              raise SystemExit('T13 crossed its representation-evaluation boundary')
-          if evaluation.get('representation_assigned') is not True:
-              raise SystemExit('T13 did not apply the frozen v2 representation')
-          for key in ('detector_authorized', 'event_identity_assigned', 'independence_assessed'):
-              if evaluation.get(key) is not False:
-                  raise SystemExit(f'T13 improperly changed semantic boundary: {key}')
-          if evaluation.get('lead_count') is not None:
-              raise SystemExit('T13 improperly emitted lead output')
-          if evaluation['sample']['attachment_count'] != 32:
-              raise SystemExit('T13 evaluated the wrong attachment source count')
-          if evaluation['sample']['selected_source_hashes'] != expected_selected:
-              raise SystemExit('T13 evaluated a different source set than frozen')
-          if evaluation['sample']['excluded_source_hashes'] != expected_excluded:
-              raise SystemExit('T13 lost its development exclusion boundary')
-
-          attachment_artifact_ids = [item['artifact']['artifact_id'] for item in evaluation['attachments']]
-          unique_artifact_count = len(set(attachment_artifact_ids))
-          if evaluation['sample']['unique_artifact_count'] != unique_artifact_count:
-              raise SystemExit('T13 unique Bronze artifact count is inconsistent')
-          duplicate_groups = evaluation['sample'].get('duplicate_artifact_groups') or []
-          if evaluation['sample']['duplicate_artifact_group_count'] != len(duplicate_groups):
-              raise SystemExit('T13 duplicate Bronze group count is inconsistent')
-          duplicate_excess = sum(group['source_count'] - 1 for group in duplicate_groups)
-          if 32 - unique_artifact_count != duplicate_excess:
-              raise SystemExit('T13 duplicate Bronze accounting is inconsistent')
-          for group in duplicate_groups:
-              if group['source_count'] != len(group['source_uris']):
-                  raise SystemExit('T13 duplicate group lost source identities')
-              if len(group['source_uris']) != len(group['source_uri_sha256s']):
-                  raise SystemExit('T13 duplicate group lost source hashes')
-              for uri, digest in zip(group['source_uris'], group['source_uri_sha256s']):
-                  if selected_uri_to_hash.get(uri) != digest:
-                      raise SystemExit('T13 duplicate group contains non-selected provenance')
-
-          if evaluation['structured_build']['parser_version'] != 'proofline-structured/v2':
-              raise SystemExit('T13 did not use structured parser v2')
-          if evaluation['extraction']['ocr_failed'] != 0:
-              raise SystemExit(f"T13 OCR failures: {evaluation['extraction']['ocr_failures']}")
-
-          facts = evaluation.get('facts') or []
-          if evaluation['money_fact_count'] != len(facts):
-              raise SystemExit('T13 money-fact count does not match emitted facts')
-          if sum(evaluation.get('scope_counts', {}).values()) != len(facts):
-              raise SystemExit('T13 scope counts do not cover the fact population')
-          if sum(evaluation.get('context_type_counts', {}).values()) != len(facts):
-              raise SystemExit('T13 context counts do not cover the fact population')
-          if sum(evaluation.get('amount_type_counts', {}).values()) != len(facts):
-              raise SystemExit('T13 amount counts do not cover the fact population')
-          if sum(evaluation.get('source_name_context_status_counts', {}).values()) != len(facts):
-              raise SystemExit('T13 source-name status counts do not cover the fact population')
-
-          allowed_scope = set(contract['allowed']['scope'])
-          allowed_context = set(contract['allowed']['context_type'])
-          allowed_amount = set(contract['allowed']['amount_type'])
-          context_rules = {rule['rule_id']: rule['value'] for rule in contract['context_rules']}
-          amount_rules = {rule['rule_id']: rule['value'] for rule in contract['amount_rules']}
-          defaults = contract['defaults']
-          low_quality_fact_count = 0
-          fully_unknown = 0
-          context_known_amount_unknown = 0
-          amount_known = 0
-
-          empty_name_sha = hashlib.sha256(b'').hexdigest()
-          for fact in facts:
-              if fact['scope'] not in allowed_scope:
-                  raise SystemExit(f"T13 emitted unknown scope: {fact['scope']}")
-              if fact['context_type'] not in allowed_context:
-                  raise SystemExit(f"T13 emitted unknown context type: {fact['context_type']}")
-              if fact['amount_type'] not in allowed_amount:
-                  raise SystemExit(f"T13 emitted unknown amount type: {fact['amount_type']}")
-              if float(fact['quality_score'] or 0.0) < 0.70:
-                  low_quality_fact_count += 1
-              if len(fact.get('page_text_sha256') or '') != 64:
-                  raise SystemExit('T13 fact lost preferred-page provenance')
-              if len(fact.get('context_sha256') or '') != 64:
-                  raise SystemExit('T13 fact lost local-context provenance')
-
-              source_uris = fact.get('source_uris') or []
-              source_hashes = fact.get('source_uri_sha256s') or []
-              if not source_uris or len(source_uris) != len(source_hashes):
-                  raise SystemExit('T13 fact lost publisher source provenance')
-              for uri, digest in zip(source_uris, source_hashes):
-                  if selected_uri_to_hash.get(uri) != digest:
-                      raise SystemExit('T13 fact contains non-selected source provenance')
-
-              context_rule_id = fact.get('context_rule_id')
-              if fact['context_type'] == defaults['context_type']:
-                  if context_rule_id is not None:
-                      raise SystemExit('unknown T13 context unexpectedly names a rule')
-              elif context_rules.get(context_rule_id) != fact['context_type']:
-                  raise SystemExit('T13 context facet is not backed by frozen rule')
-
-              amount_rule_id = fact.get('amount_rule_id')
-              if fact['amount_type'] == defaults['amount_type']:
-                  if amount_rule_id is not None:
-                      raise SystemExit('unknown T13 amount unexpectedly names a rule')
-              elif amount_rules.get(amount_rule_id) != fact['amount_type']:
-                  raise SystemExit('T13 amount facet is not backed by frozen rule')
-
-              status = fact.get('representation_source_name_status')
-              if status not in {'absent', 'shared_nonblank', 'divergent_omitted'}:
-                  raise SystemExit(f'T13 emitted unknown source-name context status: {status}')
-              if status in {'absent', 'divergent_omitted'} and fact.get('representation_source_name_sha256') != empty_name_sha:
-                  raise SystemExit('T13 used source-name context when it should have omitted it')
-
-              if (
-                  fact['scope'] == defaults['scope']
-                  and fact['context_type'] == defaults['context_type']
-                  and fact['amount_type'] == defaults['amount_type']
-              ):
-                  fully_unknown += 1
-              if (
-                  fact['context_type'] != defaults['context_type']
-                  and fact['amount_type'] == defaults['amount_type']
-              ):
-                  context_known_amount_unknown += 1
-              if fact['amount_type'] != defaults['amount_type']:
-                  amount_known += 1
-
-              for key in ('detector_authorized', 'event_identity_assigned', 'independence_assessed'):
-                  if fact.get(key) is not False:
-                      raise SystemExit(f'T13 fact improperly changed semantic boundary: {key}')
-
-          if low_quality_fact_count:
-              raise SystemExit(
-                  f'T13 contains {low_quality_fact_count} money facts below the 0.70 quality floor'
-              )
-          if evaluation['fully_unknown_fact_count'] != fully_unknown:
-              raise SystemExit('T13 fully-unknown count is inconsistent')
-          if evaluation['context_known_amount_unknown_fact_count'] != context_known_amount_unknown:
-              raise SystemExit('T13 partial-representation count is inconsistent')
-          if evaluation['amount_type_known_fact_count'] != amount_known:
-              raise SystemExit('T13 known-amount-type count is inconsistent')
-
-          summary = {
-              'attachment_source_count': evaluation['sample']['attachment_count'],
-              'unique_artifact_count': evaluation['sample']['unique_artifact_count'],
-              'duplicate_artifact_group_count': evaluation['sample']['duplicate_artifact_group_count'],
-              'money_fact_count': evaluation['money_fact_count'],
-              'fully_unknown_fact_count': evaluation['fully_unknown_fact_count'],
-              'context_known_amount_unknown_fact_count': evaluation['context_known_amount_unknown_fact_count'],
-              'amount_type_known_fact_count': evaluation['amount_type_known_fact_count'],
-              'scope_counts': evaluation['scope_counts'],
-              'context_type_counts': evaluation['context_type_counts'],
-              'amount_type_counts': evaluation['amount_type_counts'],
-              'source_name_context_status_counts': evaluation['source_name_context_status_counts'],
-              'unique_artifact_page_count': evaluation['extraction']['unique_artifact_page_count'],
-              'post_ocr_low_quality_page_count': evaluation['extraction']['post_ocr_low_quality_page_count'],
-              'money_facts_below_quality_floor': low_quality_fact_count,
-              'ocr_pages_attempted': evaluation['extraction']['ocr_pages_attempted'],
-              'ocr_extractions_added': evaluation['extraction']['ocr_extractions_added'],
-              'ocr_failed': evaluation['extraction']['ocr_failed'],
-              'global_discovery_rejection_count': len(rejections),
-              'live_attachment_graph_size': discovery['attachments']['resource_count'],
-              'detector_authorized': evaluation['detector_authorized'],
-              'event_identity_assigned': evaluation['event_identity_assigned'],
-              'independence_assessed': evaluation['independence_assessed'],
-              'lead_count': evaluation['lead_count'],
-          }
-          (root / 'summary.json').write_text(
-              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
-          )
-          print(json.dumps(summary, indent=2, sort_keys=True))
-          PY
-
-      - name: Upload T13 blind representation evidence
+      - name: Upload T13b blind representation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
