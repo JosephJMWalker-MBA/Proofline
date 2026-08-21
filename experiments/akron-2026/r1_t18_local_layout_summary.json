@@ -1,0 +1,102 @@
+{
+  "schema": "proofline-akron-t18-local-layout-summary/v1",
+  "stage": "post_hoc_bounded_local_layout_capability_probe_on_opened_t13b_t14",
+  "source_evidence": {
+    "t18_workflow_run_id": 32493548953,
+    "t18_workflow_head_sha": "2fa4dd93bcc60b81ab4b106b5ab13b8d19232c6e",
+    "t18_artifact_id": 9451052950,
+    "t18_artifact_digest": "sha256:7f8cc2ba38033b19c32a2f785190e876c773f95a09a3ccfbe7910caa7be737a6",
+    "t13b_selection_signature_sha256": "b0986198c10856b8235c87361dc54999f93c5bcb59514ca8ff26cf957db2b966",
+    "t13b_source_artifact_mapping_signature_sha256": "797f8986110664bf23019536a3c9721c7e283cd81b730e3eb867459b34848edf"
+  },
+  "sample": {
+    "status": "already_opened_t13b_t14_development_data_not_new_holdout",
+    "source_identity_count": 32,
+    "unique_artifact_count": 28,
+    "exact_source_to_bronze_match_count": 32,
+    "bronze_byte_identity_drift_count": 0,
+    "input_spatial_page_count": 7
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "tesseract": "5.3.4",
+    "full_test_count": 200,
+    "full_test_result": "passed"
+  },
+  "canonical_compact_result": {
+    "fee_target_region_count": 49,
+    "fee_nearest_peer_comparable_count": 49,
+    "fee_nearest_peer_same_audit_class_count": 49,
+    "fee_nearest_peer_same_audit_class_rate": 1.0,
+    "assessment_money_candidate_region_count": 1,
+    "assessment_target_money_distance_rank": 1,
+    "assessment_target_is_nearest_money_region": true,
+    "assessment_target_relation_normalized_distance": 0.306178,
+    "assessment_target_relation_direction": "right",
+    "assessment_target_relation_same_extractor_line": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "post_hoc_artifact_aggregation": {
+    "status": "derived_after_success_from_canonical_t18_artifact_not_a_preregistered_accuracy_metric",
+    "all_fee_page_money_observations_are_frozen_t14_targets": true,
+    "fee_money_observation_count": 49,
+    "pair_distance_page_diagonal_normalized": {
+      "within_supported": {
+        "count": 23,
+        "min": 0.008995,
+        "median": 0.024161,
+        "max": 0.086504
+      },
+      "within_contradicted": {
+        "count": 64,
+        "min": 0.008823,
+        "median": 0.068389,
+        "max": 0.097612
+      },
+      "cross_class": {
+        "count": 101,
+        "min": 0.079488,
+        "median": 0.149359,
+        "max": 0.184432
+      }
+    },
+    "assessment_target_relation": {
+      "center_distance_points": 306.455,
+      "dx_center_points": 306.455,
+      "dy_center_points": 0.0,
+      "horizontal_gap_points": 242.028,
+      "horizontal_overlap_ratio": 0.0,
+      "vertical_gap_points": 0.0,
+      "vertical_overlap_ratio": 1.0,
+      "normalized_dx_page_width": 0.500743,
+      "normalized_dy_page_height": 0.0,
+      "normalized_center_distance_page_diagonal": 0.306178,
+      "normalized_center_distance_mean_word_height": 24.945462,
+      "reading_order_delta": 1,
+      "dominant_direction": "right",
+      "same_extractor_line": false
+    }
+  },
+  "stage_decision": {
+    "local_geometry_materially_informative_on_frozen_fee_failure_population": true,
+    "page_wide_global_x_band_rule_rehabilitated": false,
+    "hard_distance_threshold_justified": false,
+    "assessment_visual_alignment_recovered_despite_extractor_line_split": true,
+    "assessment_competitive_money_disambiguation_demonstrated": false,
+    "detector_authorized": false,
+    "financial_semantics_authorized": false,
+    "event_identity_assigned": false,
+    "lead_count": null,
+    "next_boundary": "freeze a new untouched source-identity holdout before further representation development; then develop a label-free deterministic local-grouping/relationship representation on already-opened evidence and evaluate structural transfer before any new financial semantic contract"
+  },
+  "non_claims": [
+    "T18 is post-hoc characterization on already-opened T13b/T14 development evidence and is not out-of-sample validation.",
+    "The T14 supported/contradicted labels are comparison labels only; local geometry does not emit them.",
+    "49/49 nearest-peer agreement on this frozen failure population is not a universal fee-table classifier or an accuracy estimate.",
+    "The within-class and cross-class distance ranges overlap, so T18 does not justify a universal hard distance cutoff.",
+    "The assessment target ranks 1/1 only because it is the sole explicit-currency money candidate on the page; this is not robust key-value disambiguation evidence.",
+    "Visual alignment evidence is not field, transaction, event, anomaly, conflict, suspiciousness, wrongdoing, or lead semantics.",
+    "No detector or financial semantic contract is authorized."
+  ]
+}
