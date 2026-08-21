@@ -1,0 +1,51 @@
+{
+  "basis": {
+    "attachment_manifest_sha256": "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a",
+    "probe_artifact_digest": "sha256:a6f272aa8470d5742e9d1668b783e5ae384a365476187dff16700b294af7af29",
+    "probe_artifact_id": 9457805222,
+    "probe_freeze_commit": "8ce02bac592f01fd724e018a39d10155f1f0d66e",
+    "probe_head": "029a91768ce74c5b32d1dc004e35eea8f586685a",
+    "probe_run_id": 32512366582,
+    "publisher_meeting_presence_signature_sha256": "0cba4b77ff26b82b2c5a1de8958207267823e666f23489c3c39653f2a5b49875"
+  },
+  "non_claims": [
+    "This is a frozen source-identity selection for a descriptive record-family experiment, not a blind holdout.",
+    "The selected identities are publisher-linked supporting documents; identical titles do not imply identical bytes.",
+    "No meeting occurrence, outcome, approval, denial, detector, or lead semantics are assigned by this selection."
+  ],
+  "reference": {
+    "kind": "planning_case",
+    "method": "proofline-explicit-public-record-reference/v1",
+    "normalized_key": "PC-2025-80-CU"
+  },
+  "schema": "proofline-akron-t21-record-family-packet-selection/v1",
+  "selected_packet_count": 24,
+  "selected_packets": [
+    {"item_id": 46485, "meeting_id": 668, "publish_id": 100240, "source_uri_sha256": "a107c2c3331a4f6f6511b7031dcbef193b92d638692580e904d87b0068f454cc"},
+    {"item_id": 46567, "meeting_id": 669, "publish_id": 100416, "source_uri_sha256": "7c8c35b60420782746aa8509d0c9fc6bc9c92dcd1c4ca756e33eb0f6408dfebb"},
+    {"item_id": 46660, "meeting_id": 670, "publish_id": 100575, "source_uri_sha256": "cbde78a9317177f5d4607ee5d61fda688f2875485b8fcd56a9e68285d19e8493"},
+    {"item_id": 46751, "meeting_id": 671, "publish_id": 101011, "source_uri_sha256": "1bfa4f2967120a1e37e21cc25886258307b8226e77c3e30e80594959c12f1398"},
+    {"item_id": 46855, "meeting_id": 672, "publish_id": 101174, "source_uri_sha256": "d167e7f322001f50dd73433508b5db80361c748a74ad0c8b6f28621d7bfd2d8e"},
+    {"item_id": 46991, "meeting_id": 674, "publish_id": 101428, "source_uri_sha256": "86ab4ecad47f90107d14cd61bd187e81959ef6a02ee5ec9e8433fde202b94378"},
+    {"item_id": 47078, "meeting_id": 675, "publish_id": 101690, "source_uri_sha256": "4af001049e386ddf1968497707abdbebda831fd488dd5a4c0c78436dc4c65f41"},
+    {"item_id": 47185, "meeting_id": 676, "publish_id": 101858, "source_uri_sha256": "c9c2ad33b5c5beada2b99077050acc47c9e6bd7d485501ca1433e3c71e74ff27"},
+    {"item_id": 47261, "meeting_id": 677, "publish_id": 102001, "source_uri_sha256": "ef4505037a3829641cf25f7fecb36e579d8c44437f8a605c5eadc6915e2d58a7"},
+    {"item_id": 47341, "meeting_id": 678, "publish_id": 102256, "source_uri_sha256": "43ecb52750b8ea59abfdcacd757b673dd46289907e485ed413b2cd939d4b8bee"},
+    {"item_id": 47560, "meeting_id": 682, "publish_id": 102607, "source_uri_sha256": "22fd5f013547a51f2630ae9fb0738cc0029b7e681a9e5377821c8f92bf51e203"},
+    {"item_id": 47649, "meeting_id": 683, "publish_id": 102760, "source_uri_sha256": "a55a2a0f25d6102afe7c53d7e8826a5e9cec7f1726a2dbe027eddcfdf9a0bd84"},
+    {"item_id": 47823, "meeting_id": 685, "publish_id": 103127, "source_uri_sha256": "7e778fded95c38f5423a86a23829fabc933992947c2cd7f57c9a11126cc851a9"},
+    {"item_id": 47934, "meeting_id": 686, "publish_id": 103497, "source_uri_sha256": "b63d73af82f594a169b5f818d39548c43ab186ee078b316698150aa3f8224f95"},
+    {"item_id": 48069, "meeting_id": 688, "publish_id": 103839, "source_uri_sha256": "a5f0026b4f7ffd6735b81fc1e97df6f8b8a99c0a01f4a2da917aa0e0761e93ef"},
+    {"item_id": 48193, "meeting_id": 689, "publish_id": 104067, "source_uri_sha256": "4683f5f508ab724647a129e12f11a4bdd59516f4f9bcb866751735b17cd570e1"},
+    {"item_id": 48284, "meeting_id": 690, "publish_id": 104403, "source_uri_sha256": "f69e4c00a5ed762d9a91ea1d433c14e802c8142dfaae2599f96f84ac44fc3def"},
+    {"item_id": 48366, "meeting_id": 691, "publish_id": 104807, "source_uri_sha256": "a3a9b5fe4b9db683d5504e031ee7dbd2ad8852f7f39c667f2d904ef21872bb6d"},
+    {"item_id": 48490, "meeting_id": 692, "publish_id": 105494, "source_uri_sha256": "ac9d764e6a749f139dc5db36e2f3e5a8892ebbc820e79bc897c0ee7f9d9e818f"},
+    {"item_id": 48586, "meeting_id": 693, "publish_id": 105658, "source_uri_sha256": "14d03e33411ae93168525aae6f43bd1cbfb8da2160711b1811812bce3ace1eca"},
+    {"item_id": 48675, "meeting_id": 694, "publish_id": 105915, "source_uri_sha256": "c3a8a0ce28f0855aae5d18fcf50763fbef96416c24427cfdfa1f0395caec0c71"},
+    {"item_id": 48797, "meeting_id": 696, "publish_id": 106090, "source_uri_sha256": "85bd127dbf94e4b3104ad71b5e492c6b4a71f45204f398d6793c0040923c08de"},
+    {"item_id": 48918, "meeting_id": 697, "publish_id": 106394, "source_uri_sha256": "15bbd56d1908c5c370b75f7c2d6f7871d563bd95eac4f22fa40329e799991117"},
+    {"item_id": 48997, "meeting_id": 698, "publish_id": 106472, "source_uri_sha256": "1107b69810d3c9ead7dd30c1d7f381118fa4157ae9c4be2872432544e36530e3"}
+  ],
+  "selection_signature_sha256": "b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921",
+  "stage": "post_exact_reference_probe_pre_record_family_packet_sync"
+}

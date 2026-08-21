@@ -1,0 +1,161 @@
+name: r1-akron-t21-record-family-evolution
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-record-family-evolution.yml"
+      - "experiments/akron-2026/measure_t21_record_family_evolution.py"
+      - "experiments/akron-2026/r1_t21_record_family_packet_selection.json"
+      - "src/proofline/explicit_references.py"
+      - "src/proofline/onbase_attachments_cli.py"
+      - "tests/test_t21_record_family_evolution.py"
+      - "tests/test_onbase_attachments_cli.py"
+
+permissions:
+  contents: read
+
+jobs:
+  evolution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify frozen T21 packet selection and machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object experiments/akron-2026/r1_t21_record_family_packet_selection.json)" = "a6db311cf19b3fcb1f6856142df03866b91b0923"
+          test "$(git hash-object experiments/akron-2026/measure_t21_record_family_evolution.py)" = "da7335a4072a145c5b2e61e49de04a7faf15081a"
+          test "$(git hash-object src/proofline/onbase_attachments_cli.py)" = "eb3ec92694a877a6b4365db04271974392e9a402"
+          test "$(git hash-object src/proofline/explicit_references.py)" = "876a44d4710217aeebed20d31353117668afaf80"
+          python - <<'PY'
+          import json
+          p = json.load(open('experiments/akron-2026/r1_t21_record_family_packet_selection.json'))
+          assert p['schema'] == 'proofline-akron-t21-record-family-packet-selection/v1'
+          assert p['stage'] == 'post_exact_reference_probe_pre_record_family_packet_sync'
+          assert p['selected_packet_count'] == 24
+          assert p['selection_signature_sha256'] == 'b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921'
+          assert p['basis']['attachment_manifest_sha256'] == '7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a'
+          PY
+
+      - name: Run full test suite and experiment smoke gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/measure_t21_record_family_evolution.py --help >/dev/null
+
+      - name: Rebuild canonical Akron parents and attachment relation graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-t21-record-family akron-t21-record-family
+          mkdir -p akron-t21-record-family
+          proofline-onbase-attachments \
+            --state-dir .akron-t21-record-family \
+            --manifest-out akron-t21-record-family/attachment-manifest.json \
+            --relations-out akron-t21-record-family/discovered-relations.json \
+            --rejections-out akron-t21-record-family/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-t21-record-family/discovery.json
+          test "$(sha256sum akron-t21-record-family/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+          python - <<'PY'
+          import json
+          discovery = json.load(open('akron-t21-record-family/discovery.json'))
+          rejections = json.load(open('akron-t21-record-family/rejections.json'))
+          assert len(rejections) == 0
+          meetings = discovery['canonical']['meetings']
+          assert len(meetings) == discovery['canonical']['meeting_count']
+          assert all(isinstance(row.get('meeting_id'), int) for row in meetings)
+          assert all(isinstance(row.get('time'), str) and row['time'] for row in meetings)
+          PY
+
+      - name: Prove frozen selection against publisher relations before packet acquisition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import importlib.util
+          import json
+          from pathlib import Path
+          path = Path('experiments/akron-2026/measure_t21_record_family_evolution.py')
+          spec = importlib.util.spec_from_file_location('t21_evolution', path)
+          assert spec and spec.loader
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          selection = json.load(open('experiments/akron-2026/r1_t21_record_family_packet_selection.json'))
+          relations = json.load(open('akron-t21-record-family/discovered-relations.json'))
+          manifest = json.load(open('akron-t21-record-family/attachment-manifest.json'))
+          discovery = json.load(open('akron-t21-record-family/discovery.json'))
+          selected = module._selection_rows(selection)
+          verified = module.verify_publisher_relations(selection, relations)
+          bounded = module.selected_manifest(selection, verified, manifest)
+          meetings = module._meetings(discovery)
+          assert len(selected) == 24
+          assert len(verified) == 24
+          assert len(bounded.resources) == 24
+          assert all(row['meeting_id'] in meetings for row in selected)
+          PY
+
+      - name: Sync frozen publisher-linked packets and measure byte evolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/measure_t21_record_family_evolution.py \
+            --state-dir .akron-t21-record-family \
+            --selection experiments/akron-2026/r1_t21_record_family_packet_selection.json \
+            --relations akron-t21-record-family/discovered-relations.json \
+            --attachment-manifest akron-t21-record-family/attachment-manifest.json \
+            --discovery akron-t21-record-family/discovery.json \
+            --observation-time 2026-08-21T14:48:00-04:00 \
+            --output akron-t21-record-family/record-family-evolution.json \
+            > akron-t21-record-family/record-family-evolution-stdout.json
+          cat akron-t21-record-family/record-family-evolution-stdout.json
+
+      - name: Validate descriptive authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          p = json.load(open('akron-t21-record-family/record-family-evolution.json'))
+          assert p['schema'] == 'proofline-akron-t21-record-family-evolution/v1'
+          assert p['selection']['selection_signature_sha256'] == 'b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921'
+          assert p['counts']['packet_source_count'] == 24
+          assert len(p['packets']) == 24
+          assert 1 <= p['counts']['unique_bronze_artifact_count'] <= 24
+          b = p['authority_boundary']
+          assert b['source_relation_created'] is False
+          assert b['source_family_modified'] is False
+          assert b['event_identity_assigned'] is False
+          assert b['meeting_occurrence_asserted'] is False
+          assert b['outcome_assigned'] is False
+          assert b['detector_authorized'] is False
+          assert b['lead_count'] is None
+          PY
+
+      - name: Upload T21 record-family evolution evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-record-family-evolution
+          path: |
+            akron-t21-record-family/record-family-evolution.json
+            akron-t21-record-family/record-family-evolution-stdout.json
+            akron-t21-record-family/discovery.json
+            akron-t21-record-family/attachment-manifest.json
+            akron-t21-record-family/discovered-relations.json
+            akron-t21-record-family/rejections.json
+            experiments/akron-2026/r1_t21_record_family_packet_selection.json
+          if-no-files-found: error
+          retention-days: 14
