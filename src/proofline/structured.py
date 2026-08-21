@@ -14,17 +14,25 @@ from .hashing import stable_id
 from .storage import ProoflineStore
 
 _PARSER_VERSION_V1 = "proofline-structured/v1"
-_PARSER_VERSION = "proofline-structured/v2"
-_SUPPORTED_PARSER_VERSIONS = {_PARSER_VERSION_V1, _PARSER_VERSION}
+_PARSER_VERSION_V2 = "proofline-structured/v2"
+_PARSER_VERSION = "proofline-structured/v3"
+_SUPPORTED_PARSER_VERSIONS = {_PARSER_VERSION_V1, _PARSER_VERSION_V2, _PARSER_VERSION}
 
 _MONEY_RE_V1 = re.compile(
     r"(?<!\w)(?:(?P<usd>USD)\s*|(?P<dollar>\$)\s*)"
     r"(?P<number>\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)",
     re.IGNORECASE,
 )
-_MONEY_RE = re.compile(
+_MONEY_RE_V2 = re.compile(
     r"(?<!\w)(?:(?P<usd>USD)\s*|(?P<dollar>\$)\s*)"
     r"(?P<number>\d{1,3}(?:\s*,\s*\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)"
+    r"(?P<suffix>[A-Za-z]{1,4})?"
+    r"(?!\w)",
+    re.IGNORECASE,
+)
+_MONEY_RE = re.compile(
+    r"(?<!\w)(?:(?P<usd>USD)\s*|(?P<dollar>\$)\s*)"
+    r"(?P<number>(?>\d{1,3}(?:\s*,\s*\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?))"
     r"(?P<suffix>[A-Za-z]{1,4})?"
     r"(?!\w)",
     re.IGNORECASE,
@@ -362,7 +370,12 @@ def extract_structured_facts(
                 )
         return tuple(facts)
 
-    money_pattern = _MONEY_RE_V1 if resolved_parser == _PARSER_VERSION_V1 else _MONEY_RE
+    if resolved_parser == _PARSER_VERSION_V1:
+        money_pattern = _MONEY_RE_V1
+    elif resolved_parser == _PARSER_VERSION_V2:
+        money_pattern = _MONEY_RE_V2
+    else:
+        money_pattern = _MONEY_RE
     for match in money_pattern.finditer(text):
         parsed = _decimal_value(match.group(0), parser_version=resolved_parser)
         if parsed is None:
