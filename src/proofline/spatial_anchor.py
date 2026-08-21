@@ -8,13 +8,14 @@ parse, classify, or assign semantics.
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import asdict, dataclass
 
 from .hashing import sha256_text, stable_id
 from .spatial_text import SpatialPageResult, SpatialWord
 
 
-SPATIAL_TEXT_ANCHOR_METHOD = "proofline-spatial-text-anchor/source-span-v1"
+SPATIAL_TEXT_ANCHOR_METHOD = "proofline-spatial-text-anchor/source-span-v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +31,9 @@ class SpatialTextAnchor:
     word_order_indices: tuple[int, ...]
     line_identities: tuple[tuple[int, int], ...]
     crosses_line_identity: bool
+    leading_boundary_punctuation: str
+    trailing_boundary_punctuation: str
+    expanded_to_word_boundary: bool
 
     def to_dict(self) -> dict:
         data = asdict(self)
@@ -89,6 +93,10 @@ def _align_words_to_source(
     return tuple(aligned)
 
 
+def _is_unicode_punctuation_only(text: str) -> bool:
+    return bool(text) and all(unicodedata.category(char).startswith("P") for char in text)
+
+
 def anchor_source_span(
     page: SpatialPageResult,
     source_text: str,
@@ -100,9 +108,13 @@ def anchor_source_span(
     """Bind one existing source-text span to the spatial words that realize it.
 
     Whitespace inside the source span does not need its own word geometry. Every
-    non-whitespace character in the span must be covered by aligned spatial words,
-    and no selected word may contribute non-whitespace content outside the span.
-    This makes cross-line ``$\n<number>`` facts anchorable without guessing.
+    non-whitespace character in the span must be covered by aligned spatial words.
+
+    PyMuPDF may retain adjacent prose punctuation in the same spatial word token
+    even when the structured parser correctly terminates a fact before/after that
+    punctuation. V2 therefore permits deterministic word-boundary expansion only
+    across Unicode punctuation. Expansion across letters, digits, currency symbols,
+    or other substantive symbols remains a hard failure and is never guessed away.
     """
     if not method:
         raise ValueError("spatial anchor method must be non-empty")
@@ -122,15 +134,22 @@ def anchor_source_span(
     if not selected:
         raise ValueError("spatial anchor span has no overlapping spatial words")
 
-    for item in selected:
-        if item.char_start < char_start:
-            prefix = source_text[item.char_start:char_start]
-            if prefix and not prefix.isspace():
-                raise ValueError("spatial anchor span starts inside a spatial word")
-        if item.char_end > char_end:
-            suffix = source_text[char_end:item.char_end]
-            if suffix and not suffix.isspace():
-                raise ValueError("spatial anchor span ends inside a spatial word")
+    leading_boundary_punctuation = ""
+    trailing_boundary_punctuation = ""
+
+    first = selected[0]
+    if first.char_start < char_start:
+        prefix = source_text[first.char_start:char_start]
+        if not _is_unicode_punctuation_only(prefix):
+            raise ValueError("spatial anchor span starts inside substantive spatial-word content")
+        leading_boundary_punctuation = prefix
+
+    last = selected[-1]
+    if last.char_end > char_end:
+        suffix = source_text[char_end:last.char_end]
+        if not _is_unicode_punctuation_only(suffix):
+            raise ValueError("spatial anchor span ends inside substantive spatial-word content")
+        trailing_boundary_punctuation = suffix
 
     covered: set[int] = set()
     for item in selected:
@@ -156,6 +175,9 @@ def anchor_source_span(
             line_identities_list.append(identity)
     line_identities = tuple(line_identities_list)
     source_span_sha256 = sha256_text(source_span)
+    expanded_to_word_boundary = bool(
+        leading_boundary_punctuation or trailing_boundary_punctuation
+    )
 
     return SpatialTextAnchor(
         anchor_id=stable_id(
@@ -167,6 +189,8 @@ def anchor_source_span(
             str(char_end),
             ",".join(str(index) for index in word_order_indices),
             source_span_sha256,
+            leading_boundary_punctuation,
+            trailing_boundary_punctuation,
         ),
         method=method,
         spatial_id=page.spatial_id,
@@ -178,4 +202,7 @@ def anchor_source_span(
         word_order_indices=word_order_indices,
         line_identities=line_identities,
         crosses_line_identity=len(line_identities) > 1,
+        leading_boundary_punctuation=leading_boundary_punctuation,
+        trailing_boundary_punctuation=trailing_boundary_punctuation,
+        expanded_to_word_boundary=expanded_to_word_boundary,
     )
