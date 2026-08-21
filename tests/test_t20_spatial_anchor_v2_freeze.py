@@ -40,24 +40,34 @@ def test_t20_future_holdout_remains_identity_only_and_matches_freeze() -> None:
     assert frozen["status"] == "unopened_at_freeze"
     assert frozen["selected_source_identity_count"] == 32
     assert frozen["selected_signature_sha256"] == "2977671e9680305dfde595d13c77ca31197613eae0c1813f6d7a0b2218938bf3"
+    assert holdout["content_inspection_status"] == "identity_hash_only_not_resolved_or_inspected"
 
-    serialized = json.dumps(holdout, sort_keys=True).lower()
-    for forbidden in (
-        "source_uri\"",
+    selected = holdout["selected"]
+    assert set(selected) == {
+        "count",
+        "original_manifest_ranks",
+        "signature_sha256",
+        "source_uri_sha256",
+    }
+    assert selected["count"] == 32
+    assert selected["original_manifest_ranks"] == [97, 128]
+    assert selected["signature_sha256"] == frozen["selected_signature_sha256"]
+    identities = selected["source_uri_sha256"]
+    assert len(identities) == 32
+    assert all(isinstance(item, str) and len(item) == 64 for item in identities)
+
+    forbidden_keys = {
+        "source_uri",
         "source_name",
         "filename",
         "artifact_id",
-        "raw_text",
-        "money",
-        "layout",
-        "semantic",
-    ):
-        assert forbidden not in serialized
-
-    identities = holdout.get("selected_source_uri_sha256s") or holdout.get("source_uri_sha256s")
-    assert isinstance(identities, list)
-    assert len(identities) == 32
-    assert all(isinstance(item, str) and len(item) == 64 for item in identities)
+        "document_text",
+        "document_bytes",
+        "money_facts",
+        "layout_features",
+        "semantic_labels",
+    }
+    assert forbidden_keys.isdisjoint(selected)
 
 
 def test_t20_v2_freeze_does_not_authorize_semantics() -> None:
