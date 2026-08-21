@@ -17,7 +17,7 @@ from proofline.structured import extract_structured_facts
 
 SCHEMA = "proofline-akron-money-parser-v3-delta/v1"
 FIXTURE_SCHEMA = "proofline-akron-t15-t13b-money-anchor-fixture/v1"
-EXPECTED_FIXTURE_SHA256 = "6c0effdf00533ab3a2c06e2fcf168622c9baec6246f1503c374812dad9384857"
+EXPECTED_FIXTURE_SHA256 = "016a149d5d1f092f87533be012961a0f9b3a310beb4af0c6b25540159b1ec2f9"
 V2 = "proofline-structured/v2"
 V3 = "proofline-structured/v3"
 
