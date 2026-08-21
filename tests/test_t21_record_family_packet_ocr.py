@@ -53,6 +53,11 @@ def test_t21_packet_ocr_requires_the_frozen_pre_ocr_receipt() -> None:
     with pytest.raises(ValueError, match="exactly one Bronze artifact"):
         module.verify_receipt(drifted, selection)
 
+    wrong_bytes = copy.deepcopy(receipt)
+    wrong_bytes["unique_bronze_packet"]["sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="SHA-256 drifted"):
+        module.verify_receipt(wrong_bytes, selection)
+
 
 def test_t21_packet_ocr_representative_is_deterministic_from_frozen_selection() -> None:
     module = _load_module()
