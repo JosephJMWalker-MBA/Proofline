@@ -1,0 +1,134 @@
+name: r1-akron-spatial-anchor-t20b-holdout
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-spatial-anchor-t20b-holdout.yml"
+      - "experiments/akron-2026/sync_t20_attachment_holdout.py"
+      - "experiments/akron-2026/evaluate_spatial_anchor_t20b_holdout.py"
+      - "experiments/akron-2026/validate_spatial_anchor_t20b_holdout.py"
+      - "experiments/akron-2026/r1_t20_future_holdout_sources.json"
+      - "experiments/akron-2026/r1_t20_spatial_anchor_v2_development_summary.json"
+      - "src/proofline/spatial_anchor.py"
+      - "src/proofline/spatial_text.py"
+      - "src/proofline/structured.py"
+      - "src/proofline/local_grouping.py"
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify frozen T20 representation, holdout, and evaluation machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object experiments/akron-2026/r1_t20_future_holdout_sources.json)" = "aec139abeb9c29cc3082f682faf6a16f7f09e3dd"
+          test "$(git hash-object experiments/akron-2026/r1_t20_spatial_anchor_v2_development_summary.json)" = "f320652465637dbfe186c8b94af555c7bf4dfd95"
+          test "$(git hash-object src/proofline/spatial_anchor.py)" = "14bef1af09f785796787eac6aef07d393a17a5d9"
+          test "$(git hash-object src/proofline/spatial_text.py)" = "bc424f586d394f61db3b42a9dfa90a3943e1ec27"
+          test "$(git hash-object src/proofline/structured.py)" = "10ab05b933005d7cd686dd026331393a03658026"
+          test "$(git hash-object src/proofline/local_grouping.py)" = "c931c7ea631444f18fa780164deadd126bd47160"
+          test "$(git hash-object src/proofline/ocr.py)" = "8337c251aa8facd3074242c6c375136146c1e2e3"
+          test "$(git hash-object src/proofline/progressive.py)" = "4c65f7840271fffd3fa8afa7b8d45a40ad2481d5"
+          test "$(git hash-object experiments/akron-2026/evaluate_local_grouping_holdout.py)" = "a8fa059584c532eddf1a6839aa207b8f86367ba0"
+          test "$(git hash-object experiments/akron-2026/sync_t20_attachment_holdout.py)" = "0f72e58e8a0d5c34e248f6b8188749c10b55c34b"
+          test "$(git hash-object experiments/akron-2026/evaluate_spatial_anchor_t20b_holdout.py)" = "76b36f54a4b0bc99ddbb9b26d079108510143ae0"
+          test "$(git hash-object experiments/akron-2026/validate_spatial_anchor_t20b_holdout.py)" = "f8afe63c37395c95b05d7aa8e9b50d08e7a3a3b8"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite and helper smoke gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/sync_t20_attachment_holdout.py --help >/dev/null
+          python experiments/akron-2026/evaluate_spatial_anchor_t20b_holdout.py --help >/dev/null
+          python experiments/akron-2026/validate_spatial_anchor_t20b_holdout.py --help >/dev/null
+
+      - name: Ensure bounded OCR capability is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v tesseract >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y tesseract-ocr
+          fi
+          tesseract --version | head -1
+
+      - name: Rebuild canonical Akron parents and full attachment identity graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-spatial-anchor-t20b-holdout akron-spatial-anchor-t20b-holdout
+          mkdir -p akron-spatial-anchor-t20b-holdout
+          proofline-onbase-attachments \
+            --state-dir .akron-spatial-anchor-t20b-holdout \
+            --manifest-out akron-spatial-anchor-t20b-holdout/attachment-manifest.json \
+            --relations-out akron-spatial-anchor-t20b-holdout/discovered-relations.json \
+            --rejections-out akron-spatial-anchor-t20b-holdout/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-spatial-anchor-t20b-holdout/discovery.json
+          test "$(sha256sum akron-spatial-anchor-t20b-holdout/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+          test "$(python - <<'PY'
+          import json
+          print(len(json.load(open('akron-spatial-anchor-t20b-holdout/rejections.json'))))
+          PY
+          )" = "0"
+
+      - name: Resolve and sync frozen ranks 97-128 holdout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/sync_t20_attachment_holdout.py \
+            --state-dir .akron-spatial-anchor-t20b-holdout \
+            --manifest akron-spatial-anchor-t20b-holdout/attachment-manifest.json \
+            --relations akron-spatial-anchor-t20b-holdout/discovered-relations.json \
+            --selection experiments/akron-2026/r1_t20_future_holdout_sources.json \
+            --output akron-spatial-anchor-t20b-holdout/selection-sync.json \
+            > akron-spatial-anchor-t20b-holdout/selection-sync-stdout.json
+
+      - name: Apply frozen source-span-v2 and local-grouping-v1 to holdout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/evaluate_spatial_anchor_t20b_holdout.py \
+            --state-dir .akron-spatial-anchor-t20b-holdout \
+            --selection-sync akron-spatial-anchor-t20b-holdout/selection-sync.json \
+            --output akron-spatial-anchor-t20b-holdout/anchor-evaluation.json \
+            --threshold 0.70 \
+            --language eng \
+            --dpi 200 \
+            > akron-spatial-anchor-t20b-holdout/anchor-evaluation-stdout.json
+
+      - name: Validate raw blind machine result and semantic boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/validate_spatial_anchor_t20b_holdout.py \
+            --evaluation akron-spatial-anchor-t20b-holdout/anchor-evaluation.json \
+            --selection-sync akron-spatial-anchor-t20b-holdout/selection-sync.json \
+            --summary-out akron-spatial-anchor-t20b-holdout/summary.json
+          cat akron-spatial-anchor-t20b-holdout/summary.json
+
+      - name: Upload frozen pre-audit T20b holdout machine evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-spatial-anchor-t20b-holdout
+          path: akron-spatial-anchor-t20b-holdout/
+          if-no-files-found: error
+          retention-days: 14
