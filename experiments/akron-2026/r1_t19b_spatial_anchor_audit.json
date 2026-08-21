@@ -1,0 +1,78 @@
+{
+  "audit_stage": "post_hoc_failure_localization_after_blind_machine_artifact_frozen",
+  "blind_evidence": {
+    "artifact_digest": "sha256:4033ea05fbd122504e0dadf005f200ae32e30f646d086cfdfb2399b0bbb36320",
+    "artifact_id": 9452336639,
+    "evaluation_sha256": "542b35d019573ce518d22cd3001663f2a4a89d4fcc025c40e97118bf21116e1b",
+    "head_sha": "c23fdb8446f64354d0f654670ffba97ef4d8fb78",
+    "run_id": 32497051480,
+    "topology_signature_sha256": "12ca65788281d621299e35f7f526dad5a43356ef3e4adb36df857a09ccc61645"
+  },
+  "blind_population": {
+    "component_count": 38,
+    "grouped_page_count": 18,
+    "money_bearing_low_quality_page_count": 0,
+    "money_bearing_page_count": 29,
+    "ocr_extractions_added": 49,
+    "ocr_failed": 0,
+    "ocr_pages_attempted": 49,
+    "page_count": 171,
+    "page_parser_money_fact_count": 375,
+    "selected_source_identity_count": 32,
+    "spatial_line_money_observation_count": 90,
+    "spatial_money_region_count": 90,
+    "unique_artifact_count": 30
+  },
+  "coverage_gap": {
+    "all_unmatched_raw_tokens_cross_extractor_line_boundary": true,
+    "all_unmatched_raw_tokens_match_pattern": "$\\n<number>",
+    "dominant_native_artifact": {
+      "artifact_id": "artifact:ad3b0b1fd40ec402ddc50401adf004f215372e7b4ff83ba04c459c5f8b3c503c",
+      "money_bearing_page_count": 11,
+      "spatial_money_region_count": 0,
+      "unmatched_fact_count": 273
+    },
+    "matched_page_parser_money_fact_count": 90,
+    "matched_rate": 0.24,
+    "ocr_counterexample": {
+      "artifact_id": "artifact:93073e4707bb9fcee72ce7a1435605fe229c117360e50697857980412e381c23",
+      "page_number": 2,
+      "page_parser_money_fact_count": 13,
+      "spatial_line_money_observation_count": 1,
+      "unmatched_fact_count": 12
+    },
+    "pages_with_any_unmatched_fact_count": 12,
+    "unmatched_by_preferred_method": {
+      "pymupdf_native_text": 273,
+      "pymupdf_tesseract_ocr": 12
+    },
+    "unmatched_page_parser_money_fact_count": 285,
+    "zero_spatial_region_money_page_count": 11
+  },
+  "interpretation": {
+    "grouping_v1_tuning_justified_by_this_gap": false,
+    "next_untouched_validation_ranks": [
+      97,
+      128
+    ],
+    "spatial_anchor_repair_justified": true,
+    "t19b_may_validate_repair": false,
+    "t19b_role_after_audit": "opened development/audit evidence only"
+  },
+  "mechanism": {
+    "evaluator_function": "_spatial_money_regions",
+    "failure": "page parser accepts whitespace/newline between currency symbol and numeric core; line-local reparse cannot reconstruct a fact whose span crosses line identity",
+    "page_parser_input": "full preferred page text",
+    "repair_direction": "anchor frozen page-parser fact spans directly into spatial word geometry; do not use isolated-line reparsing as the sole mapping path",
+    "spatial_mapper_input": "each PyMuPDF spatial line reparsed independently"
+  },
+  "schema": "proofline-akron-t19b-spatial-anchor-audit/v1",
+  "semantic_boundary": {
+    "detector_authorized": false,
+    "event_identity_assigned": false,
+    "field_semantics_assigned": false,
+    "financial_semantics_authorized": false,
+    "lead_count": null,
+    "table_semantics_assigned": false
+  }
+}
