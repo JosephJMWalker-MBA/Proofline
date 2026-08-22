@@ -1,0 +1,48 @@
+{
+  "basis": {
+    "attachment_manifest_sha256": "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a",
+    "contextual_audit_commit": "53509846e148c223ffbae5b411dfa600df897d8c",
+    "parent_artifact_sha256": "e798e9a3561189aded6ef784a551cf4782d144e6715107ae04fea4ad643ba4ca",
+    "parent_item_id": 47559,
+    "parent_meeting_id": 682,
+    "parent_source_uri_sha256": "3e45697901d20d589213993acd1f903fca3072df1bfd1434f759d621a1d9e4cc",
+    "publisher_declared_relation_count": 20
+  },
+  "non_claims": [
+    "This is a provenance-bounded descriptive expansion set, not a statistical holdout.",
+    "Publisher link labels and relation identity determine selection before any selected document bytes are acquired in the next stage.",
+    "Selection does not imply that any document proves meeting occurrence, hearing occurrence, approval, denial, or final disposition.",
+    "No detector or lead authority is created by this selection."
+  ],
+  "schema": "proofline-akron-t21-april27-supporting-document-selection/v1",
+  "selected_document_count": 20,
+  "selected_documents": [
+    {"item_id":47559,"link_text_sha256":"2dbed5fc4599555f5343350debd10808d494017fd97b7e6888d0e8630ed943d3","meeting_id":682,"publish_id":102587,"source_uri_sha256":"0f36bc647f3c017d43b00464d354adea8c249ec0b3ac297ff44241b03d04ef1b"},
+    {"item_id":47559,"link_text_sha256":"6ca5b53d159a5d3047473e9c57146b51c1fde4995b0cb48fa0529d18598c08e6","meeting_id":682,"publish_id":102588,"source_uri_sha256":"fb91ba0ec5359cf51b91390e769865403c731ee54d206f2893f576ee37b80977"},
+    {"item_id":47559,"link_text_sha256":"0d2dcbe3dc9116c53e9099e85188c529fcc38324202d9c19948947c8f69cadb2","meeting_id":682,"publish_id":102589,"source_uri_sha256":"3e2952c78d0c8c74a63ed39d41bdeae2bce476b5ac453a2399dce8defeeb8af9"},
+    {"item_id":47559,"link_text_sha256":"7c1bdd6eccfe2b5f53f295c4a816ba90b52b57c679637fb47993e362a4fe901f","meeting_id":682,"publish_id":102590,"source_uri_sha256":"add0d6c8088f7b9fa1251a4bbedd56d3496b2362ece1447df49affc4890d3a4b"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102591,"source_uri_sha256":"3a06e51b3694156036755daa35c9c19ddf18de05235cb00b18d68c19f0068c85"},
+    {"item_id":47559,"link_text_sha256":"13a6a9290b7b341200eda7bee18457cfc9eeca17bf39a0c63cd71cecad3e6426","meeting_id":682,"publish_id":102592,"source_uri_sha256":"aca69aad7b09b0742c9d1ab862a5004e78cee8a289b7b2556e6002b2820c4727"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102593,"source_uri_sha256":"9e338b568216eb3bc62533b9dd0b67a7b8aac09dcc1d62bbbe560f477509de7d"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102594,"source_uri_sha256":"e3d1fc45148c8d0880a60da3d3c93e2505c4a8238d58e5e7f0b8d18224722ecb"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102595,"source_uri_sha256":"fa88e23585d638ad8e0cd7f6810d141efe6a045b6a3d4e1bb329e99eafd4ad88"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102596,"source_uri_sha256":"dbe22b4d827a1f4ca38089961734924571610d266e80d2828c14e5acc24b4cf1"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102597,"source_uri_sha256":"8f21c6c1c93978169795fca8233cbd8f25d412e875ed46a9cb790503e1cd49fd"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102598,"source_uri_sha256":"3bf4ad27b5518d75abf5bea27a28cd8e32769321b6e450199f60f67a78a845bd"},
+    {"item_id":47559,"link_text_sha256":"634ebbc0f9fe88d434b77199b91879b22228f00871a0cc334a91bbff53bb6c40","meeting_id":682,"publish_id":102599,"source_uri_sha256":"bb9787d27a5f172198e2dc9251b6808377c5508fc76073c517d19ee763cd64ea"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102600,"source_uri_sha256":"3cecd92911a6d140a8694d2be2fe88d4962b6163999a25014fb91d6d60fa25bc"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102601,"source_uri_sha256":"a2d12726265b24795b2003dbae02fb7eff582f32b6e8092bdcd0d9881863b06f"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102602,"source_uri_sha256":"578fc9252e8c9d1a319100a785af04ef17b5b3a39ab71feb4594c942e3ddc152"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102603,"source_uri_sha256":"57c1d1dd03fb9604d7b625397129951e4f46ef5046535577b0fdadffbb9e7a4e"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102604,"source_uri_sha256":"4e862031150d8c8a0b58a83f290e65398a4f80e4875fdea0df8d3117de0df048"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102605,"source_uri_sha256":"0d4825b3ecb9a0a34438153573a03551219ced97625044c7b959bad30a1cdf79"},
+    {"item_id":47559,"link_text_sha256":"50c731a953dc878b23b0f4d513075d7ef04f43f32988a723530dfaa337694692","meeting_id":682,"publish_id":102606,"source_uri_sha256":"a67d12d7a36525193d5e5343647fe3542ba3266818e293d2a46e27b4d05be3fc"}
+  ],
+  "selection_method": {
+    "content_blind": true,
+    "description": "Select every current publisher-declared supporting_document_of edge whose structured publisher relation has meeting_id=682 and item_id=47559; sort by publish_id then source_uri_sha256.",
+    "relation_type": "supporting_document_of"
+  },
+  "selection_signature_sha256": "0f58180207c3bf55e90a8494ddd15d1606f53281d2dad2df133b5db9ea60485d",
+  "stage": "post_packet_contextual_audit_pre_supporting_document_acquisition"
+}
