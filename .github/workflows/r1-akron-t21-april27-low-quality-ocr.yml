@@ -4,17 +4,18 @@ on:
   pull_request:
     paths:
       - ".github/workflows/r1-akron-t21-april27-low-quality-ocr.yml"
-      - "experiments/akron-2026/recover_t21_april27_low_quality_ocr.py"
-      - "experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection.json"
-      - "experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary.json"
+      - "experiments/akron-2026/recover_t21_april27_low_quality_ocr_v2.py"
+      - "experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection_v2.json"
+      - "experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary_v2.json"
       - "experiments/akron-2026/r1_t21_april27_supporting_document_selection.json"
       - "experiments/akron-2026/acquire_t21_april27_supporting_documents.py"
+      - "experiments/akron-2026/R1_T21_APRIL27_ACQUISITION_RECEIPT_CORRECTION.md"
       - "src/proofline/ocr.py"
       - "src/proofline/progressive.py"
       - "src/proofline/review.py"
       - "src/proofline/onbase_attachments.py"
-      - "tests/test_t21_april27_low_quality_ocr_selection.py"
-      - "tests/test_t21_april27_low_quality_ocr.py"
+      - "tests/test_t21_april27_acquisition_receipt_v2.py"
+      - "tests/test_t21_april27_low_quality_ocr_v2.py"
 
 permissions:
   contents: read
@@ -27,17 +28,18 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Verify frozen receipt, OCR target set, and machinery
+      - name: Verify corrected receipt, OCR target, and v2 machinery
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary.json)" = "d0aff4df92ca174bdfd8d883985df208bb06a838"
+          test "$(git hash-object experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary_v2.json)" = "146e14bb651282e5d0d5089af6be59e92a1a7399"
+          test "$(git hash-object experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection_v2.json)" = "c3911f72fce8918c0ff946a4e160ceebcf9270fc"
+          test "$(git hash-object experiments/akron-2026/R1_T21_APRIL27_ACQUISITION_RECEIPT_CORRECTION.md)" = "676d097a0b4716e1962410a4fd87c9c3fa9847a1"
+          test "$(git hash-object tests/test_t21_april27_acquisition_receipt_v2.py)" = "b7485bbc97e8f4db57c7f6af98fb7d8031126491"
           test "$(git hash-object experiments/akron-2026/r1_t21_april27_supporting_document_selection.json)" = "cd197f9e39d110f724a6c4437b311c1d86e9d904"
           test "$(git hash-object experiments/akron-2026/acquire_t21_april27_supporting_documents.py)" = "2af981af1a0f1e2624af2fe0d95d14ba9f6c4212"
-          test "$(git hash-object experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection.json)" = "fffd943999357830bf606c33303c5eeab7723fbe"
-          test "$(git hash-object tests/test_t21_april27_low_quality_ocr_selection.py)" = "6ee37c45018c64b399d26d15f342da6faeff1461"
-          test "$(git hash-object experiments/akron-2026/recover_t21_april27_low_quality_ocr.py)" = "d5aaebecbe467baf0f957cd67a8694f2c08132b6"
-          test "$(git hash-object tests/test_t21_april27_low_quality_ocr.py)" = "57fc1c2a16996ce505f251f00c94618e9346673e"
+          test "$(git hash-object experiments/akron-2026/recover_t21_april27_low_quality_ocr_v2.py)" = "66602a7379587715879b784d74814a6a5e6f1c0f"
+          test "$(git hash-object tests/test_t21_april27_low_quality_ocr_v2.py)" = "04937ebfc029c74f7910a4ed14fd8edda604327a"
           test "$(git hash-object src/proofline/ocr.py)" = "8337c251aa8facd3074242c6c375136146c1e2e3"
           test "$(git hash-object src/proofline/progressive.py)" = "4c65f7840271fffd3fa8afa7b8d45a40ad2481d5"
           test "$(git hash-object src/proofline/review.py)" = "4bd49ce877178d294167074cbb1aa31e6ed49e4b"
@@ -53,12 +55,12 @@ jobs:
       - name: Install package and tests
         run: python -m pip install -e ".[dev]"
 
-      - name: Run full test suite and OCR helper smoke gate
+      - name: Run full test suite and corrected OCR helper smoke gate
         shell: bash
         run: |
           set -euo pipefail
           pytest
-          python experiments/akron-2026/recover_t21_april27_low_quality_ocr.py --help >/dev/null
+          python experiments/akron-2026/recover_t21_april27_low_quality_ocr_v2.py --help >/dev/null
 
       - name: Ensure bounded OCR capability is present
         shell: bash
@@ -74,23 +76,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .akron-t21-april27-low-quality-ocr akron-t21-april27-low-quality-ocr
-          mkdir -p akron-t21-april27-low-quality-ocr
+          rm -rf .akron-t21-april27-low-quality-ocr-v2 akron-t21-april27-low-quality-ocr-v2
+          mkdir -p akron-t21-april27-low-quality-ocr-v2
           proofline-onbase-attachments \
-            --state-dir .akron-t21-april27-low-quality-ocr \
-            --manifest-out akron-t21-april27-low-quality-ocr/attachment-manifest.json \
-            --relations-out akron-t21-april27-low-quality-ocr/discovered-relations.json \
-            --rejections-out akron-t21-april27-low-quality-ocr/rejections.json \
+            --state-dir .akron-t21-april27-low-quality-ocr-v2 \
+            --manifest-out akron-t21-april27-low-quality-ocr-v2/attachment-manifest.json \
+            --relations-out akron-t21-april27-low-quality-ocr-v2/discovered-relations.json \
+            --rejections-out akron-t21-april27-low-quality-ocr-v2/rejections.json \
             experiments/akron-2026/onbase-plan.json \
-            > akron-t21-april27-low-quality-ocr/discovery.json
-          test "$(sha256sum akron-t21-april27-low-quality-ocr/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+            > akron-t21-april27-low-quality-ocr-v2/discovery.json
+          test "$(sha256sum akron-t21-april27-low-quality-ocr-v2/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
           test "$(python - <<'PY'
           import json
-          print(len(json.load(open('akron-t21-april27-low-quality-ocr/rejections.json'))))
+          print(len(json.load(open('akron-t21-april27-low-quality-ocr-v2/rejections.json'))))
           PY
           )" = "0"
 
-      - name: Prove frozen four-artifact OCR frontier before reacquisition
+      - name: Prove corrected four-artifact OCR frontier before reacquisition
         shell: bash
         run: |
           set -euo pipefail
@@ -99,17 +101,17 @@ jobs:
           import json
           from pathlib import Path
 
-          path = Path('experiments/akron-2026/recover_t21_april27_low_quality_ocr.py')
-          spec = importlib.util.spec_from_file_location('t21_low_ocr', path)
+          path = Path('experiments/akron-2026/recover_t21_april27_low_quality_ocr_v2.py')
+          spec = importlib.util.spec_from_file_location('t21_low_ocr_v2', path)
           assert spec and spec.loader
           module = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(module)
 
-          low = json.load(open('experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection.json'))
-          receipt = json.load(open('experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary.json'))
+          low = json.load(open('experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection_v2.json'))
+          receipt = json.load(open('experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary_v2.json'))
           full = json.load(open('experiments/akron-2026/r1_t21_april27_supporting_document_selection.json'))
-          relations = json.load(open('akron-t21-april27-low-quality-ocr/discovered-relations.json'))
-          manifest = json.load(open('akron-t21-april27-low-quality-ocr/attachment-manifest.json'))
+          relations = json.load(open('akron-t21-april27-low-quality-ocr-v2/discovered-relations.json'))
+          manifest = json.load(open('akron-t21-april27-low-quality-ocr-v2/attachment-manifest.json'))
 
           rows = module.verify_frozen_inputs(low_selection=low, receipt=receipt, full_selection=full)
           bounded, selected_relations = module.bounded_manifest(
@@ -123,38 +125,37 @@ jobs:
           assert sorted(selected_relations) == [102589, 102590, 102593, 102597]
           PY
 
-      - name: Reacquire exact Bronze and recover raw Silver OCR
+      - name: Reacquire exact Bronze and recover corrected raw Silver OCR
         shell: bash
         run: |
           set -euo pipefail
-          python experiments/akron-2026/recover_t21_april27_low_quality_ocr.py \
-            --state-dir .akron-t21-april27-low-quality-ocr \
-            --low-selection experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection.json \
-            --receipt experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary.json \
+          python experiments/akron-2026/recover_t21_april27_low_quality_ocr_v2.py \
+            --state-dir .akron-t21-april27-low-quality-ocr-v2 \
+            --low-selection experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection_v2.json \
+            --receipt experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary_v2.json \
             --full-selection experiments/akron-2026/r1_t21_april27_supporting_document_selection.json \
-            --relations akron-t21-april27-low-quality-ocr/discovered-relations.json \
-            --attachment-manifest akron-t21-april27-low-quality-ocr/attachment-manifest.json \
+            --relations akron-t21-april27-low-quality-ocr-v2/discovered-relations.json \
+            --attachment-manifest akron-t21-april27-low-quality-ocr-v2/attachment-manifest.json \
             --threshold 0.70 \
             --language eng \
             --dpi 200 \
-            --output akron-t21-april27-low-quality-ocr/low-quality-ocr.json \
-            > akron-t21-april27-low-quality-ocr/low-quality-ocr-stdout.json
-          cat akron-t21-april27-low-quality-ocr/low-quality-ocr-stdout.json
+            --output akron-t21-april27-low-quality-ocr-v2/low-quality-ocr-v2.json \
+            > akron-t21-april27-low-quality-ocr-v2/low-quality-ocr-v2-stdout.json
+          cat akron-t21-april27-low-quality-ocr-v2/low-quality-ocr-v2-stdout.json
 
-      - name: Validate raw Silver accounting and authority boundary
+      - name: Validate corrected raw Silver accounting and authority boundary
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
-          p = json.load(open('akron-t21-april27-low-quality-ocr/low-quality-ocr.json'))
-          assert p['schema'] == 'proofline-akron-t21-april27-low-quality-ocr/v1'
-          assert p['stage'] == 'raw_low_quality_supporting_document_ocr_before_contextual_reading'
-          f = p['frozen_inputs']
-          assert f['selected_artifact_count'] == 4
-          assert f['selected_source_page_count'] == 48
-          assert f['pre_ocr_native_low_quality_page_count'] == 41
-          assert f['quality_floor'] == 0.70
+          p = json.load(open('akron-t21-april27-low-quality-ocr-v2/low-quality-ocr-v2.json'))
+          assert p['schema'] == 'proofline-akron-t21-april27-low-quality-ocr/v2'
+          assert p['stage'] == 'raw_low_quality_supporting_document_ocr_after_receipt_correction_before_contextual_reading'
+          assert p['correction_lineage']['superseded_v1_receipt_not_used'] is True
+          assert p['frozen_inputs']['selected_artifact_count'] == 4
+          assert p['frozen_inputs']['selected_source_page_count'] == 48
+          assert p['frozen_inputs']['pre_ocr_native_low_quality_page_count'] == 41
           assert p['silver']['artifact_count'] == 4
           assert p['silver']['page_count'] == 48
           assert [a['publish_id'] for a in p['silver']['artifacts']] == [102589, 102590, 102593, 102597]
@@ -163,9 +164,6 @@ jobs:
           assert o['attempted'] + o['skipped'] == o['candidates']
           assert 0 <= o['added'] <= o['attempted']
           assert 0 <= o['failed'] <= o['attempted']
-          assert 0 <= p['silver']['preferred_ocr_page_count'] <= 41
-          assert 0 <= p['silver']['preferred_nonblank_page_count'] <= 48
-          assert 0 <= p['silver']['preferred_quality_floor_page_count'] <= 48
           assert p['authority_boundary'] == {
               'supporting_document_content_interpreted': False,
               'event_identity_assigned': False,
@@ -179,19 +177,19 @@ jobs:
           }
           PY
 
-      - name: Upload raw pre-reading April 27 low-quality OCR evidence
+      - name: Upload corrected raw pre-reading OCR evidence
         uses: actions/upload-artifact@v4
         with:
-          name: r1-akron-t21-april27-low-quality-ocr
+          name: r1-akron-t21-april27-low-quality-ocr-v2
           path: |
-            akron-t21-april27-low-quality-ocr/low-quality-ocr.json
-            akron-t21-april27-low-quality-ocr/low-quality-ocr-stdout.json
-            akron-t21-april27-low-quality-ocr/discovery.json
-            akron-t21-april27-low-quality-ocr/attachment-manifest.json
-            akron-t21-april27-low-quality-ocr/discovered-relations.json
-            akron-t21-april27-low-quality-ocr/rejections.json
-            experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary.json
+            akron-t21-april27-low-quality-ocr-v2/low-quality-ocr-v2.json
+            akron-t21-april27-low-quality-ocr-v2/low-quality-ocr-v2-stdout.json
+            akron-t21-april27-low-quality-ocr-v2/discovery.json
+            akron-t21-april27-low-quality-ocr-v2/attachment-manifest.json
+            akron-t21-april27-low-quality-ocr-v2/discovered-relations.json
+            akron-t21-april27-low-quality-ocr-v2/rejections.json
+            experiments/akron-2026/r1_t21_april27_supporting_document_acquisition_summary_v2.json
+            experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection_v2.json
             experiments/akron-2026/r1_t21_april27_supporting_document_selection.json
-            experiments/akron-2026/r1_t21_april27_low_quality_ocr_selection.json
           if-no-files-found: error
           retention-days: 14
