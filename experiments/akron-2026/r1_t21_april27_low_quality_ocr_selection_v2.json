@@ -1,0 +1,53 @@
+{
+  "authority_boundary": {
+    "ocr_performed_before_this_selection": false,
+    "semantic_selection": false,
+    "supporting_document_content_interpreted": false
+  },
+  "schema": "proofline-akron-t21-april27-low-quality-ocr-selection/v2",
+  "selected_artifact_count": 4,
+  "selected_artifacts": [
+    {
+      "artifact_sha256": "44c74c2f8d01865a0242b3eed7d4fd6b22306cde781d6e78037e59774e981bdc",
+      "native_low_quality_page_count": 33,
+      "page_count": 33,
+      "page_metadata_signature_sha256": "95598036c50606fdb1e1efedede029c2a7b26a7d27485b6a6ce09d0f42166b9b",
+      "publish_id": 102589,
+      "source_uri_sha256": "3e2952c78d0c8c74a63ed39d41bdeae2bce476b5ac453a2399dce8defeeb8af9"
+    },
+    {
+      "artifact_sha256": "c628216c674093d496d107b2588a42730ef30f1de2ec7657b3c6de313379093e",
+      "native_low_quality_page_count": 3,
+      "page_count": 8,
+      "page_metadata_signature_sha256": "bfe26c9e620f58a0c5b7c552d7bc3f810fca2ed46d8de42447dcff4206588f16",
+      "publish_id": 102590,
+      "source_uri_sha256": "add0d6c8088f7b9fa1251a4bbedd56d3496b2362ece1447df49affc4890d3a4b"
+    },
+    {
+      "artifact_sha256": "a3b406e939cfde7ad94c967ba7545e0f96481929e92d1d20dfdcbc9d1a005332",
+      "native_low_quality_page_count": 1,
+      "page_count": 1,
+      "page_metadata_signature_sha256": "4dceae5b98cab97a8c02a31585ac377625d3c652e5efa9a49b5bace1fd6f66b6",
+      "publish_id": 102593,
+      "source_uri_sha256": "9e338b568216eb3bc62533b9dd0b67a7b8aac09dcc1d62bbbe560f477509de7d"
+    },
+    {
+      "artifact_sha256": "6a0eec8ab93895d5e2dda11f300c23436510df178e697b3ef85d36c3479e7668",
+      "native_low_quality_page_count": 4,
+      "page_count": 6,
+      "page_metadata_signature_sha256": "6008f1cd564b2b449870636af841b307ff23082becb797898330c1f64ad78656",
+      "publish_id": 102597,
+      "source_uri_sha256": "8f21c6c1c93978169795fca8233cbd8f25d412e875ed46a9cb790503e1cd49fd"
+    }
+  ],
+  "selected_low_quality_page_count": 41,
+  "selected_source_page_count": 48,
+  "selection_method": "artifact.native_low_quality_page_count > 0",
+  "selection_signature_sha256": "cd86100e5a6ff2d54159ae0437db95f79bdcfed24a054c1ed330792f3c07c357",
+  "selection_source": {
+    "full_supporting_document_selection_signature_sha256": "0f58180207c3bf55e90a8494ddd15d1606f53281d2dad2df133b5db9ea60485d",
+    "receipt_raw_acquisition_json_sha256": "012242bc20fbd07b1e70fdf58bc0b7a95b24e926d33f472fbc730eb004d53f07",
+    "receipt_schema": "proofline-akron-t21-april27-supporting-document-acquisition-receipt/v2"
+  },
+  "stage": "corrected_pre_ocr_selection_after_receipt_v2_before_any_ocr"
+}
