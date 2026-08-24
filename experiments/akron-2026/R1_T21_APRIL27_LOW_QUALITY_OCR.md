@@ -16,6 +16,7 @@ The correction history is part of the evidence rather than something to hide.
 4. Corrected v2 run `32600657882` / job `97098314570` proved the corrected publisher identities and exact Bronze/native profiles and then executed OCR. The wrapper failed afterward because it incorrectly treated `ProgressiveExtractionResult.candidates` as the number of pages actually escalated to OCR. No OCR prose from that failed run was read or uploaded.
 5. The existing `ProgressiveExtractor` contract was audited. Its `candidates` field counts all page units presented to the quality gate; `attempted` counts pages actually OCRed; `skipped` counts pages already meeting the threshold.
 6. v3 changed only the evaluator accounting contract. The source population, Bronze hashes, OCR backend, threshold, language, DPI, and `force=False` behavior remained unchanged.
+7. The first receipt-head test caught one final receipt-only defect: the 48 page hashes were correct, but the initially stored list signature had been generated with an undocumented construction. Before contextual reading, the receipt signature was replaced with the reproducible SHA-256 of canonical JSON over the ordered `(publish_id, page_number, text_sha256)` entries: `bb87cbbe7443e25b23861745b4df922af8a972c6d1fe2275d923ac2b9de42807`. No page hash or OCR result changed.
 
 ## Canonical v3 run
 
@@ -26,7 +27,7 @@ The correction history is part of the evidence rather than something to hide.
 - artifact digest: `sha256:81426a330498c708ae107df63c73fa401a01597d86f80eb38c64b136a41ccd69`
 - raw `low-quality-ocr-v3.json` SHA-256: `f7027285870fdec87328d2218391b7b28a13df3f4edf933cddca7a92b169c566`
 
-All dedicated workflow steps succeeded: hash/freeze verification, tests, canonical publisher-graph reconstruction, unchanged four-artifact proof, exact Bronze reacquisition, OCR replay, accounting/authority validation, and artifact upload. The ordinary test, Akron OnBase, and Canton workflows were also green on the same head.
+All dedicated workflow steps succeeded: hash/freeze verification, tests, canonical publisher-graph reconstruction, unchanged four-artifact proof, exact Bronze reacquisition, OCR replay, accounting/authority validation, and artifact upload. The ordinary test, Akron OnBase, and Canton workflows were also green on the measurement head.
 
 ## Frozen population and OCR accounting
 
@@ -56,9 +57,9 @@ After preferred-extraction selection:
 - preferred nonblank pages: **47 / 48**
 - preferred pages meeting the 0.70 floor: **47 / 48**
 
-The receipt freezes a SHA-256 for every one of the 48 preferred page texts without embedding their prose. The ordered page-hash-list signature is:
+The receipt freezes a SHA-256 for every one of the 48 preferred page texts without embedding their prose. The reproducible ordered page-hash-list signature is:
 
-`6e8a2ce042f80bd8127e2595f5efe260823c83c929154ba06cc6e665f20b9677`
+`bb87cbbe7443e25b23861745b4df922af8a972c6d1fe2275d923ac2b9de42807`
 
 ## Residual quality exception
 
