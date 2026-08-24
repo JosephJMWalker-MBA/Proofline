@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object experiments/akron-2026/r1_t21_april27_contextual_reading_population.json)" = "b35e64aba3ca607c231328a1395b0160166521a8"
+          test "$(git hash-object experiments/akron-2026/r1_t21_april27_contextual_reading_population.json)" = "e45f590f8387eaf3702c24bef2c51fa0e87d13e3"
           test "$(git hash-object experiments/akron-2026/r1_t21_april27_supporting_document_selection.json)" = "cd197f9e39d110f724a6c4437b311c1d86e9d904"
           test "$(git hash-object experiments/akron-2026/acquire_t21_april27_supporting_documents.py)" = "2af981af1a0f1e2624af2fe0d95d14ba9f6c4212"
           test "$(git hash-object experiments/akron-2026/export_t21_april27_contextual_reading_corpus.py)" = "e8f4d1d45f2988757e51a6b829d6ed7b845456c9"
