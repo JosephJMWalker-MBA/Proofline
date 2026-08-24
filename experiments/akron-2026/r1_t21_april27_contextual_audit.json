@@ -1,0 +1,319 @@
+{
+  "authority": {
+    "community_representativeness_assigned": false,
+    "cross_document_causality_assigned": false,
+    "detector_authorized": false,
+    "document_statements_are_not_automatically_treated_as_true": true,
+    "final_outcome_assigned": false,
+    "human_contextual_interpretation_performed": true,
+    "lead_count": null
+  },
+  "corpus": {
+    "document_count": 20,
+    "native_skipped": 47,
+    "ocr_added": 41,
+    "ocr_attempted": 41,
+    "ocr_failed": 0,
+    "page_count": 88,
+    "preferred_nonblank_page_count": 87,
+    "preferred_quality_floor_page_count": 87,
+    "reading_corpus_json_sha256": "ca6d2ff970d713346ee5a7592008567ba4dc08bdbd48d504c84b7475ff1a2459",
+    "workflow_artifact_digest": "sha256:f2d26738a3d1c1bef6baecf553bc17e71d47bd21a2fcce63e7aa19303fd1db0c",
+    "workflow_artifact_id": 9506443844,
+    "workflow_run_id": 32688151447
+  },
+  "cross_document_findings": [
+    {
+      "boundary": "The number of opposition documents in this publisher family is not a statistically representative measure of community opinion.",
+      "evidence_publish_ids": [102587,102590,102591,102594,102595,102598,102601,102602,102603,102604,102605],
+      "finding": "Planning support and public opposition coexist in the preserved record."
+    },
+    {
+      "boundary": "The documents do not establish that public comments caused the added condition.",
+      "evidence_publish_ids": [102587,102592],
+      "finding": "The March 9 substitute adds an operating-hours condition to the seven-condition original ordinance."
+    },
+    {
+      "boundary": "Continued submissions establish continued expressed opposition by these writers, not community-wide consensus.",
+      "evidence_publish_ids": [102594,102595,102598,102599,102600,102601,102602,102603,102604,102605],
+      "finding": "Public opposition continued after the March 9 hearing date."
+    },
+    {
+      "boundary": "The request is not itself a final disposition and does not prove Council's reason for later TIME status.",
+      "evidence_publish_ids": [102606],
+      "finding": "The applicant requested additional review time on March 30 to engage community/Council and explain the plan."
+    },
+    {
+      "boundary": "Image-only/handwritten material and referenced testimony/photos remain unresolved rather than inferred.",
+      "evidence_publish_ids": [102593,102597,102604,102605],
+      "finding": "The record family contains unresolved referenced evidence and representation gaps."
+    }
+  ],
+  "document_audits": [
+    {
+      "observations": [
+        "Planning memorandum identifies PC-2025-80-CU and the residential/park/church context.",
+        "Planning Staff states the conditional use is consistent with Section 153.474 and the Land Use and Development Guide Plan and recommends approval.",
+        "Fact sheet states Planning Staff and Planning Commission recommended approval.",
+        "Original ordinance carries seven conditions, including archery fencing and a prohibition on live ammunition."
+      ],
+      "publish_id": 102587,
+      "role": "official_planning_and_legislation",
+      "stance_or_function": "planning_support"
+    },
+    {
+      "observations": [
+        "February 19 notice schedules March 9, 2026 Planning & Economic Development discussion and a 5:00 p.m. open-comment public hearing.",
+        "Notice provides in-person, remote, and written-comment participation routes."
+      ],
+      "publish_id": 102588,
+      "role": "official_hearing_notice",
+      "stance_or_function": "procedural"
+    },
+    {
+      "observations": [
+        "Petition describes repurposing Eastwood Swim Park as a defense-education facility serving public, police, fire, and EMS.",
+        "Application states an estimated total project cost of $677,000.",
+        "Business materials describe phased uses including a configurable training structure, Simunition-based scenarios, archery, obstacle/K9 training, and a possible rappel tower.",
+        "Many later diagram/image pages are OCR-noisy; claims in petitioner materials remain applicant statements unless independently corroborated."
+      ],
+      "publish_id": 102589,
+      "role": "petitioner_application_and_business_materials",
+      "stance_or_function": "applicant_support"
+    },
+    {
+      "observations": [
+        "Bundle contains multiple pre-hearing comments opposing or questioning the location and land-use compatibility.",
+        "Recurring themes include residential/park compatibility, safety, noise, traffic/parking, property values, and impacts on nearby recreation.",
+        "Summit Metro Parks submission raises safety/noise/park-character concerns while recognizing first-responder training as a legitimate need.",
+        "Page 5 remains blank/unresolved after OCR and should not be inferred."
+      ],
+      "publish_id": 102590,
+      "role": "bundled_written_comments",
+      "stance_or_function": "predominantly_opposition"
+    },
+    {
+      "observations": [
+        "March 9 letter from Tallmadge Mayor Carol Siciliano-Kilway urges Akron Council to vote no.",
+        "Letter emphasizes cross-border residential impact, noise/activity/safety, traffic, and property-value concerns."
+      ],
+      "publish_id": 102591,
+      "role": "neighboring_city_mayor_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "March 9 substitute preserves the original seven conditions and adds an eighth condition limiting operating hours to 8 a.m.-6 p.m. Monday-Saturday and 10 a.m.-6 p.m. Sunday.",
+        "The preserved text does not add explicit new conditions for a noise study, hard-surfaced parking, security, or property-value mitigation.",
+        "The existence/timing of the amendment is observable; the record does not establish which comments, if any, caused it."
+      ],
+      "publish_id": 102592,
+      "role": "substitute_legislation",
+      "stance_or_function": "governmental_amendment"
+    },
+    {
+      "observations": [
+        "OCR yields mostly screenshot/image noise.",
+        "Semantic content is not safely recoverable from the preserved text corpus; visual review remains an unresolved evidence task."
+      ],
+      "publish_id": 102593,
+      "role": "image_based_attachment",
+      "stance_or_function": "unresolved"
+    },
+    {
+      "observations": [
+        "March 16 John and Luciana Rutecki submission argues incompatibility with U1 residential zoning and raises noise, parking, park-use, aesthetics, and property-value concerns.",
+        "Submission explicitly challenges Planning Staff's compatibility reasoning and proposes questions for Council."
+      ],
+      "publish_id": 102594,
+      "role": "resident_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "March 16 letter signed by Tallmadge council members conveys resident concerns and questions compatibility with surrounding residential areas and the Land Use and Development Guide Plan.",
+        "Letter respects Akron's jurisdiction while asking Council to consider cross-community impacts."
+      ],
+      "publish_id": 102595,
+      "role": "neighboring_city_officials_letter",
+      "stance_or_function": "institutional_concern"
+    },
+    {
+      "observations": [
+        "Contains the same Tallmadge forwarding email seen in publish 102595 but omits the attached signed letter.",
+        "This is a useful example of byte-unique publisher artifacts containing semantically overlapping record content; provenance should be preserved even if later deduplicated for reading."
+      ],
+      "publish_id": 102596,
+      "role": "forwarding_wrapper_partial_duplicate",
+      "stance_or_function": "procedural_duplicate_candidate"
+    },
+    {
+      "observations": [
+        "Email wrapper identifies a constituent communication associated with 1849 Eastwood Avenue.",
+        "Four handwritten/image pages remain too noisy for safe semantic normalization from OCR alone; detailed claims remain unresolved pending visual review."
+      ],
+      "publish_id": 102597,
+      "role": "constituent_forward_with_handwritten_images",
+      "stance_or_function": "partially_unresolved"
+    },
+    {
+      "observations": [
+        "March 16 forwarded objection argues the training facility is ill-suited to the neighborhood/Metro Park edge and suggests a different site."
+      ],
+      "publish_id": 102598,
+      "role": "resident_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "Forwarded message objects to the Eastwood location and references perceived support by Ward 10 representation.",
+        "The writer's statement about another person's position is not independently treated as proof of that position."
+      ],
+      "publish_id": 102599,
+      "role": "resident_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "First section opposes the Eastwood training proposal on safety/wildlife/park concerns.",
+        "Second section concerns an unrelated bitcoin/AI data-center allegation.",
+        "Document demonstrates why relevance should be segment-level rather than treating every statement in a linked document as part of the Eastwood matter."
+      ],
+      "publish_id": 102600,
+      "role": "mixed_topic_constituent_email",
+      "stance_or_function": "partial_opposition_plus_unrelated_topic"
+    },
+    {
+      "observations": [
+        "March 18 Tallmadge resident opposes the location based on Metro Park, neighborhood, safety, and unanswered public-access questions."
+      ],
+      "publish_id": 102601,
+      "role": "resident_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "March 18 Parkside Condos HOA president opposes the location and reports attending the hearing.",
+        "The writer reports that most hearing speakers opposed the project and describes one non-attorney supporter; those hearing-count observations remain witness statements, not a transcript."
+      ],
+      "publish_id": 102602,
+      "role": "hoa_representative_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "March 20 Tallmadge-area writer raises business-model, user-access, security, noise, traffic, property-value, and public-safety questions.",
+        "Writer explicitly says the business plan should be refined before Council votes."
+      ],
+      "publish_id": 102603,
+      "role": "resident_written_comment",
+      "stance_or_function": "opposition_and_request_for_clarity"
+    },
+    {
+      "observations": [
+        "March 20 nearby resident opposes the location, references attending and speaking at the March 9 meeting, and reports signing a petition.",
+        "Writer's recollection of another attendee's statement remains testimony about the hearing, not independently verified transcript evidence."
+      ],
+      "publish_id": 102604,
+      "role": "nearby_resident_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "March 23 Melissa Riley-Smith letter is the previously blind-audited document.",
+        "References prior March 9 testimony and photographs submitted at the meeting; those referenced photographs/testimony are not present in this two-page attachment.",
+        "Contains property-value estimates and the shorthand range $10,000-20,000 that exposed the earlier parser/anchor representation boundary.",
+        "Document directly proves the resident made these claims; it does not prove the predicted depreciation or environmental effects occurred."
+      ],
+      "publish_id": 102605,
+      "role": "nearby_resident_written_comment",
+      "stance_or_function": "opposition"
+    },
+    {
+      "observations": [
+        "March 30 applicant counsel formally requests additional time for review.",
+        "Stated reason is to refresh application status with the community and Council and more fully explain the proposed business model and plan.",
+        "Request establishes a procedural reason offered by the applicant for additional time; it does not prove why Council kept the matter under TIME."
+      ],
+      "publish_id": 102606,
+      "role": "applicant_attorney_procedural_request",
+      "stance_or_function": "request_for_additional_time"
+    }
+  ],
+  "outcome": {
+    "reason": "No document in the audited 20-document family establishes final passage, denial, withdrawal, or other terminal disposition.",
+    "status": "unknown"
+  },
+  "procedural_chronology": [
+    {
+      "date": "2026-02-13",
+      "event": "Planning Commission review identified in official planning memorandum; staff/commission recommend approval.",
+      "evidence_publish_ids": [102587]
+    },
+    {
+      "date": "2026-02-19",
+      "event": "Clerk issues notice for March 9 open-comment hearing.",
+      "evidence_publish_ids": [102588]
+    },
+    {
+      "date": "2026-03-09",
+      "event": "Substitute ordinance dated/offered; preserved official agenda elsewhere in T21 explicitly records public hearing held and substitute offered.",
+      "evidence_publish_ids": [102592],
+      "related_publisher_meeting_id": 671
+    },
+    {
+      "date": "2026-03-16",
+      "event": "Post-hearing opposition and cross-jurisdiction concerns continue in publisher attachments.",
+      "evidence_publish_ids": [102594,102595,102596,102598,102599]
+    },
+    {
+      "date": "2026-03-18",
+      "event": "Additional constituent opposition is forwarded into the Council record.",
+      "evidence_publish_ids": [102600,102601,102602]
+    },
+    {
+      "date": "2026-03-20",
+      "event": "Additional nearby/Tallmadge-area opposition is forwarded.",
+      "evidence_publish_ids": [102603,102604]
+    },
+    {
+      "date": "2026-03-23",
+      "event": "Previously blind-audited resident letter is forwarded, referencing March 9 testimony/photos.",
+      "evidence_publish_ids": [102605]
+    },
+    {
+      "date": "2026-03-30",
+      "event": "Applicant attorney requests additional time to explain/refine community and Council understanding of the business model.",
+      "evidence_publish_ids": [102606]
+    }
+  ],
+  "schema": "proofline-akron-t21-april27-human-contextual-audit/v1",
+  "stage": "post_freeze_human_contextual_audit",
+  "unresolved_evidence_obligations": [
+    {
+      "obligation": "Locate or establish availability of March 9 hearing recording/transcript/minutes sufficient to attribute testimony directly.",
+      "source_publish_ids": [102602,102604,102605],
+      "status": "unresolved"
+    },
+    {
+      "obligation": "Locate photographs Melissa Riley-Smith says she submitted at the March 9 meeting.",
+      "source_publish_ids": [102605],
+      "status": "unresolved"
+    },
+    {
+      "obligation": "Visually inspect image/screenshot attachment publish 102593.",
+      "source_publish_ids": [102593],
+      "status": "unresolved"
+    },
+    {
+      "obligation": "Visually inspect handwritten/image pages in publish 102597.",
+      "source_publish_ids": [102597],
+      "status": "unresolved"
+    },
+    {
+      "obligation": "Trace final ordinance disposition beyond the April 27 family and repeated TIME agenda appearances.",
+      "source_publish_ids": [],
+      "status": "unresolved"
+    }
+  ]
+}
