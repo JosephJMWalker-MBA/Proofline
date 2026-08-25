@@ -13,8 +13,8 @@ _spec.loader.exec_module(module)
 TARGET = {
     "schema": module.TARGET_SCHEMA,
     "planning_case": {"kind": "planning_case", "normalized_key": "PC-2025-80-CU"},
-    "ordinance_title": "ORDINANCE authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.",
-    "ordinance_title_sha256": "1c34ab1c1907c9d7d31a90b7e57cf7d0bc6b040a816c9b9a854b60ba1a33a421",
+    "ordinance_title": "authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.",
+    "ordinance_title_sha256": "484e8b7cd5bc9957938bc6aaf98063ae0c93ffb1bc2df86b10205501437a1c84",
     "introduced_on_or_after": "2026-02-23",
 }
 
