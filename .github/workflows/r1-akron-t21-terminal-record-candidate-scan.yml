@@ -6,6 +6,7 @@ on:
       - ".github/workflows/r1-akron-t21-terminal-record-candidate-scan.yml"
       - "experiments/akron-2026/measure_t21_terminal_record_candidates.py"
       - "experiments/akron-2026/r1_t21_terminal_record_target.json"
+      - "experiments/akron-2026/r1_t21_terminal_record_candidate_scan_summary.json"
       - "experiments/akron-2026/onbase-plan.json"
       - "src/proofline/terminal_record_candidates.py"
       - "src/proofline/onbase.py"
@@ -13,6 +14,7 @@ on:
       - "src/proofline/ingest.py"
       - "tests/test_terminal_record_candidates.py"
       - "tests/test_t21_terminal_record_candidate_measurement.py"
+      - "tests/test_t21_terminal_record_candidate_scan_receipt.py"
 
 permissions:
   contents: read
@@ -115,6 +117,41 @@ jobs:
           assert b['lead_count'] is None
           PY
 
+      - name: Reproduce frozen terminal-record candidate receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum akron-t21-terminal/terminal-record-candidates.json | awk '{print $1}')" = "b3c846e6f3eec81e96f9c2e0008b6ddb0d4bec182d0e8f5aee9e093451a0b952"
+          test "$(wc -c < akron-t21-terminal/terminal-record-candidates.json | tr -d ' ')" = "254275"
+          python - <<'PY'
+          import json
+          raw = json.load(open('akron-t21-terminal/terminal-record-candidates.json'))
+          receipt = json.load(open('experiments/akron-2026/r1_t21_terminal_record_candidate_scan_summary.json'))
+          assert receipt['schema'] == 'proofline-akron-t21-terminal-record-candidate-scan-receipt/v1'
+          assert raw['observation_time'] == receipt['observation_time']
+          assert raw['target'] == receipt['target']
+          assert raw['scan_window'] == receipt['scan_window']
+          assert raw['counts'] == receipt['counts']
+          assert raw['publisher_discovery'] == receipt['publisher_discovery']
+          assert raw['source_population_signature_sha256'] == receipt['source_population_signature_sha256']
+          assert raw['candidate_population_signature_sha256'] == receipt['candidate_population_signature_sha256']
+          assert raw['target_matches'] == receipt['target_matches'] == []
+          source_receipts = [
+              {
+                  'meeting_id': row['meeting_id'],
+                  'meeting_time': row['meeting_time'],
+                  'artifact_sha256': row['artifact_sha256'],
+                  'page_count': row['page_count'],
+                  'candidate_count': row['candidate_count'],
+              }
+              for row in raw['sources']
+          ]
+          assert source_receipts == receipt['source_receipts']
+          assert raw['authority_boundary'] == receipt['authority_boundary']
+          assert receipt['outcome']['status'] == 'unknown'
+          assert receipt['receipt_guards']['zero_match_is_not_disposition'] is True
+          PY
+
       - name: Upload T21 terminal-record candidate measurement
         uses: actions/upload-artifact@v4
         with:
@@ -123,5 +160,6 @@ jobs:
             akron-t21-terminal/terminal-record-candidates.json
             akron-t21-terminal/terminal-record-candidates-stdout.json
             experiments/akron-2026/r1_t21_terminal_record_target.json
+            experiments/akron-2026/r1_t21_terminal_record_candidate_scan_summary.json
           if-no-files-found: error
           retention-days: 14
