@@ -1,0 +1,176 @@
+{
+  "schema": "proofline-akron-t21-disposition-surface-inventory-receipt/v1",
+  "stage": "frozen_disposition_surface_inventory_before_section38_target_search",
+  "canonical_measurement": {
+    "workflow_run_id": 32863846665,
+    "job_id": 97854135262,
+    "head_sha": "841063ab29ff4da6a641b137ac96241a2ff0b0c7",
+    "artifact_id": 9569268154,
+    "artifact_digest": "sha256:c20df7d33adf1301c754420d6475b3d88c2824ca567b1e395db3abce0b35f51b",
+    "raw_measurement_byte_size": 7492,
+    "raw_measurement_sha256": "620ef292be8a8c97178af4ac35be7cdc33440b88f884505dcff2b12297aa66cb"
+  },
+  "source_receipts": {
+    "chronology": {
+      "path": "r1_t21_evidence_chronology_summary.json",
+      "file_sha256": "7ade49cfd0ae83629cd353e12b5f495ddf486daa0d3bf3302c33bfe6df3495f6",
+      "chronology_signature_sha256": "87baac451279933ea0e0eceaa5702de9b3a518a4250d5eda79fb210068d1c8fe"
+    },
+    "public_access": {
+      "path": "r1_t21_public_access_source_contract_summary.json",
+      "file_sha256": "92be2d4cad91a89aed87ee689c6e6c5ff0a0fcf931ba2b3c5a18f69d99ac558c",
+      "custom_query_signature_sha256": "ad1a89062d3fb4acbda01be6a899fadeb2bad037eab862e58849c4cbda897c74"
+    }
+  },
+  "official_council_publication_contract": {
+    "schema": "proofline-akron-t21-council-publication-contract/v1",
+    "legal_notices_url": "https://www.akroncitycouncil.org/legal-notices",
+    "legislation_minutes_url": "https://www.akroncitycouncil.org/legislationminutes",
+    "legal_notices_section38_declared": true,
+    "legal_notices_full_passed_list_points_to_agenda": true,
+    "legislation_minutes_passed_archive_declared": true,
+    "legislation_minutes_municipal_code_declared": true,
+    "public_record_request_path_declared": true
+  },
+  "canonical_page_fetches": {
+    "legal_notices": {
+      "requested_url": "https://www.akroncitycouncil.org/legal-notices",
+      "final_url": "https://www.akroncitycouncil.org/legal-notices",
+      "byte_length": 25090,
+      "sha256": "638c2449dbf89b23cad96a4730c4c36942449e57283091ac3bf13748daabab8f"
+    },
+    "legislation_minutes": {
+      "requested_url": "https://www.akroncitycouncil.org/legislationminutes",
+      "final_url": "https://www.akroncitycouncil.org/legislationminutes",
+      "byte_length": 30001,
+      "sha256": "cadd4f65f4cf62e9c765d31abf36a90a69b38826810ee5ee27e9be3304682f65"
+    }
+  },
+  "counts": {
+    "surface_count": 8,
+    "tested_count": 4,
+    "untested_positive_only_count": 1,
+    "next_priority_count": 1
+  },
+  "selected_next_surface_id": "charter_section38_legal_notices",
+  "surface_population_signature_sha256": "56ecb542c795ffae35bd27475c2fe9a3801189c3d9a80defccc2f9a8b48ac12f",
+  "inventory_signature_sha256": "fda5333e4b866cf0b8246c069a61b67fdce15ca9df54b14e5c6cea79eead98d6",
+  "surfaces": [
+    {
+      "id": "agenda_passed_list",
+      "publisher_surface": "OnBase Agenda Online / Ordinances & Resolutions Passed at Previous Meeting",
+      "authority": "official_council_passed_legislation_listing",
+      "completeness": "council_page_declares_agenda_as_full_passed_list_per_meeting",
+      "target_stage_status": "tested",
+      "governed_by": ["r1_t21_terminal_record_candidate_scan_summary.json"],
+      "target_result": "zero_exact_title_numbered_vote_candidates_in_bounded_scan",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    },
+    {
+      "id": "public_access_passed_legislation",
+      "publisher_surface": "Public Access / Passed Legislation",
+      "authority": "official_council_passed_legislation_archive",
+      "completeness": "publisher_designated_archive_but_target_search_semantics_are_query_bounded",
+      "target_stage_status": "tested",
+      "governed_by": ["r1_t21_public_access_eastwood_search_summary.json", "r1_t21_passed_legislation_recall_expansion_summary.json"],
+      "target_result": "no_strong_target_identity_candidate_under_frozen_queries",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    },
+    {
+      "id": "council_minutes",
+      "publisher_surface": "Public Access / Council Meeting Minutes",
+      "authority": "official_council_minutes",
+      "completeness": "date_bounded_minutes_corpus_not_terminally_exhaustive",
+      "target_stage_status": "tested",
+      "governed_by": ["r1_t21_council_minutes_content_audit_summary.json"],
+      "target_result": "target_local_procedural_evidence_zero_terminal_candidates",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    },
+    {
+      "id": "committee_minutes",
+      "publisher_surface": "Public Access / Committee Meeting Minutes",
+      "authority": "official_committee_minutes",
+      "completeness": "date_and_committee_bounded_minutes_corpus_not_terminally_exhaustive",
+      "target_stage_status": "tested",
+      "governed_by": ["r1_t21_committee_minutes_content_audit_summary.json"],
+      "target_result": "target_local_procedural_evidence_zero_terminal_candidates",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    },
+    {
+      "id": "charter_section38_legal_notices",
+      "publisher_surface": "Akron City Council / Legal Notices and Clerk-authored Section 38 publication summaries",
+      "authority": "official_clerk_publication_positive_disposition_evidence",
+      "completeness": "positive_only_not_full_passed_archive",
+      "target_stage_status": "untested",
+      "governed_by": [],
+      "target_result": "not_searched_in_this_stage",
+      "negative_result_is_terminal": false,
+      "next_priority": true
+    },
+    {
+      "id": "municipal_code_pending_amendments",
+      "publisher_surface": "Akron City Council / Municipal Code and pending supplement list",
+      "authority": "official_council_codification_pointer",
+      "completeness": "not_full_passed_legislation_ledger",
+      "target_stage_status": "not_selected",
+      "governed_by": [],
+      "target_result": "not_searched_in_this_stage",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    },
+    {
+      "id": "street_cards",
+      "publisher_surface": "Public Access / Street Cards",
+      "authority": "official_property_record_query",
+      "completeness": "not_a_legislative_disposition_surface",
+      "target_stage_status": "out_of_scope_for_disposition",
+      "governed_by": ["r1_t21_public_access_source_contract_summary.json"],
+      "target_result": "not_applicable",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    },
+    {
+      "id": "clerk_public_records_request",
+      "publisher_surface": "Akron City Council Clerk / public-record request path",
+      "authority": "official_clerk_record_custody_request_path",
+      "completeness": "request_scoped_not_publicly_enumerable_in_this_inventory",
+      "target_stage_status": "fallback_untested",
+      "governed_by": [],
+      "target_result": "no_request_submitted_in_this_stage",
+      "negative_result_is_terminal": false,
+      "next_priority": false
+    }
+  ],
+  "authority_boundary": {
+    "inventory_only": true,
+    "target_search_submitted": false,
+    "negative_notice_result_would_be_terminal": false,
+    "passed_legislation_vocabulary_expanded": false,
+    "absence_treated_as_disposition": false,
+    "terminal_outcome_assigned": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "outcome": {
+    "status": "unknown",
+    "reason": "This stage inventories source authority and completeness only. It does not search the selected positive-only notice surface for the Eastwood target or assign disposition."
+  },
+  "receipt_guards": {
+    "canonical_raw_page_bytes_preserved_but_not_replay_pinned": true,
+    "official_urls_and_normalized_declarations_replayed": true,
+    "section38_notice_absence_cannot_be_disposition": true,
+    "agenda_full_passed_list_declaration_preserved": true,
+    "target_search_for_selected_surface_deferred": true
+  },
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "selected_next_surface": "charter_section38_legal_notices",
+    "selected_surface_authority": "positive_only",
+    "next_stage": "Pre-freeze a target search/acquisition method for Clerk-authored Charter Section 38 publication summaries. A positive Clerk summary may establish passage; an absent notice must remain non-terminal and should fall through to the official Clerk public-record request path rather than to inference."
+  }
+}
