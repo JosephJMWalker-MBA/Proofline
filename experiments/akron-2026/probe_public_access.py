@@ -3,9 +3,10 @@
 
 The probe starts from the official Agenda Online home page, follows only its
 publisher-declared Public Access Viewer link, preserves the viewer HTML/scripts,
-then follows source-declared configuration and CustomQuery metadata routes.
-It never submits a document search, guesses a query ID, enumerates document
-tokens, or assigns a terminal outcome.
+then follows source-declared configuration and metadata routes. It requests the
+publisher's CustomQuery list and the keyword schema for the query named exactly
+"Passed Legislation". It never submits a document search, guesses a query ID,
+enumerates document tokens, or assigns a terminal outcome.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
 
 from probe_onbase import PageParser, fetch
 
@@ -24,6 +26,7 @@ AGENDA_HOME = "https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/"
 EXPECTED_PUBLIC_ACCESS_ROOT = "https://onlinedocs.akronohio.gov/PublicAccess/"
 SCHEMA = "proofline-akron-t21-public-access-source-contract-probe/v1"
 CONFIG_LITERAL = "./obpa-config.json"
+PASSED_LEGISLATION_QUERY_NAME = "Passed Legislation"
 
 _ROUTE_TOKEN_RE = re.compile(
     r"(?i)(?:https?://[^\"'\s)]+|/[^\"'\s)]*(?:api|recordsearch|customquery|cq)[^\"'\s)]*)"
@@ -94,6 +97,35 @@ def _response_record(result: dict, body: bytes) -> dict:
     return record
 
 
+def _post_json(url: str, payload: dict, *, timeout: float = 30.0) -> dict:
+    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    request = Request(
+        url,
+        data=body,
+        method="POST",
+        headers={
+            "User-Agent": "Proofline/0.1 public-record source-contract probe",
+            "Accept": "application/json,*/*;q=0.5",
+            "Content-Type": "application/json",
+        },
+    )
+    with urlopen(request, timeout=timeout) as response:
+        response_body = response.read(5_000_001)
+        if len(response_body) > 5_000_000:
+            raise RuntimeError("metadata response exceeded 5000000 bytes")
+        return {
+            "ok": True,
+            "requested_url": url,
+            "final_url": response.geturl(),
+            "status": getattr(response, "status", 200),
+            "content_type": response.headers.get("Content-Type"),
+            "content_length_header": response.headers.get("Content-Length"),
+            "etag": response.headers.get("ETag"),
+            "last_modified": response.headers.get("Last-Modified"),
+            "body": response_body,
+        }
+
+
 def _declared_public_access_link(home_html: str) -> tuple[str, dict]:
     parser = PageParser()
     parser.feed(home_html)
@@ -156,13 +188,18 @@ def _nested(payload: dict, dotted: str):
     return value
 
 
-def _parse_custom_queries(raw: bytes) -> tuple[dict, list[dict]]:
+def _data_array(raw: bytes, label: str) -> tuple[dict, list]:
     payload = json.loads(raw.decode("utf-8"))
     if not isinstance(payload, dict):
-        raise ValueError("CustomQuery response must be a JSON object")
+        raise ValueError(f"{label} response must be a JSON object")
     rows = payload.get("Data")
     if not isinstance(rows, list):
-        raise ValueError("CustomQuery response must contain a Data array")
+        raise ValueError(f"{label} response must contain a Data array")
+    return payload, rows
+
+
+def _parse_custom_queries(raw: bytes) -> list[dict]:
+    _, rows = _data_array(raw, "CustomQuery")
     queries: list[dict] = []
     for row in rows:
         if not isinstance(row, dict):
@@ -185,7 +222,36 @@ def _parse_custom_queries(raw: bytes) -> tuple[dict, list[dict]]:
                 "requires_date": row.get("RequiresDate"),
             }
         )
-    return payload, queries
+    return queries
+
+
+def _parse_keywords(raw: bytes) -> list[dict]:
+    _, rows = _data_array(raw, "Keywords")
+    keywords: list[dict] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        keyword_id = row.get("ID")
+        name = row.get("Name")
+        if not isinstance(keyword_id, (int, str)) or not str(keyword_id).strip():
+            continue
+        if not isinstance(name, str) or not name.strip():
+            continue
+        keywords.append(
+            {
+                "id": str(keyword_id),
+                "name": " ".join(name.split()),
+                "data_type": row.get("DataType"),
+                "required": row.get("Required"),
+                "max_length": row.get("MaxLength"),
+                "dataset": row.get("Dataset"),
+                "is_masked": row.get("IsMasked"),
+                "mask": row.get("Mask"),
+                "mask_static": row.get("MaskStatic"),
+                "mask_full_field_required": row.get("MaskFullFieldRequired"),
+            }
+        )
+    return keywords
 
 
 def main() -> int:
@@ -249,17 +315,7 @@ def main() -> int:
         "document_uri_declared": 'this.URI+"/Document/"' in combined_scripts,
         "api_url_config_key_declared": 'config.get("api.url")' in combined_scripts,
     }
-    if not all(
-        client_contract[key]
-        for key in (
-            "config_literal",
-            "custom_query_get_declared",
-            "keywords_post_declared",
-            "keyword_search_post_declared",
-            "document_uri_declared",
-            "api_url_config_key_declared",
-        )
-    ):
+    if not all(client_contract.values()):
         raise ValueError("Public Access client did not expose the expected source-declared query contract")
 
     config_url = urljoin(viewer_record["final_url"], CONFIG_LITERAL)
@@ -294,12 +350,31 @@ def main() -> int:
     custom_query_record = _response_record(custom_query_result, custom_query_body)
     if not custom_query_record.get("ok") or not custom_query_record.get("same_host"):
         raise RuntimeError("source-declared CustomQuery metadata endpoint was unavailable")
-    _, custom_queries = _parse_custom_queries(custom_query_body)
+    custom_queries = _parse_custom_queries(custom_query_body)
     (output / "custom-queries.json").write_bytes(custom_query_body)
 
-    route_candidates.add(config_url)
-    route_candidates.add(api_root)
-    route_candidates.add(custom_query_url)
+    passed_queries = [
+        row for row in custom_queries if row["name"].casefold() == PASSED_LEGISLATION_QUERY_NAME.casefold()
+    ]
+    if len(passed_queries) != 1:
+        raise ValueError(
+            "expected exactly one publisher-issued Passed Legislation query; "
+            f"found {len(passed_queries)}"
+        )
+    passed_query = passed_queries[0]
+    if not passed_query["id"].isdigit():
+        raise ValueError("publisher-issued Passed Legislation query ID must be numeric")
+
+    keywords_url = api_root.rstrip("/") + "/Keywords"
+    keyword_result = _post_json(keywords_url, {"QueryID": int(passed_query["id"])})
+    keyword_body: bytes = keyword_result.pop("body")
+    keyword_record = _response_record(keyword_result, keyword_body)
+    if not keyword_record.get("ok") or not keyword_record.get("same_host"):
+        raise RuntimeError("source-declared Passed Legislation keyword metadata was unavailable")
+    passed_keywords = _parse_keywords(keyword_body)
+    (output / "passed-legislation-keywords.json").write_bytes(keyword_body)
+
+    route_candidates.update({config_url, api_root, custom_query_url, keywords_url})
 
     payload = {
         "schema": SCHEMA,
@@ -323,12 +398,18 @@ def main() -> int:
             "api_url": configured_api,
             "api_root": api_root,
             "api_root_basis": api_root_basis,
-            "query_limit": _nested(config_payload, "query.limit"),
+            "query_limit": _nested(config_payload, "api.queryLimit"),
         },
         "custom_query_metadata": {
             "record": custom_query_record,
             "endpoint": custom_query_url,
             "queries": custom_queries,
+        },
+        "passed_legislation_query": {
+            "query": passed_query,
+            "keyword_metadata_record": keyword_record,
+            "keyword_metadata_endpoint": keywords_url,
+            "keywords": passed_keywords,
         },
         "route_candidates": sorted(route_candidates),
         "interesting_source_snippets": interesting,
@@ -338,11 +419,12 @@ def main() -> int:
             "route_candidate_count": len(route_candidates),
             "interesting_snippet_count": sum(len(rows) for rows in interesting.values()),
             "publisher_custom_query_count": len(custom_queries),
+            "passed_legislation_keyword_count": len(passed_keywords),
         },
         "authority_boundary": {
             "custom_query_metadata_requested": True,
             "document_search_submitted": False,
-            "keyword_metadata_requested": False,
+            "keyword_metadata_requested": True,
             "query_id_guessed": False,
             "document_token_enumerated": False,
             "terminal_outcome_assigned": False,
@@ -353,8 +435,8 @@ def main() -> int:
         },
         "non_claims": [
             "A publisher-declared Public Access Viewer link establishes only the intended official surface, not the existence or disposition of any particular Eastwood record.",
-            "CustomQuery metadata identifies publisher-issued search definitions; it is not a document search result.",
-            "No query ID is guessed: every recorded query ID comes from the source-declared CustomQuery metadata endpoint.",
+            "CustomQuery and keyword metadata identify publisher-issued search definitions; neither is a document search result.",
+            "No query ID is guessed: the Passed Legislation query is selected by exact publisher-issued name and its ID comes from CustomQuery metadata.",
             "No absence, search result, vote, or terminal outcome is evaluated in this probe.",
         ],
     }
@@ -362,9 +444,6 @@ def main() -> int:
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     print(json.dumps(payload["counts"], indent=2, sort_keys=True))
-
-    if not custom_query_record.get("ok"):
-        return 4
     return 0
 
 
