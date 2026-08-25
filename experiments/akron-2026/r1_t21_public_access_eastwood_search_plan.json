@@ -46,7 +46,7 @@
   ],
   "positive_control": {
     "control_id": "known_passed_ordinance_44_2026",
-    "purpose": "Independently prove that publisher Passed Legislation query 101 and its keyword-search transport return known archived legislation; this control cannot add to or alter the Eastwood candidate population.",
+    "purpose": "Independently prove that publisher Passed Legislation query 101 and its keyword-search transport return the specific known archived Ordinance 44-2026; this control cannot add to or alter the Eastwood candidate population.",
     "query_id": 101,
     "keyword": {
       "ID": 102,
@@ -56,6 +56,7 @@
     },
     "QueryLimit": 0,
     "minimum_returned_documents": 1,
+    "required_document_name_prefix": "O-44-2026 -",
     "excluded_from_candidate_population": true,
     "provenance": {
       "source": "frozen R1.T21 marked-agenda candidate measurement from merged PR #96",
@@ -92,6 +93,7 @@
   "non_claims": [
     "The two frozen Eastwood requests are bounded candidate-discovery queries, not an exhaustive proof that no other wording could identify the matter.",
     "The positive control was added only to validate the already-governed query/transport after the initial Eastwood measurement returned zero; it does not change either frozen Eastwood term and is excluded from the candidate population.",
+    "The positive-control wildcard may return superstrings such as 144-2026 or 244-2026; control success requires that the specific known O-44-2026 record is among the returned rows.",
     "A zero-result Eastwood union is not evidence of denial, withdrawal, failure, non-passage, abandonment, or any other disposition.",
     "A returned Eastwood document is a retrieval candidate only until its publisher document is separately acquired and evaluated."
   ]
