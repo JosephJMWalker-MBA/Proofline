@@ -8,8 +8,9 @@ arithmetic or surrounding prose.
 
 Version 1 recognizes only records whose publisher text begins a line with an
 explicit ``ORDINANCE NO.`` or ``RESOLUTION NO.`` identifier and contains an
-explicit ``Vote: A-B`` before the next numbered instrument. Unnumbered pending
-legislation and free-form mentions fail closed.
+exact two-part ``Vote: A-B`` before the next numbered instrument or the
+publisher's ``NEW LEGISLATION`` boundary. Unnumbered pending legislation and
+free-form mentions fail closed.
 """
 
 from __future__ import annotations
@@ -25,7 +26,10 @@ _INSTRUMENT_START_RE = re.compile(
     r"(?im)^[ \t]*(?P<kind>ORDINANCE|RESOLUTION)\s+NO\.?\s+"
     r"(?P<number>\d+)-(?P<year>\d{4})\b"
 )
-_VOTE_RE = re.compile(r"(?i)\bVote\s*:\s*(?P<ayes>\d+)\s*-\s*(?P<nays>\d+)\b")
+_NEW_LEGISLATION_RE = re.compile(r"(?im)^[ \t]*NEW\s+LEGISLATION[ \t]*$")
+_VOTE_RE = re.compile(
+    r"(?i)\bVote\s*:\s*(?P<ayes>\d+)\s*-\s*(?P<nays>\d+)\b(?!\s*-\s*\d)"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,16 +74,25 @@ def extract_numbered_vote_record_candidates(
         return ()
 
     starts = tuple(_INSTRUMENT_START_RE.finditer(text))
+    new_legislation_boundaries = tuple(_NEW_LEGISLATION_RE.finditer(text))
     candidates: list[NumberedVoteRecordCandidate] = []
     for index, start in enumerate(starts):
-        end = starts[index + 1].start() if index + 1 < len(starts) else len(text)
+        structural_ends = [
+            starts[index + 1].start() if index + 1 < len(starts) else len(text)
+        ]
+        structural_ends.extend(
+            boundary.start()
+            for boundary in new_legislation_boundaries
+            if boundary.start() > start.start()
+        )
+        end = min(structural_ends)
         raw_chunk = text[start.start() : end].strip()
         vote = _VOTE_RE.search(raw_chunk)
         if vote is None:
             continue
 
-        # Keep only the numbered record through its first explicit vote. This
-        # prevents unrelated later prose from becoming part of the candidate.
+        # Keep only the numbered record through its first exact explicit vote.
+        # This prevents unrelated later prose from becoming part of the candidate.
         raw_record = raw_chunk[: vote.end()].strip()
         normalized = _normalize_text(raw_record)
         kind = start.group("kind").casefold()
