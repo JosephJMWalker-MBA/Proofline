@@ -1,0 +1,130 @@
+{
+  "schema": "proofline-akron-t21-clerk-public-record-request-scope-receipt/v1",
+  "stage": "frozen_unsent_clerk_request_scope_before_submission",
+  "canonical_measurement": {
+    "workflow_run_id": 32873973825,
+    "job_id": 97887385420,
+    "head_sha": "ff6c6842ad6238c12b3ac497d293d9478dcfc3f1",
+    "artifact_id": 9573148828,
+    "artifact_digest": "sha256:34127135d0ea32231af4ffa00e1d8b350c025a0099d6dd2d18ff1d426dee09cd",
+    "raw_measurement_byte_size": 6405,
+    "raw_measurement_sha256": "ba9494ef7b18f19cc8138f16a7dec4cd1bc3f1bfdfa8b43c045fb33d93c67bfe"
+  },
+  "source_receipts": {
+    "plan": {
+      "path": "r1_t21_clerk_public_record_request_plan.json",
+      "file_sha256": "528babf378b9efd753ff4192a7c2605fb447171cab5e2dcd9e5a13e4419e55b1"
+    },
+    "section38": {
+      "path": "r1_t21_section38_positive_search_summary.json",
+      "file_sha256": "f0888e71e7a4bd7432b7b65c01bb1a780cd535480e668478140341824d252b16",
+      "measurement_signature_sha256": "7d4bb85187f5d90c90cd8b4a086ff118920f6994fcf509646f1d0d6c6ac07c63"
+    },
+    "target": {
+      "path": "r1_t21_terminal_record_target.json",
+      "file_sha256": "9bfcce0cf440ed0f2392f8dbab311d9c9146dbab08a1a0e15a0b2f3eae014c2a",
+      "ordinance_title_sha256": "484e8b7cd5bc9957938bc6aaf98063ae0c93ffb1bc2df86b10205501437a1c84"
+    }
+  },
+  "policy_contract": {
+    "schema": "proofline-akron-public-record-request-policy-contract/v1",
+    "policy_url": "https://www.akronohio.gov/departments/law/index.php",
+    "recipient": "publicrecords@akronohio.gov",
+    "law_department_oversees_requests_verified": true,
+    "records_only_instruction_verified": true,
+    "email_submission_path_verified": true
+  },
+  "canonical_policy_page_provenance": {
+    "requested_url": "https://www.akronohio.gov/departments/law/index.php",
+    "final_url": "https://www.akronohio.gov/departments/law/index.php",
+    "byte_length": 108434,
+    "sha256": "8c404c7c3bb69d3f50e8a05d0736804f4e46d74b19c8b5a3963abcad4a357c28",
+    "normalized_text_sha256": "bd0c50f2473aa3e7364b77560a7adbefdfd5f967ccdbee860c16e3bee86d89fc"
+  },
+  "request_packet": {
+    "schema": "proofline-public-record-request-packet/v1",
+    "delivery": {
+      "method": "email",
+      "recipient": "publicrecords@akronohio.gov",
+      "policy_url": "https://www.akronohio.gov/departments/law/index.php",
+      "subject": "Public records request - 1928 Eastwood Avenue / PC-2025-80-CU",
+      "body": "Please provide electronic copies, if available, of existing records in the custody of the City of Akron or Clerk of Council responsive to the following matter: Planning case PC-2025-80-CU; Petition of David Walker / D-14; Conditional Use to Establish a Training Facility at 1928 Eastwood Avenue; proposed ordinance titled \"authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.\" Date range: February 9, 2026 through August 25, 2026.\n\nI am requesting: (1) any Clerk or Council index, docket, legislative-history, cross-reference, or status record assigning an ordinance or resolution number to this matter; (2) any introduced, substituted, amended, final, or executed ordinance or resolution document responsive to this matter; (3) any existing record reflecting final disposition or closure of this matter, including passage, rejection or denial, withdrawal, expiration, tabling, or another final Council action; and (4) any existing Clerk-maintained legislative-status record reflecting this matter's status as of August 25, 2026, if no final-disposition record exists.\n\nThis request seeks existing records only. It does not ask the City to create a new record, provide a legal conclusion, or answer an interrogatory.",
+      "electronic_delivery_requested_if_available": true
+    },
+    "target_identity": {
+      "planning_case": "PC-2025-80-CU",
+      "petition_label": "D-14",
+      "petitioner": "David Walker",
+      "address": "1928 Eastwood Avenue",
+      "matter_description": "Conditional Use to Establish a Training Facility at 1928 Eastwood Avenue",
+      "ordinance_title": "authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.",
+      "date_range_start": "2026-02-09",
+      "date_range_end": "2026-08-25"
+    },
+    "requested_existing_record_categories": [
+      {
+        "id": "legislative_identity_index",
+        "request": "Any Clerk or Council index, docket, legislative-history, cross-reference, or status record assigning an ordinance or resolution number to this matter."
+      },
+      {
+        "id": "legislation_versions",
+        "request": "Any introduced, substituted, amended, final, or executed ordinance or resolution document responsive to this matter."
+      },
+      {
+        "id": "final_disposition_or_closure",
+        "request": "Any existing record reflecting final disposition or closure of this matter, including passage, rejection or denial, withdrawal, expiration, tabling, or another final Council action."
+      },
+      {
+        "id": "clerk_status_record",
+        "request": "Any existing Clerk-maintained legislative-status record reflecting this matter's status as of August 25, 2026, if no final-disposition record exists."
+      }
+    ],
+    "response_semantics": {
+      "responsive_terminal_record_may_be_reviewed_for_disposition": true,
+      "assigned_number_alone_is_terminal": false,
+      "no_responsive_records_is_terminal": false,
+      "partial_production_is_exhaustive_without_explicit_custodian_statement": false,
+      "referral_or_forwarding_is_terminal": false,
+      "delay_or_no_response_is_terminal": false,
+      "redaction_or_exemption_is_terminal": false,
+      "different_matter_record_is_target_evidence": false
+    },
+    "submission_state": {
+      "submitted": false,
+      "send_authorized": false,
+      "recipient_verified_from_live_city_policy": true,
+      "records_only_scope_verified": true
+    },
+    "authority_boundary": {
+      "request_submitted_in_this_stage": false,
+      "email_send_authorized": false,
+      "future_response_interpreted_in_this_stage": false,
+      "absence_treated_as_disposition": false,
+      "terminal_outcome_assigned": false,
+      "causality_assigned": false,
+      "detector_or_lead_semantics_authorized": false
+    },
+    "outcome": {
+      "status": "unknown",
+      "reason": "This packet governs a future records request only. No request has been submitted and no future custodian response is interpreted in this stage."
+    },
+    "request_scope_signature_sha256": "3fa66ea6f290905ec98626fd667e8073a383a96a9d4908deedbbe324b382bf64",
+    "delivery_signature_sha256": "2a0e561f620bfbbbb18e17266c0d405ccbfea0f64381c254ccac2293a3044b39"
+  },
+  "measurement_signature_sha256": "6a367c1a97fac96cd4579dc6a5968bda55bcbb7e55ece7ec314fa2631845c771",
+  "submission_performed": false,
+  "receipt_guards": {
+    "canonical_policy_page_bytes_preserved_but_not_replay_pinned": true,
+    "live_policy_contract_replayed": true,
+    "exact_request_packet_replayed": true,
+    "no_send_capability_in_workflow": true,
+    "no_records_response_remains_nonterminal": true,
+    "assigned_legislative_number_alone_remains_nonterminal": true
+  },
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "request_ready_for_separate_submission_stage": true,
+    "request_submitted": false,
+    "next_stage": "After this scope receipt is merged, submit the exact frozen request through the official Akron public-record request path in a separately governed action, then preserve the sent-message receipt before interpreting any response."
+  }
+}
