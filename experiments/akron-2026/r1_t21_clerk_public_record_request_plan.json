@@ -1,0 +1,66 @@
+{
+  "schema": "proofline-akron-t21-clerk-public-record-request-plan/v1",
+  "stage": "pre_submission_scope_freeze",
+  "base_continuity": {
+    "merged_pr": 111,
+    "merge_commit": "03d0fad062dc7adc6882f221b7b26b7a69523bce",
+    "section38_receipt": "r1_t21_section38_positive_search_summary.json",
+    "required_upstream_outcome": "unknown",
+    "required_section38_terminal_positive_count": 0
+  },
+  "submission_policy": {
+    "policy_url": "https://www.akronohio.gov/departments/law/index.php",
+    "recipient": "publicrecords@akronohio.gov",
+    "policy_basis": "City of Akron Law Department public-record request path",
+    "electronic_delivery_requested_if_available": true
+  },
+  "target_identity": {
+    "planning_case": "PC-2025-80-CU",
+    "petition_label": "D-14",
+    "petitioner": "David Walker",
+    "address": "1928 Eastwood Avenue",
+    "matter_description": "Conditional Use to Establish a Training Facility at 1928 Eastwood Avenue",
+    "ordinance_title": "authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.",
+    "date_range_start": "2026-02-09",
+    "date_range_end": "2026-08-25"
+  },
+  "requested_existing_record_categories": [
+    {
+      "id": "legislative_identity_index",
+      "request": "Any Clerk or Council index, docket, legislative-history, cross-reference, or status record assigning an ordinance or resolution number to this matter."
+    },
+    {
+      "id": "legislation_versions",
+      "request": "Any introduced, substituted, amended, final, or executed ordinance or resolution document responsive to this matter."
+    },
+    {
+      "id": "final_disposition_or_closure",
+      "request": "Any existing record reflecting final disposition or closure of this matter, including passage, rejection or denial, withdrawal, expiration, tabling, or another final Council action."
+    },
+    {
+      "id": "clerk_status_record",
+      "request": "Any existing Clerk-maintained legislative-status record reflecting this matter's status as of August 25, 2026, if no final-disposition record exists."
+    }
+  ],
+  "request_subject": "Public records request - 1928 Eastwood Avenue / PC-2025-80-CU",
+  "request_body": "Please provide electronic copies, if available, of existing records in the custody of the City of Akron or Clerk of Council responsive to the following matter: Planning case PC-2025-80-CU; Petition of David Walker / D-14; Conditional Use to Establish a Training Facility at 1928 Eastwood Avenue; proposed ordinance titled \"authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.\" Date range: February 9, 2026 through August 25, 2026.\n\nI am requesting: (1) any Clerk or Council index, docket, legislative-history, cross-reference, or status record assigning an ordinance or resolution number to this matter; (2) any introduced, substituted, amended, final, or executed ordinance or resolution document responsive to this matter; (3) any existing record reflecting final disposition or closure of this matter, including passage, rejection or denial, withdrawal, expiration, tabling, or another final Council action; and (4) any existing Clerk-maintained legislative-status record reflecting this matter's status as of August 25, 2026, if no final-disposition record exists.\n\nThis request seeks existing records only. It does not ask the City to create a new record, provide a legal conclusion, or answer an interrogatory.",
+  "response_semantics": {
+    "responsive_terminal_record_may_be_reviewed_for_disposition": true,
+    "assigned_number_alone_is_terminal": false,
+    "no_responsive_records_is_terminal": false,
+    "partial_production_is_exhaustive_without_explicit_custodian_statement": false,
+    "referral_or_forwarding_is_terminal": false,
+    "delay_or_no_response_is_terminal": false,
+    "redaction_or_exemption_is_terminal": false,
+    "different_matter_record_is_target_evidence": false
+  },
+  "authority_boundary": {
+    "request_submitted_in_this_stage": false,
+    "email_send_authorized": false,
+    "future_response_interpreted_in_this_stage": false,
+    "absence_treated_as_disposition": false,
+    "terminal_outcome_assigned": false,
+    "causality_assigned": false,
+    "detector_or_lead_semantics_authorized": false
+  }
+}
