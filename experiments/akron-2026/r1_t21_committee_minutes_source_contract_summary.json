@@ -1,0 +1,74 @@
+{
+  "authority_boundary": {
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "custom_query_metadata_inherited": true,
+    "detector_authorized": false,
+    "document_search_submitted": false,
+    "document_token_enumerated": false,
+    "keyword_id_guessed": false,
+    "keyword_metadata_requested": true,
+    "lead_count": null,
+    "query_id_guessed": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false
+  },
+  "canonical_measurement": {
+    "artifact_digest": "sha256:7ff4c29a94b255bad1e7c482b212f556aa96ad2477b342aafeda7a6b124ff0ce",
+    "artifact_id": 9550174163,
+    "head_sha": "fa43f1e2066130988753f9ff534bdb02758c1d2d",
+    "job_id": 97693524052,
+    "raw_source_contract_byte_size": 7386,
+    "raw_source_contract_sha256": "61eac3e3d69fdf24303a97600c1372f1c44e0659bfbdbf77917c52a390fea5e4",
+    "workflow_run_id": 32812190856
+  },
+  "interpretation": {
+    "document_search_performed": false,
+    "eastwood_outcome_status": "Unknown",
+    "next_stage": "Freeze a Committee Meeting Minutes search using publisher fields 124 (Meeting Date) and 105 (Committee), exact governed Eastwood committee dates, and the exact publisher dataset value PLANNING & ECONOMIC DEVELOPMENT.",
+    "publisher_exact_committee_value_available": true
+  },
+  "keyword_metadata": {
+    "committee": {
+      "contains_planning_economic_development": true,
+      "data_type": "AlphaNumericSingleTable",
+      "dataset_count": 38,
+      "dataset_signature_sha256": "a12a07f15b9fa743f6988c0441f153bd9fc4d72e5dbd571ab56c0f9ef17999f3",
+      "first": "BUDGET AND FINANCE",
+      "last": "PUBLIC SERVICE, PUBLIC UTILITIES, & GREEN",
+      "max_length": 100,
+      "planning_economic_development_value": "PLANNING & ECONOMIC DEVELOPMENT"
+    },
+    "endpoint": "https://onlinedocs.akronohio.gov/PublicAccess/api/Keywords",
+    "keyword_count": 3,
+    "keyword_ids": ["124", "532", "105"],
+    "keyword_names": ["Meeting Date", "Year", "Committee"],
+    "keywords_signature_sha256": "e52bb02786ddcae8f147804d0eaaa996637d9c3634f5fd5fd3aa768ba753c51a",
+    "meeting_date": {"data_type": "Date", "dataset_is_null": true, "max_length": 27},
+    "raw_byte_length": 2472,
+    "raw_sha256": "6e9d97705c63c61434fc9b5bbe1976bc1519afe1a6de1b3939eb61da2df71dd8",
+    "request_payload": {"QueryID": 202},
+    "request_payload_sha256": "3d49f9b901300fd3618e1511c8d10a2c40ccba4cb2c86b40b5fab6385999d6ba",
+    "year": {"contains_2026": true, "data_type": "SmallNumeric", "dataset_count": 151, "first": "1900", "last": "2050", "max_length": 9}
+  },
+  "outcome": {
+    "reason": "This stage requests publisher Committee Meeting Minutes query metadata only and does not submit a document search.",
+    "status": "unknown"
+  },
+  "schema": "proofline-akron-t21-committee-minutes-source-contract-receipt/v1",
+  "source_contract": {
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "query": {
+      "date_search_option": "NoDate",
+      "id": "202",
+      "name": "Committee Meeting Minutes",
+      "requires_date": false,
+      "requires_date_or_keyword": true,
+      "requires_keyword": false,
+      "type": "DocumentType"
+    },
+    "query_signature_sha256": "608612c086a5965d580397f2bb9298b51e592e1bbb3e9caec763f1686efbeec9",
+    "schema": "proofline-akron-t21-public-access-source-contract-receipt/v1"
+  },
+  "stage": "frozen_committee_minutes_query_contract_before_document_search"
+}
