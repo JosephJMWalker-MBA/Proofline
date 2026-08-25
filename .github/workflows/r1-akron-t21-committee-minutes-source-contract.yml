@@ -1,0 +1,117 @@
+name: r1-akron-t21-committee-minutes-source-contract
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-committee-minutes-source-contract.yml"
+      - "experiments/akron-2026/probe_t21_committee_minutes_source_contract.py"
+      - "experiments/akron-2026/r1_t21_public_access_source_contract_summary.json"
+      - "experiments/akron-2026/r1_t21_committee_minutes_source_contract_summary.json"
+      - "tests/test_t21_committee_minutes_source_contract.py"
+      - "tests/test_t21_committee_minutes_source_contract_receipt.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  committee-minutes-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and probe syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/probe_t21_committee_minutes_source_contract.py
+      - name: Probe publisher-issued Committee Meeting Minutes metadata
+        run: |
+          set -euo pipefail
+          rm -rf akron-committee-minutes-source-contract
+          python experiments/akron-2026/probe_t21_committee_minutes_source_contract.py akron-committee-minutes-source-contract \
+            | tee akron-committee-minutes-source-contract-stdout.json
+          test -s akron-committee-minutes-source-contract/committee-minutes-source-contract.json
+          test -s akron-committee-minutes-source-contract/committee-minutes-keywords.json
+      - name: Validate metadata-only authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlparse
+          p=json.load(open('akron-committee-minutes-source-contract/committee-minutes-source-contract.json'))
+          assert p['schema']=='proofline-akron-t21-committee-minutes-source-contract/v1'
+          assert p['stage']=='publisher_committee_minutes_query_metadata_only'
+          q=p['source_contract']['query']
+          assert q['id']=='202' and q['name']=='Committee Meeting Minutes' and q['type']=='DocumentType'
+          assert p['keyword_metadata']['request_payload']=={'QueryID':202}
+          assert p['keyword_metadata']['response']['ok'] is True
+          assert p['keyword_metadata']['response']['same_host'] is True
+          assert urlparse(p['keyword_metadata']['endpoint']).hostname=='onlinedocs.akronohio.gov'
+          assert p['keyword_metadata']['count']==len(p['keyword_metadata']['keywords'])
+          assert p['authority_boundary']=={
+              'custom_query_metadata_inherited':True,'keyword_metadata_requested':True,
+              'document_search_submitted':False,'query_id_guessed':False,'keyword_id_guessed':False,
+              'document_token_enumerated':False,'returned_document_dereferenced':False,
+              'terminal_outcome_assigned':False,'absence_treated_as_disposition':False,
+              'causality_assigned':False,'detector_authorized':False,'lead_count':None,
+          }
+          assert p['outcome']['status']=='unknown'
+          PY
+      - name: Reproduce frozen Committee minutes source contract
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('akron-committee-minutes-source-contract')
+          live=json.load(open(root/'committee-minutes-source-contract.json'))
+          receipt=json.load(open('experiments/akron-2026/r1_t21_committee_minutes_source_contract_summary.json'))
+          raw=(root/'committee-minutes-keywords.json').read_bytes()
+          e=receipt['keyword_metadata']
+          assert len(raw)==e['raw_byte_length']==2472
+          assert hashlib.sha256(raw).hexdigest()==e['raw_sha256']
+          assert live['source_contract']==receipt['source_contract']
+          assert live['keyword_metadata']['request_payload']==e['request_payload']=={'QueryID':202}
+          assert live['keyword_metadata']['request_payload_sha256']==e['request_payload_sha256']
+          assert live['keyword_metadata']['count']==e['keyword_count']==3
+          assert live['keyword_metadata']['keywords_signature_sha256']==e['keywords_signature_sha256']
+          k=live['keyword_metadata']['keywords']
+          assert [x['id'] for x in k]==e['keyword_ids']==['124','532','105']
+          assert [x['name'] for x in k]==e['keyword_names']==['Meeting Date','Year','Committee']
+          assert k[0]['data_type']==e['meeting_date']['data_type']=='Date'
+          assert k[0]['max_length']==e['meeting_date']['max_length']==27 and k[0]['dataset'] is None
+          years=k[1]['dataset']
+          assert k[1]['data_type']==e['year']['data_type']=='SmallNumeric'
+          assert k[1]['max_length']==e['year']['max_length']==9
+          assert len(years)==e['year']['dataset_count']==151
+          assert years[0]==e['year']['first']=='1900' and years[-1]==e['year']['last']=='2050'
+          assert ('2026' in years) is e['year']['contains_2026'] is True
+          committees=k[2]['dataset']
+          assert k[2]['data_type']==e['committee']['data_type']=='AlphaNumericSingleTable'
+          assert k[2]['max_length']==e['committee']['max_length']==100
+          assert len(committees)==e['committee']['dataset_count']==38
+          assert committees[0]==e['committee']['first']
+          assert committees[-1]==e['committee']['last']
+          digest=hashlib.sha256(json.dumps(committees,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          assert digest==e['committee']['dataset_signature_sha256']
+          assert e['committee']['planning_economic_development_value'] in committees
+          assert e['committee']['contains_planning_economic_development'] is True
+          assert live['authority_boundary']==receipt['authority_boundary']
+          assert live['outcome']==receipt['outcome']
+          assert receipt['interpretation']['document_search_performed'] is False
+          assert receipt['interpretation']['eastwood_outcome_status']=='Unknown'
+          PY
+      - name: Upload Committee minutes source-contract evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-committee-minutes-source-contract
+          path: |
+            akron-committee-minutes-source-contract/
+            akron-committee-minutes-source-contract-stdout.json
+            experiments/akron-2026/r1_t21_committee_minutes_source_contract_summary.json
+          retention-days: 14
