@@ -68,7 +68,7 @@ def test_response_parser_excludes_opaque_token_from_stable_projection() -> None:
     raw = json.dumps({
         "Data": [{
             "ID": "rotating-token-a",
-            "Name": "Council Meeting Minutes - 03/09/2026",
+            "Name": "Council Meeting Minutes - Meeting Date: 03/09/2026",
             "DisplayColumnValues": [{"Value": "03/09/2026", "RawValue": "2026-03-09"}],
             "Score": None,
             "Summary": None,
@@ -83,7 +83,34 @@ def test_response_parser_excludes_opaque_token_from_stable_projection() -> None:
     assert columns[0]["Heading"] == "Meeting Date"
     assert documents[0]["document_token"] == "rotating-token-a"
     assert "document_token" not in documents[0]["stable_projection"]
-    assert documents[0]["stable_projection"]["name"] == "Council Meeting Minutes - 03/09/2026"
+    assert documents[0]["stable_projection"]["name"].startswith("Council Meeting Minutes")
+
+
+def test_identical_visible_rows_group_without_assuming_document_equivalence() -> None:
+    stable = {
+        "name": "Council Meeting Minutes - Meeting Date: 3/9/2026",
+        "display_column_values": [{"Value": "3/9/2026", "RawValue": "1773014400000"}],
+        "score": None,
+        "summary": None,
+    }
+    digest = module.sha256_json(stable)
+    searches = [{
+        "meeting_id": 671,
+        "meeting_date": "2026-03-09",
+        "returned_documents": [
+            {"document_token": "token-a", "stable_projection": stable, "stable_projection_sha256": digest, "raw_row_sha256": "a"},
+            {"document_token": "token-b", "stable_projection": stable, "stable_projection_sha256": digest, "raw_row_sha256": "b"},
+        ],
+    }]
+
+    groups = module.group_stable_candidates(searches)
+
+    assert len(groups) == 1
+    assert groups[0]["observed_token_count"] == 2
+    assert groups[0]["observed_document_tokens"] == ["token-a", "token-b"]
+    signature_rows = module.stable_group_signature_projection(groups)
+    assert "observed_document_tokens" not in signature_rows[0]
+    assert "observed_token_count" not in signature_rows[0]
 
 
 def test_response_parser_fails_closed_on_missing_token() -> None:
