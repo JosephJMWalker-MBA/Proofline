@@ -111,7 +111,7 @@ def main() -> int:
         if unique_name:
             pdf_url = urljoin(
                 BASE,
-                "Documents/DownloadFile/"
+                "Documents/DownloadFileBytes/"
                 + quote(str(unique_name), safe="")
                 + f".pdf?documentType=1&meetingId={meeting_id}",
             )
@@ -161,6 +161,7 @@ def main() -> int:
             }
         )
 
+    expected_pdf_samples = sum(1 for meeting in samples if meeting.get("AgendaUniqueName"))
     result = {
         "schema": "proofline-akron-onbase-data-probe/v1",
         "search": search_record,
@@ -178,6 +179,7 @@ def main() -> int:
             "meetings_discovered": len(meetings),
             "agendas_available": sum(1 for meeting in meetings if meeting.get("IsAgendaAvailable")),
             "sample_agenda_trees": len(agenda_records),
+            "expected_pdf_samples": expected_pdf_samples,
             "substantive_agenda_trees": sum(
                 1
                 for row in agenda_records
@@ -196,7 +198,7 @@ def main() -> int:
             ),
         },
         "limitations": [
-            "This probe uses only the publisher-declared search, agenda-tree, item-detail, and DownloadFile routes.",
+            "This probe uses only the publisher-declared search, agenda-tree, item-detail, and DownloadFileBytes routes.",
             "The custom 2026 range is fixed for the transfer experiment and is not yet production scheduling logic.",
             "No Canton semantic policy is applied to Akron content in this probe.",
         ],
@@ -204,8 +206,11 @@ def main() -> int:
     (output / "data-probe.json").write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps(result["counts"], indent=2, sort_keys=True))
 
+    counts = result["counts"]
     if not search_record.get("ok") or len(meetings) < 10:
         return 2
+    if expected_pdf_samples < 1 or counts["pdf_magic_downloads"] != expected_pdf_samples:
+        return 3
     return 0
 
 
