@@ -1,0 +1,82 @@
+name: r1-akron-t21-disposition-surface-inventory
+
+on:
+  pull_request:
+    paths:
+      - "src/proofline/disposition_surfaces.py"
+      - "experiments/akron-2026/probe_t21_disposition_surface_inventory.py"
+      - "experiments/akron-2026/r1_t21_disposition_surface_inventory_summary.json"
+      - "tests/test_t21_disposition_surface_inventory.py"
+      - "tests/test_t21_disposition_surface_inventory_receipt.py"
+      - ".github/workflows/r1-akron-t21-disposition-surface-inventory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  disposition-surface-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile src/proofline/disposition_surfaces.py experiments/akron-2026/probe_t21_disposition_surface_inventory.py
+      - name: Probe official Council publication declarations and build inventory
+        run: |
+          set -euo pipefail
+          rm -rf akron-disposition-surface-inventory
+          python experiments/akron-2026/probe_t21_disposition_surface_inventory.py \
+            experiments/akron-2026/r1_t21_public_access_source_contract_summary.json \
+            experiments/akron-2026/r1_t21_evidence_chronology_summary.json \
+            akron-disposition-surface-inventory
+      - name: Validate inventory-only authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-disposition-surface-inventory/disposition-surface-inventory-measurement.json'))
+          i=p['inventory']
+          assert i['counts']['surface_count']==8
+          assert i['counts']['tested_count']==4
+          assert i['counts']['untested_positive_only_count']==1
+          assert i['counts']['next_priority_count']==1
+          assert i['selected_next_surface_id']=='charter_section38_legal_notices'
+          assert i['authority_boundary']['inventory_only'] is True
+          assert i['authority_boundary']['target_search_submitted'] is False
+          assert i['authority_boundary']['negative_notice_result_would_be_terminal'] is False
+          assert i['authority_boundary']['passed_legislation_vocabulary_expanded'] is False
+          assert i['authority_boundary']['terminal_outcome_assigned'] is False
+          assert i['outcome']['status']=='unknown'
+          PY
+      - name: Reproduce frozen inventory receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_disposition_surface_inventory_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_disposition_surface_inventory_summary.json'))
+          m=json.load(open('akron-disposition-surface-inventory/disposition-surface-inventory-measurement.json'))
+          assert m['source_receipts']==r['source_receipts']
+          assert m['official_council_publication_contract']==r['official_council_publication_contract']
+          assert m['inventory']['surfaces']==r['surfaces']
+          assert m['inventory']['counts']==r['counts']
+          assert m['inventory']['selected_next_surface_id']==r['selected_next_surface_id']
+          assert m['inventory']['surface_population_signature_sha256']==r['surface_population_signature_sha256']
+          assert m['inventory_signature_sha256']==r['inventory_signature_sha256']
+          assert m['inventory']['authority_boundary']==r['authority_boundary']
+          assert m['inventory']['outcome']==r['outcome']
+          PY
+      - name: Upload disposition-surface inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-disposition-surface-inventory
+          path: akron-disposition-surface-inventory/
+          retention-days: 14
