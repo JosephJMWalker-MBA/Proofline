@@ -1,0 +1,9 @@
+{
+  "schema": "proofline-akron-t21-clerk-public-record-request-submission-manifest/v1",
+  "receipt": "r1_t21_clerk_public_record_request_submission_summary.json",
+  "note": "r1_t21_clerk_public_record_request_submission_note.md",
+  "test": "tests/test_t21_clerk_public_record_request_submission_receipt.py",
+  "workflow": ".github/workflows/r1-akron-t21-clerk-public-record-request-submission.yml",
+  "response_interpretation_deferred": true,
+  "duplicate_send_authorized": false
+}
