@@ -1,0 +1,41 @@
+{
+  "schema": "proofline-akron-t21-clerk-public-record-request-submission-receipt/v1",
+  "stage": "frozen_submission_before_response_interpretation",
+  "base_continuity": {
+    "merged_pr": 112,
+    "merge_commit": "c462402bec5742dbbd84a64829138cb613879ae7",
+    "scope_receipt": "r1_t21_clerk_public_record_request_scope_summary.json",
+    "request_scope_signature_sha256": "3fa66ea6f290905ec98626fd667e8073a383a96a9d4908deedbbe324b382bf64",
+    "delivery_signature_sha256": "2a0e561f620bfbbbb18e17266c0d405ccbfea0f64381c254ccac2293a3044b39"
+  },
+  "submission": {
+    "method": "gmail_send_email",
+    "recipient": "publicrecords@akronohio.gov",
+    "subject": "Public records request - 1928 Eastwood Avenue / PC-2025-80-CU",
+    "subject_sha256": "9c3104196da830d6fa448dcd9331776907ab056cf96e9bcf3bb7eac1e003a4a9",
+    "body_sha256": "4b32fffe13d9218720d41b31995f1c4fa495ddcd976ca95b88150f3ce9ff8353",
+    "gmail_message_id": "1a039e0ad7fd78b4",
+    "gmail_thread_id": "1a039e0ad7fd78b4",
+    "sent_at": "2026-08-25T13:03:40-04:00",
+    "labels": ["SENT"],
+    "cc": [],
+    "bcc": [],
+    "has_attachment": false,
+    "submission_successful": true
+  },
+  "authority_boundary": {
+    "request_submitted": true,
+    "duplicate_send_authorized": false,
+    "response_interpreted": false,
+    "response_polled_in_this_stage": false,
+    "absence_treated_as_disposition": false,
+    "terminal_outcome_assigned": false,
+    "causality_assigned": false,
+    "detector_or_lead_semantics_authorized": false
+  },
+  "outcome": {
+    "status": "unknown",
+    "reason": "The governed records request was submitted successfully. Submission itself supplies no disposition evidence, and no custodian response is interpreted in this stage."
+  },
+  "next_stage": "Preserve any custodian response or responsive records in a separate stage and evaluate them under the frozen response-semantics boundary before changing the Eastwood outcome."
+}
