@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Run the frozen Akron Public Access Eastwood candidate-search plan.
 
-This stage submits only the two predeclared Passed Legislation Title Clause
-queries. Returned document identifiers are preserved as retrieval candidates but
-are not dereferenced and do not assign any terminal outcome.
+This stage submits only the two predeclared Eastwood Title Clause queries plus an
+independent known-legislation positive control. Returned Eastwood document IDs are
+preserved as retrieval candidates but are not dereferenced and do not assign any
+terminal outcome. The positive control is excluded from the candidate population.
 """
 
 from __future__ import annotations
@@ -29,6 +30,8 @@ EXPECTED_VALUES = (
     "*1928*Eastwood*Avenue*",
     "*defense*education*training*facility*",
 )
+EXPECTED_CONTROL_ID = "known_passed_ordinance_44_2026"
+EXPECTED_CONTROL_VALUE = "*44-2026*"
 
 
 def sha256_bytes(body: bytes) -> str:
@@ -74,6 +77,7 @@ def validate_inputs(plan: dict, source: dict, target: dict) -> None:
     frozen_query = source["passed_legislation_query"]
     frozen_keywords = source["passed_legislation_keywords"]["keywords"]
     title_keyword = next((row for row in frozen_keywords if row.get("id") == "103"), None)
+    number_keyword = next((row for row in frozen_keywords if row.get("id") == "102"), None)
     if contract != {
         "receipt_schema": SOURCE_SCHEMA,
         "api_root": source["configuration"]["api_root"],
@@ -90,6 +94,8 @@ def validate_inputs(plan: dict, source: dict, target: dict) -> None:
         raise ValueError("frozen query is not publisher-issued Passed Legislation 101")
     if title_keyword is None or title_keyword["name"] != "Title Clause":
         raise ValueError("frozen Title Clause keyword 103 is unavailable")
+    if number_keyword is None or number_keyword["name"] != "Ordinance/Resolution Number":
+        raise ValueError("frozen Ordinance/Resolution Number keyword 102 is unavailable")
     if "asterisk" not in frozen_query["instructions"].casefold():
         raise ValueError("publisher wildcard instruction is not present in frozen contract")
 
@@ -103,7 +109,7 @@ def validate_inputs(plan: dict, source: dict, target: dict) -> None:
 
     requests = plan.get("requests")
     if not isinstance(requests, list) or len(requests) != 2:
-        raise ValueError("exactly two frozen requests are required")
+        raise ValueError("exactly two frozen Eastwood requests are required")
     if tuple(row.get("request_id") for row in requests) != EXPECTED_REQUEST_IDS:
         raise ValueError("frozen request IDs changed")
     if tuple(row.get("keyword", {}).get("Value") for row in requests) != EXPECTED_VALUES:
@@ -111,17 +117,40 @@ def validate_inputs(plan: dict, source: dict, target: dict) -> None:
     for row in requests:
         keyword = row["keyword"]
         if row.get("query_id") != 101 or row.get("QueryLimit") != 0:
-            raise ValueError("request must use publisher query 101 with frozen QueryLimit 0")
+            raise ValueError("Eastwood request must use publisher query 101 with frozen QueryLimit 0")
         if keyword.get("ID") != 103 or keyword.get("Name") != "Title Clause":
-            raise ValueError("request must use publisher Title Clause keyword 103")
+            raise ValueError("Eastwood request must use publisher Title Clause keyword 103")
         if keyword.get("KeywordOperator") != "=":
-            raise ValueError("request keyword operator must remain '='")
+            raise ValueError("Eastwood request keyword operator must remain '='")
         if len(keyword["Value"]) > int(title_keyword["max_length"]):
-            raise ValueError("request exceeds publisher Title Clause maximum length")
+            raise ValueError("Eastwood request exceeds publisher Title Clause maximum length")
         if not tokens_appear_in_order(keyword["Value"], frozen_title):
-            raise ValueError("request tokens are not ordered anchors from the frozen title")
+            raise ValueError("Eastwood request tokens are not ordered anchors from the frozen title")
+
+    control = plan.get("positive_control")
+    if not isinstance(control, dict) or control.get("control_id") != EXPECTED_CONTROL_ID:
+        raise ValueError("known-legislation positive control is required")
+    control_keyword = control.get("keyword", {})
+    if control.get("query_id") != 101 or control.get("QueryLimit") != 0:
+        raise ValueError("positive control must use publisher query 101 with QueryLimit 0")
+    if control_keyword != {
+        "ID": 102,
+        "Name": "Ordinance/Resolution Number",
+        "Value": EXPECTED_CONTROL_VALUE,
+        "KeywordOperator": "=",
+    }:
+        raise ValueError("positive control must remain the frozen Ordinance 44-2026 lookup")
+    if control.get("minimum_returned_documents") != 1:
+        raise ValueError("positive control must require at least one publisher result")
+    if control.get("excluded_from_candidate_population") is not True:
+        raise ValueError("positive control must be excluded from Eastwood candidate population")
+    provenance = control.get("provenance", {})
+    if provenance.get("meeting_id") != 669 or provenance.get("instrument") != "ORDINANCE NO. 44-2026":
+        raise ValueError("positive-control provenance diverged from the frozen marked-agenda evidence")
 
     selection = plan["selection_rule"]
+    if selection.get("positive_control_excluded") is not True:
+        raise ValueError("positive control must remain excluded from candidate population")
     if selection.get("post_result_term_expansion_allowed") is not False:
         raise ValueError("post-result term expansion must remain forbidden")
     if selection.get("document_retrieval_in_this_stage") is not False:
@@ -199,6 +228,40 @@ def parse_search_response(raw: bytes) -> tuple[dict, list[dict], bool]:
     return payload, documents, bool(payload.get("Truncated"))
 
 
+def request_payload(spec: dict) -> dict:
+    return {
+        "QueryID": spec["query_id"],
+        "Keywords": [spec["keyword"]],
+        "QueryLimit": spec["QueryLimit"],
+    }
+
+
+def run_search(endpoint: str, spec: dict, output: Path, filename: str) -> dict:
+    payload = request_payload(spec)
+    response_record, raw = post_json(endpoint, payload)
+    (output / filename).write_bytes(raw)
+    response_record.update(
+        {
+            "byte_length": len(raw),
+            "sha256": sha256_bytes(raw),
+            "same_host": urlparse(response_record["requested_url"]).hostname
+            == urlparse(response_record["final_url"]).hostname,
+        }
+    )
+    documents: list[dict] = []
+    truncated = False
+    if response_record["ok"]:
+        _, documents, truncated = parse_search_response(raw)
+    return {
+        "request_payload": payload,
+        "request_payload_sha256": sha256_json(payload),
+        "response": response_record,
+        "truncated": truncated,
+        "returned_document_count": len(documents),
+        "returned_documents": documents,
+    }
+
+
 def main() -> int:
     root = Path(__file__).resolve().parent
     output = Path(sys.argv[1] if len(sys.argv) > 1 else "akron-public-access-eastwood-search")
@@ -213,53 +276,49 @@ def main() -> int:
     if urlparse(endpoint).hostname != "onlinedocs.akronohio.gov":
         raise ValueError("KeywordSearch endpoint escaped the frozen publisher host")
 
+    control_spec = plan["positive_control"]
+    control = run_search(
+        endpoint,
+        control_spec,
+        output,
+        "positive-control-known_passed_ordinance_44_2026.json",
+    )
+    control["control_id"] = control_spec["control_id"]
+    control["excluded_from_candidate_population"] = True
+    control["minimum_returned_documents"] = control_spec["minimum_returned_documents"]
+    control_ok = (
+        control["response"]["ok"]
+        and control["response"]["same_host"]
+        and not control["truncated"]
+        and control["returned_document_count"] >= control_spec["minimum_returned_documents"]
+    )
+    control["passed"] = control_ok
+
     searches: list[dict] = []
     union: dict[str, dict] = {}
     any_failure = False
     any_truncation = False
 
     for index, spec in enumerate(plan["requests"], start=1):
-        request_payload = {
-            "QueryID": spec["query_id"],
-            "Keywords": [spec["keyword"]],
-            "QueryLimit": spec["QueryLimit"],
-        }
-        response_record, raw = post_json(endpoint, request_payload)
-        filename = f"search-{index:02d}-{spec['request_id']}.json"
-        (output / filename).write_bytes(raw)
-        response_record.update(
-            {
-                "byte_length": len(raw),
-                "sha256": sha256_bytes(raw),
-                "same_host": urlparse(response_record["requested_url"]).hostname
-                == urlparse(response_record["final_url"]).hostname,
-            }
+        row = run_search(
+            endpoint,
+            spec,
+            output,
+            f"search-{index:02d}-{spec['request_id']}.json",
         )
-        documents: list[dict] = []
-        truncated = False
-        if response_record["ok"]:
-            _, documents, truncated = parse_search_response(raw)
-            for document in documents:
+        row["request_id"] = spec["request_id"]
+        if row["response"]["ok"]:
+            for document in row["returned_documents"]:
                 previous = union.get(document["id"])
                 if previous is not None and previous != document:
                     raise ValueError(
-                        f"publisher document ID {document['id']} returned conflicting metadata across frozen searches"
+                        f"publisher document ID {document['id']} returned conflicting metadata across frozen Eastwood searches"
                     )
                 union[document["id"]] = document
         else:
             any_failure = True
-        any_truncation = any_truncation or truncated
-        searches.append(
-            {
-                "request_id": spec["request_id"],
-                "request_payload": request_payload,
-                "request_payload_sha256": sha256_json(request_payload),
-                "response": response_record,
-                "truncated": truncated,
-                "returned_document_count": len(documents),
-                "returned_documents": documents,
-            }
-        )
+        any_truncation = any_truncation or row["truncated"]
+        searches.append(row)
 
     candidates = [union[key] for key in sorted(union)]
     measurement = {
@@ -270,14 +329,15 @@ def main() -> int:
             "schema": plan["schema"],
             "sha256": sha256_json(plan),
             "request_ids": list(EXPECTED_REQUEST_IDS),
+            "positive_control_id": EXPECTED_CONTROL_ID,
             "post_result_term_expansion_allowed": False,
         },
         "source_contract": {
             "schema": source["schema"],
             "query_id": source["passed_legislation_query"]["id"],
             "query_name": source["passed_legislation_query"]["name"],
-            "keyword_id": "103",
-            "keyword_name": "Title Clause",
+            "title_clause_keyword_id": "103",
+            "ordinance_number_keyword_id": "102",
             "api_root": source["configuration"]["api_root"],
             "query_limit": source["configuration"]["query_limit"],
         },
@@ -287,22 +347,27 @@ def main() -> int:
             "ordinance_title_sha256": target["ordinance_title_sha256"],
         },
         "endpoint": endpoint,
+        "positive_control": control,
         "searches": searches,
         "candidate_population": {
             "deduplicate_by": "publisher_returned_document_id",
+            "positive_control_excluded": True,
             "count": len(candidates),
             "documents": candidates,
             "signature_sha256": sha256_json(candidates),
         },
         "counts": {
-            "frozen_request_count": len(searches),
-            "successful_request_count": sum(1 for row in searches if row["response"]["ok"]),
-            "truncated_request_count": sum(1 for row in searches if row["truncated"]),
-            "unique_returned_document_count": len(candidates),
+            "positive_control_returned_document_count": control["returned_document_count"],
+            "frozen_eastwood_request_count": len(searches),
+            "successful_eastwood_request_count": sum(1 for row in searches if row["response"]["ok"]),
+            "truncated_eastwood_request_count": sum(1 for row in searches if row["truncated"]),
+            "unique_returned_eastwood_document_count": len(candidates),
         },
         "authority_boundary": {
             "document_search_submitted": True,
-            "only_predeclared_terms_used": True,
+            "positive_control_submitted": True,
+            "positive_control_excluded_from_candidate_population": True,
+            "only_predeclared_eastwood_terms_used": True,
             "post_result_term_expansion_performed": False,
             "query_id_guessed": False,
             "keyword_id_guessed": False,
@@ -316,30 +381,40 @@ def main() -> int:
         },
         "outcome": {
             "status": "unknown",
-            "reason": "This stage measures publisher-returned retrieval candidates only. Candidate presence or absence is not a terminal disposition.",
+            "reason": "This stage measures publisher-returned Eastwood retrieval candidates only. Candidate presence or absence is not a terminal disposition.",
         },
         "non_claims": [
-            "A zero candidate population does not establish denial, withdrawal, failure, non-passage, abandonment, or any terminal disposition.",
-            "A returned Public Access document ID is a retrieval candidate only until the corresponding publisher document is separately acquired and evaluated.",
-            "The two predeclared wildcard requests are bounded discovery measurements and are not represented as proof that no differently worded record exists."
+            "The positive control validates that the same Passed Legislation query/transport can return a known archived ordinance; it is excluded from the Eastwood candidate population.",
+            "A zero Eastwood candidate population does not establish denial, withdrawal, failure, non-passage, abandonment, or any terminal disposition.",
+            "A returned Eastwood Public Access document ID is a retrieval candidate only until the corresponding publisher document is separately acquired and evaluated.",
+            "The two predeclared Eastwood wildcard requests are bounded discovery measurements and are not represented as proof that no differently worded record exists."
         ],
     }
     measurement["response_population_signature_sha256"] = sha256_json(
-        [
-            {
-                "request_id": row["request_id"],
-                "request_payload_sha256": row["request_payload_sha256"],
-                "response_sha256": row["response"]["sha256"],
-                "truncated": row["truncated"],
-                "returned_document_count": row["returned_document_count"],
-            }
-            for row in searches
-        ]
+        {
+            "positive_control": {
+                "request_payload_sha256": control["request_payload_sha256"],
+                "response_sha256": control["response"]["sha256"],
+                "returned_document_count": control["returned_document_count"],
+            },
+            "eastwood": [
+                {
+                    "request_id": row["request_id"],
+                    "request_payload_sha256": row["request_payload_sha256"],
+                    "response_sha256": row["response"]["sha256"],
+                    "truncated": row["truncated"],
+                    "returned_document_count": row["returned_document_count"],
+                }
+                for row in searches
+            ],
+        }
     )
     path = output / "eastwood-search-measurement.json"
     path.write_text(json.dumps(measurement, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(measurement["counts"], indent=2, sort_keys=True))
 
+    if not control_ok:
+        return 4
     if any_failure:
         return 2
     if any_truncation:
