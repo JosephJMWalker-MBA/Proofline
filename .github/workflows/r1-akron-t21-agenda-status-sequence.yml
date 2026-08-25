@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/r1-akron-t21-agenda-status-sequence.yml"
       - "experiments/akron-2026/measure_t21_agenda_status_sequence.py"
+      - "experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json"
       - "experiments/akron-2026/r1_t21_record_family_packet_selection.json"
       - "experiments/akron-2026/measure_t21_record_family_evolution.py"
       - "src/proofline/agenda_status.py"
@@ -13,6 +14,7 @@ on:
       - "src/proofline/onbase_attachments_cli.py"
       - "tests/test_agenda_status.py"
       - "tests/test_onbase_agenda_status.py"
+      - "tests/test_t21_agenda_status_sequence_receipt.py"
 
 permissions:
   contents: read
@@ -141,6 +143,63 @@ jobs:
           assert b['lead_count'] is None
           PY
 
+      - name: Reproduce frozen status-sequence receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          receipt = json.load(open('experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json'))
+          raw_path = Path('akron-t21-status/agenda-status-sequence.json')
+          raw_bytes = raw_path.read_bytes()
+          live = json.loads(raw_bytes)
+
+          assert hashlib.sha256(raw_bytes).hexdigest() == receipt['canonical_run']['raw_sequence_json_sha256']
+          assert live['sequence_signature_sha256'] == receipt['sequence_signature_sha256']
+          assert live['counts'] == receipt['counts']
+          assert live['observation_time'] == receipt['observation_time']
+          assert live['reference'] == receipt['reference']
+          assert live['selection'] == receipt['selection']
+          assert live['publisher_discovery']['agenda_item_manifest_sha256'] == receipt['publisher_discovery']['agenda_item_manifest_sha256']
+          assert live['publisher_discovery']['meeting_count'] == receipt['publisher_discovery']['meeting_count']
+          assert live['publisher_discovery']['agenda_tree_count'] == receipt['publisher_discovery']['agenda_tree_count']
+          assert live['publisher_discovery']['agenda_item_count'] == receipt['publisher_discovery']['agenda_item_count']
+
+          columns = receipt['sequence_columns']
+          live_rows = []
+          item_text_hashes = set()
+          for row in live['sequence']:
+              item_text_hashes.add(row['selected_item']['item_text_sha256'])
+              live_rows.append([
+                  row['meeting']['meeting_id'],
+                  row['meeting']['time'],
+                  row['meeting']['publisher_time_relation_to_observation'],
+                  row['selected_item']['item_id'],
+                  row['selected_item']['publish_id'],
+                  row['agenda_tree']['artifact_sha256'],
+                  row['status_block_index'],
+                  row['status']['normalized_status'] if row['status'] else None,
+                  row['status']['procedural_category'] if row['status'] else None,
+              ])
+          assert columns == [
+              'meeting_id',
+              'time',
+              'publisher_time_relation_to_observation',
+              'item_id',
+              'publish_id',
+              'agenda_tree_artifact_sha256',
+              'status_block_index',
+              'normalized_status',
+              'procedural_category',
+          ]
+          assert live_rows == receipt['sequence_rows']
+          assert item_text_hashes == {receipt['shared_item_text_sha256']}
+          assert live['authority_boundary'] == receipt['authority_boundary']
+          PY
+
       - name: Upload T21 agenda-status measurement
         uses: actions/upload-artifact@v4
         with:
@@ -152,6 +211,7 @@ jobs:
             akron-t21-status/attachment-manifest.json
             akron-t21-status/discovered-relations.json
             akron-t21-status/rejections.json
+            experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json
             experiments/akron-2026/r1_t21_record_family_packet_selection.json
           if-no-files-found: error
           retention-days: 14
