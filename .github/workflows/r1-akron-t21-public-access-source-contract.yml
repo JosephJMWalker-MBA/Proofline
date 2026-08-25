@@ -6,6 +6,8 @@ on:
       - ".github/workflows/r1-akron-t21-public-access-source-contract.yml"
       - "experiments/akron-2026/probe_public_access.py"
       - "experiments/akron-2026/probe_onbase.py"
+      - "experiments/akron-2026/r1_t21_public_access_source_contract_summary.json"
+      - "tests/test_t21_public_access_source_contract_receipt.py"
   workflow_dispatch:
 
 permissions:
@@ -123,6 +125,72 @@ jobs:
           }
           PY
 
+      - name: Reproduce frozen Public Access source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('akron-public-access-probe')
+          live = json.load(open(root / 'public-access-probe.json'))
+          receipt = json.load(open('experiments/akron-2026/r1_t21_public_access_source_contract_summary.json'))
+
+          def canonical_sha(value):
+              serialized = json.dumps(
+                  value, sort_keys=True, separators=(',', ':'), ensure_ascii=False
+              ).encode('utf-8')
+              return hashlib.sha256(serialized).hexdigest()
+
+          for name, expected in receipt['stable_source_assets'].items():
+              body = (root / name).read_bytes()
+              assert len(body) == expected['byte_length'], name
+              assert hashlib.sha256(body).hexdigest() == expected['sha256'], name
+
+          declaration = live['publisher_declaration']
+          assert declaration['anchor_text'] == receipt['publisher_declaration']['anchor_text']
+          assert declaration['resolved_url'] == receipt['publisher_declaration']['resolved_url']
+          assert declaration['passed_legislation_and_meeting_minutes_claimed_by_publisher'] is True
+
+          assert live['configuration']['api_url'] == receipt['configuration']['api_url']
+          assert live['configuration']['api_root'] == receipt['configuration']['api_root']
+          assert live['configuration']['api_root_basis'] == receipt['configuration']['api_root_basis']
+          assert live['configuration']['query_limit'] == receipt['configuration']['query_limit']
+
+          receipt_client = dict(receipt['client_contract'])
+          client_signature = receipt_client.pop('signature_sha256')
+          assert live['client_contract'] == receipt_client
+          assert canonical_sha(live['client_contract']) == client_signature
+
+          live_queries = live['custom_query_metadata']['queries']
+          assert len(live_queries) == receipt['custom_queries']['count']
+          assert canonical_sha(live_queries) == receipt['custom_queries']['signature_sha256']
+
+          live_passed = live['passed_legislation_query']['query']
+          assert canonical_sha(live_passed) == receipt['passed_legislation_query']['signature_sha256']
+          assert live_passed['id'] == receipt['passed_legislation_query']['id'] == '101'
+          assert live_passed['name'] == 'Passed Legislation'
+
+          live_keywords = live['passed_legislation_query']['keywords']
+          assert len(live_keywords) == receipt['passed_legislation_keywords']['count']
+          assert canonical_sha(live_keywords) == receipt['passed_legislation_keywords']['signature_sha256']
+          by_name = {row['name']: row for row in live_keywords}
+          assert by_name['Ordinance/Resolution Number']['id'] == '102'
+          assert by_name['Title Clause']['id'] == '103'
+          assert by_name['Sponsor']['id'] == '106'
+
+          receipt_boundary = dict(receipt['authority_boundary'])
+          boundary_signature = receipt_boundary.pop('signature_sha256')
+          assert live['authority_boundary'] == receipt_boundary
+          assert canonical_sha(live['authority_boundary']) == boundary_signature
+          assert live['authority_boundary']['document_search_submitted'] is False
+          assert receipt['interpretation']['eastwood_outcome_status'] == 'Unknown'
+          assert receipt['interpretation']['document_search_performed'] is False
+          assert receipt['receipt_guard']['agenda_home_bytes_intentionally_not_pinned'] is True
+          PY
+
       - name: Upload Public Access source-contract evidence
         uses: actions/upload-artifact@v4
         with:
@@ -130,5 +198,6 @@ jobs:
           path: |
             akron-public-access-probe/
             akron-public-access-probe-stdout.json
+            experiments/akron-2026/r1_t21_public_access_source_contract_summary.json
           if-no-files-found: error
           retention-days: 14
