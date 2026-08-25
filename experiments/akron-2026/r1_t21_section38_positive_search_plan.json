@@ -1,0 +1,92 @@
+{
+  "schema": "proofline-akron-t21-section38-positive-search-plan/v1",
+  "base_continuity": {
+    "merged_pr": 110,
+    "merge_commit": "8ab9b3b45c3a238d9d777d71315f6789db6b89f3",
+    "inventory_receipt": "r1_t21_disposition_surface_inventory_summary.json",
+    "selected_surface_id": "charter_section38_legal_notices",
+    "surface_semantics": "official_positive_only_not_complete_passed_archive"
+  },
+  "publisher_source": {
+    "authority_page": "https://www.akroncitycouncil.org/legal-notices",
+    "accepted_document_host": "www.akroncitycouncil.org",
+    "accepted_document_path_prefix": "/sites/default/files/docs/",
+    "accepted_content_type": "application/pdf"
+  },
+  "positive_control": {
+    "id": "known_section38_ordinance_40_2026",
+    "url": "https://www.akroncitycouncil.org/sites/default/files/docs/Summary%20of%20O-40-2026.pdf",
+    "required_text": [
+      "Summary of Ordinance No. 40-2026 passed by Akron City Council February 9, 2026",
+      "Clerk of Council",
+      "This summary is being published pursuant to Section 38 of the City Charter"
+    ],
+    "excluded_from_target_population": true
+  },
+  "external_discovery": {
+    "authority": "candidate_discovery_only_non_authoritative_non_exhaustive",
+    "search_engine_nonfinding_is_disposition_evidence": false,
+    "post_observation_query_expansion_allowed": false,
+    "queries": [
+      {
+        "id": "exact_address",
+        "query": "site:akroncitycouncil.org/sites/default/files/docs/ \"1928 Eastwood Avenue\""
+      },
+      {
+        "id": "distinctive_use_phrase",
+        "query": "site:akroncitycouncil.org/sites/default/files/docs/ \"defense education training facility\""
+      },
+      {
+        "id": "planning_case",
+        "query": "site:akroncitycouncil.org/sites/default/files/docs/ \"PC-2025-80-CU\""
+      },
+      {
+        "id": "petitioner_and_location",
+        "query": "site:akroncitycouncil.org/sites/default/files/docs/ \"David Walker\" \"Eastwood\""
+      }
+    ]
+  },
+  "target_identity": {
+    "exact_address": "1928 Eastwood Avenue",
+    "planning_case": "PC-2025-80-CU",
+    "petitioner": "David Walker",
+    "distinctive_use_tokens": [
+      "defense",
+      "education",
+      "training",
+      "facility"
+    ],
+    "location_token": "Eastwood",
+    "accepted_identity_rules": [
+      "exact_address",
+      "planning_case",
+      "distinctive_use_tokens_and_location",
+      "petitioner_and_location"
+    ]
+  },
+  "terminal_positive_contract": {
+    "direct_same_host_document_required": true,
+    "required_section38_markers": [
+      "passed by Akron City Council",
+      "Clerk of Council",
+      "This summary is being published pursuant to Section 38 of the City Charter"
+    ],
+    "minimum_target_identity_rules_satisfied": 1,
+    "authorized_terminal_status_if_all_contract_requirements_hold": "passed_by_council",
+    "approval_or_effective_date_inference_authorized": false
+  },
+  "negative_boundary": {
+    "zero_discovery_results_are_terminal": false,
+    "no_accepted_direct_document_is_terminal": false,
+    "notice_absence_means_non_passage": false,
+    "fallback": "official_clerk_public_record_request_path"
+  },
+  "authority_boundary": {
+    "target_search_observed_before_plan_commit": false,
+    "post_result_term_fishing_allowed": false,
+    "search_engine_result_itself_can_assign_outcome": false,
+    "same_host_document_required_for_positive_outcome": true,
+    "detector_or_lead_semantics_authorized": false,
+    "causality_assigned": false
+  }
+}
