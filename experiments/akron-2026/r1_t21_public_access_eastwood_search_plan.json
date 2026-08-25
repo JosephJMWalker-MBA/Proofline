@@ -44,15 +44,41 @@
       "derivation": "Ordered distinctive-use tokens are copied from the frozen Eastwood ordinance title and wrapped using the publisher's declared Title Clause wildcard syntax."
     }
   ],
+  "positive_control": {
+    "control_id": "known_passed_ordinance_44_2026",
+    "purpose": "Independently prove that publisher Passed Legislation query 101 and its keyword-search transport return known archived legislation; this control cannot add to or alter the Eastwood candidate population.",
+    "query_id": 101,
+    "keyword": {
+      "ID": 102,
+      "Name": "Ordinance/Resolution Number",
+      "Value": "*44-2026*",
+      "KeywordOperator": "="
+    },
+    "QueryLimit": 0,
+    "minimum_returned_documents": 1,
+    "excluded_from_candidate_population": true,
+    "provenance": {
+      "source": "frozen R1.T21 marked-agenda candidate measurement from merged PR #96",
+      "meeting_id": 669,
+      "meeting_time": "2026-02-23T18:30:00-05:00",
+      "candidate_id": "terminal-record-candidate:c8ae0201c05f7d130b7dc4111aacb9544588e37306bf2bdc09f093960d6f55f3",
+      "evidence_id": "akron-marked-agenda:669:0b6199724e0fe111bb4a2d555337bf5ef33dbdbb4e2edbb9d8ac27ecb8d0a997",
+      "instrument": "ORDINANCE NO. 44-2026",
+      "normalized_record_text_sha256": "93043688ba3ccbf9279964349be70be7d07b97a8a1a3f2f52a54d4ec360edd75"
+    }
+  },
   "selection_rule": {
-    "candidate_population": "union_of_publisher_returned_document_ids_across_the_two_frozen_requests",
+    "candidate_population": "union_of_publisher_returned_document_ids_across_the_two_frozen_eastwood_requests_only",
     "deduplicate_by": "publisher_returned_document_id",
+    "positive_control_excluded": true,
     "post_result_term_expansion_allowed": false,
     "document_retrieval_in_this_stage": false
   },
   "authority_boundary": {
     "document_search_planned": true,
     "document_search_submitted": false,
+    "positive_control_planned": true,
+    "positive_control_submitted": false,
     "query_id_guessed": false,
     "keyword_id_guessed": false,
     "document_token_enumerated": false,
@@ -64,8 +90,9 @@
     "lead_count": null
   },
   "non_claims": [
-    "The two frozen requests are bounded candidate-discovery queries, not an exhaustive proof that no other wording could identify the matter.",
-    "A zero-result union is not evidence of denial, withdrawal, failure, non-passage, abandonment, or any other disposition.",
-    "A returned document is a retrieval candidate only until its publisher document is separately acquired and evaluated."
+    "The two frozen Eastwood requests are bounded candidate-discovery queries, not an exhaustive proof that no other wording could identify the matter.",
+    "The positive control was added only to validate the already-governed query/transport after the initial Eastwood measurement returned zero; it does not change either frozen Eastwood term and is excluded from the candidate population.",
+    "A zero-result Eastwood union is not evidence of denial, withdrawal, failure, non-passage, abandonment, or any other disposition.",
+    "A returned Eastwood document is a retrieval candidate only until its publisher document is separately acquired and evaluated."
   ]
 }
