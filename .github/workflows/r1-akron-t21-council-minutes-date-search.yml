@@ -1,0 +1,127 @@
+name: r1-akron-t21-council-minutes-date-search
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-council-minutes-date-search.yml"
+      - "experiments/akron-2026/measure_t21_council_minutes_date_search.py"
+      - "experiments/akron-2026/r1_t21_council_minutes_date_search_plan.json"
+      - "experiments/akron-2026/r1_t21_council_minutes_source_contract_summary.json"
+      - "experiments/akron-2026/r1_t21_terminal_record_target.json"
+      - "experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json"
+      - "tests/test_t21_council_minutes_date_search_measurement.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  council-minutes-date-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify frozen plan and run full test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/measure_t21_council_minutes_date_search.py
+
+      - name: Run year control and 22 frozen Council minutes date searches
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf akron-council-minutes-date-search
+          python experiments/akron-2026/measure_t21_council_minutes_date_search.py \
+            akron-council-minutes-date-search \
+            | tee akron-council-minutes-date-search-stdout.json
+          test -s akron-council-minutes-date-search/council-minutes-date-search-measurement.json
+          test -s akron-council-minutes-date-search/year_2026_control.json
+
+      - name: Validate candidate-only authority and complete responses
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from urllib.parse import urlparse
+
+          p = json.load(open('akron-council-minutes-date-search/council-minutes-date-search-measurement.json'))
+          assert p['schema'] == 'proofline-akron-t21-council-minutes-date-search-measurement/v1'
+          assert p['stage'] == 'publisher_council_minutes_exact_date_candidate_search_only'
+          assert p['source_contract']['query_id'] == '175'
+          assert p['source_contract']['meeting_date_keyword_id'] == '124'
+          assert p['source_contract']['year_keyword_id'] == '532'
+          assert p['source_contract']['query_limit'] == 0
+          assert urlparse(p['endpoint']).hostname == 'onlinedocs.akronohio.gov'
+
+          control = p['positive_control']
+          assert control['response']['ok'] is True
+          assert control['response']['same_host'] is True
+          assert control['truncated'] is False
+          assert control['returned_document_count'] >= 1
+          assert control['request_payload'] == {
+              'QueryID': 175,
+              'Keywords': [{
+                  'ID': 532,
+                  'Name': 'Year',
+                  'Value': '2026',
+                  'KeywordOperator': '=',
+              }],
+              'QueryLimit': 0,
+          }
+
+          assert len(p['eastwood_searches']) == 22
+          assert p['counts']['eastwood_request_count'] == 22
+          assert p['counts']['successful_eastwood_request_count'] == 22
+          assert p['counts']['truncated_eastwood_request_count'] == 0
+          for row in p['eastwood_searches']:
+              assert row['response']['ok'] is True
+              assert row['response']['same_host'] is True
+              assert row['truncated'] is False
+              assert row['request_payload']['QueryID'] == 175
+              assert row['request_payload']['QueryLimit'] == 0
+              assert row['request_payload']['Keywords'][0]['ID'] == 124
+              assert row['request_payload']['Keywords'][0]['Name'] == 'Meeting Date'
+              assert row['request_payload']['Keywords'][0]['KeywordOperator'] == '='
+
+          assert p['candidate_population']['count'] == p['counts']['eastwood_returned_document_count']
+          assert p['outcome']['status'] == 'unknown'
+          assert p['authority_boundary'] == {
+              'document_search_submitted': True,
+              'only_predeclared_dates_used': True,
+              'post_result_expansion_performed': False,
+              'positive_control_excluded_from_eastwood_population': True,
+              'query_id_guessed': False,
+              'keyword_id_guessed': False,
+              'opaque_document_token_treated_as_stable_identity': False,
+              'returned_document_dereferenced': False,
+              'terminal_outcome_assigned': False,
+              'absence_treated_as_disposition': False,
+              'causality_assigned': False,
+              'detector_authorized': False,
+              'lead_count': None,
+          }
+          PY
+
+      - name: Upload Council minutes date-search measurement
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-council-minutes-date-search
+          path: |
+            akron-council-minutes-date-search/
+            akron-council-minutes-date-search-stdout.json
+          if-no-files-found: error
+          retention-days: 14
