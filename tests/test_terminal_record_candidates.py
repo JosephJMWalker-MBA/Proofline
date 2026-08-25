@@ -61,6 +61,21 @@ Vote: 12-0.
     assert [r.instrument_number for r in rows] == [44]
 
 
+def test_new_legislation_boundary_prevents_vote_leakage_into_prior_numbered_record():
+    text = """
+ORDINANCE NO. 43-2026 prior record with no vote shown.
+NEW LEGISLATION
+ORDINANCE authorizing a pending action.
+Vote: 12-0.
+"""
+    assert extract_numbered_vote_record_candidates(text, evidence_id="agenda:669") == ()
+
+
+def test_extended_three_part_vote_not_partially_accepted_as_two_part_vote():
+    text = "ORDINANCE NO. 44-2026 example.\nVote: 11-1-1."
+    assert extract_numbered_vote_record_candidates(text, evidence_id="agenda:669") == ()
+
+
 def test_unnumbered_pending_legislation_is_not_a_candidate():
     text = """
 ORDINANCE authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.
