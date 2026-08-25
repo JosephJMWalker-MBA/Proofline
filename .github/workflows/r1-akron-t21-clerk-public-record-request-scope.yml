@@ -1,0 +1,78 @@
+name: r1-akron-t21-clerk-public-record-request-scope
+
+on:
+  pull_request:
+    paths:
+      - "src/proofline/public_record_request_scope.py"
+      - "experiments/akron-2026/build_t21_clerk_public_record_request_scope.py"
+      - "experiments/akron-2026/r1_t21_clerk_public_record_request_plan.json"
+      - "experiments/akron-2026/r1_t21_clerk_public_record_request_scope_summary.json"
+      - "tests/test_t21_clerk_public_record_request_scope.py"
+      - "tests/test_t21_clerk_public_record_request_scope_receipt.py"
+      - ".github/workflows/r1-akron-t21-clerk-public-record-request-scope.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clerk-public-record-request-scope:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile src/proofline/public_record_request_scope.py experiments/akron-2026/build_t21_clerk_public_record_request_scope.py
+      - name: Build governed unsent Clerk request packet
+        run: |
+          set -euo pipefail
+          rm -rf akron-clerk-request-scope
+          python experiments/akron-2026/build_t21_clerk_public_record_request_scope.py \
+            experiments/akron-2026/r1_t21_clerk_public_record_request_plan.json \
+            experiments/akron-2026/r1_t21_section38_positive_search_summary.json \
+            experiments/akron-2026/r1_t21_terminal_record_target.json \
+            akron-clerk-request-scope
+      - name: Validate no-send authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-clerk-request-scope/clerk-public-record-request-scope-measurement.json'))
+          packet=p['request_packet']
+          assert p['submission_performed'] is False
+          assert packet['submission_state']['submitted'] is False
+          assert packet['submission_state']['send_authorized'] is False
+          assert packet['delivery']['recipient']=='publicrecords@akronohio.gov'
+          assert len(packet['requested_existing_record_categories'])==4
+          assert packet['response_semantics']['no_responsive_records_is_terminal'] is False
+          assert packet['response_semantics']['assigned_number_alone_is_terminal'] is False
+          assert packet['authority_boundary']['terminal_outcome_assigned'] is False
+          assert packet['outcome']['status']=='unknown'
+          PY
+      - name: Reproduce frozen request-scope receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_clerk_public_record_request_scope_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_clerk_public_record_request_scope_summary.json'))
+          m=json.load(open('akron-clerk-request-scope/clerk-public-record-request-scope-measurement.json'))
+          assert m['source_receipts']==r['source_receipts']
+          assert m['policy_contract']==r['policy_contract']
+          assert m['request_packet']==r['request_packet']
+          assert m['measurement_signature_sha256']==r['measurement_signature_sha256']
+          assert m['submission_performed'] is False
+          PY
+      - name: Upload governed request packet
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-clerk-public-record-request-scope
+          path: akron-clerk-request-scope/
+          retention-days: 14
