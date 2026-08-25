@@ -1,0 +1,91 @@
+{
+  "schema": "proofline-akron-t21-council-minutes-source-contract-receipt/v1",
+  "stage": "frozen_council_minutes_query_contract_before_document_search",
+  "canonical_measurement": {
+    "workflow_run_id": 32803160871,
+    "job_id": 97667962984,
+    "head_sha": "3c054dea7796cb948ed6fe1eda2d01ff43eb0506",
+    "artifact_id": 9547215479,
+    "artifact_digest": "sha256:0acebae23c9972945af3da5e178336206b4a78f1586bf6aa613d0d0d9177f08a"
+  },
+  "source_contract": {
+    "schema": "proofline-akron-t21-public-access-source-contract-receipt/v1",
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "query": {
+      "id": "175",
+      "name": "Council Meeting Minutes",
+      "type": "DocumentType",
+      "date_search_option": "NoDate",
+      "requires_date_or_keyword": true,
+      "requires_keyword": false,
+      "requires_date": false
+    },
+    "query_signature_sha256": "fc53f2450c6755270b42831f0e86593296f456d1e7a963a6ea09ad534d0e3f11"
+  },
+  "keyword_metadata": {
+    "endpoint": "https://onlinedocs.akronohio.gov/PublicAccess/api/Keywords",
+    "request_payload": {
+      "QueryID": 175
+    },
+    "request_payload_sha256": "1efba54a49d6f8cc87d35b4306fcdadb9d62b7a6a6cdf1ad4c9679f3690e39cc",
+    "raw_byte_length": 1409,
+    "raw_sha256": "8d0500a537219a883b903935accf6b98f720e432fc087ee1f4f899fdeb4b8aca",
+    "keyword_count": 2,
+    "keywords_signature_sha256": "47971ebf2442b1465e20c8fabdb95dab429c441866c0ee4387935c52b6454b78",
+    "keywords": [
+      {
+        "id": "124",
+        "name": "Meeting Date",
+        "data_type": "Date",
+        "required": false,
+        "max_length": 27,
+        "dataset": null,
+        "is_masked": false,
+        "mask": "",
+        "mask_static": "",
+        "mask_full_field_required": false
+      },
+      {
+        "id": "532",
+        "name": "Year",
+        "data_type": "SmallNumeric",
+        "required": false,
+        "max_length": 9,
+        "dataset_summary": {
+          "count": 151,
+          "first": "1900",
+          "last": "2050",
+          "contains_2026": true
+        },
+        "is_masked": false,
+        "mask": "",
+        "mask_static": "",
+        "mask_full_field_required": false
+      }
+    ]
+  },
+  "measurement_receipt": {
+    "summary_byte_length": 5719,
+    "summary_sha256": "c931b4bd9bf6dfbf764f367dee29db8d53a7c6b3fe691f0fe2f22cfc63773d1c"
+  },
+  "authority_boundary": {
+    "custom_query_metadata_inherited": true,
+    "keyword_metadata_requested": true,
+    "document_search_submitted": false,
+    "query_id_guessed": false,
+    "keyword_id_guessed": false,
+    "document_token_enumerated": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "council_minutes_query_governed": true,
+    "document_search_performed": false,
+    "next_stage": "Freeze a Council Meeting Minutes search plan using publisher keyword 124 (Meeting Date) and exact meeting dates already established in the Eastwood chronology; do not infer disposition from missing minutes or search non-findings."
+  }
+}
