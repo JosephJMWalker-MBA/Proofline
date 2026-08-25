@@ -1,0 +1,100 @@
+name: r1-akron-t21-committee-minutes-content-audit
+
+on:
+  pull_request:
+    paths:
+      - "experiments/akron-2026/audit_t21_committee_minutes_content.py"
+      - "experiments/akron-2026/r1_t21_committee_minutes_content_audit_plan.json"
+      - "experiments/akron-2026/r1_t21_committee_minutes_content_audit_summary.json"
+      - "experiments/akron-2026/r1_t21_committee_minutes_document_retrieval_summary.json"
+      - "tests/test_t21_committee_minutes_content_audit.py"
+      - "tests/test_t21_committee_minutes_content_audit_receipt.py"
+      - ".github/workflows/r1-akron-t21-committee-minutes-content-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  committee-minutes-content-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and audit syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/audit_t21_committee_minutes_content.py
+      - name: Reproduce frozen Committee minutes source-byte population
+        run: |
+          set -euo pipefail
+          rm -rf akron-committee-minutes-audit-search akron-committee-minutes-audit-retrieval
+          python experiments/akron-2026/measure_t21_committee_minutes_date_search.py \
+            akron-committee-minutes-audit-search
+          python experiments/akron-2026/retrieve_t21_committee_minutes_documents.py \
+            akron-committee-minutes-audit-search/committee-minutes-date-search.json \
+            experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json \
+            akron-committee-minutes-audit-retrieval
+      - name: Audit frozen Committee minutes text layer
+        run: |
+          set -euo pipefail
+          rm -rf akron-committee-minutes-content-audit
+          python experiments/akron-2026/audit_t21_committee_minutes_content.py \
+            akron-committee-minutes-audit-retrieval/committee-minutes-document-retrieval.json \
+            akron-committee-minutes-audit-retrieval \
+            experiments/akron-2026/r1_t21_committee_minutes_document_retrieval_summary.json \
+            experiments/akron-2026/r1_t21_committee_minutes_content_audit_plan.json \
+            akron-committee-minutes-content-audit
+      - name: Validate non-terminal authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-committee-minutes-content-audit/committee-minutes-content-audit.json'))
+          assert p['source_receipt']['document_count'] == 18
+          assert p['authority_boundary']['source_pdf_population_verified'] is True
+          assert p['authority_boundary']['ocr_used'] is False
+          assert p['authority_boundary']['target_block_locality_enforced'] is True
+          assert p['authority_boundary']['committee_recommendation_treated_as_final_council_disposition'] is False
+          assert p['authority_boundary']['terminal_outcome_assigned'] is False
+          assert p['authority_boundary']['absence_treated_as_disposition'] is False
+          assert p['outcome']['status'] == 'unknown'
+          PY
+      - name: Reproduce frozen Committee minutes content-audit receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_committee_minutes_content_audit_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_committee_minutes_content_audit_summary.json'))
+          m=json.load(open('akron-committee-minutes-content-audit/committee-minutes-content-audit.json'))
+          assert m['plan']['sha256'] == r['plan_sha256']
+          assert m['source_receipt']['stable_document_receipt_population_signature_sha256'] == r['source_document_receipt_population_signature_sha256']
+          assert m['text_extraction'] == r['text_extraction']
+          assert m['counts'] == r['counts']
+          assert m['anchor_block_counts'] == r['anchor_block_counts']
+          assert m['procedural_phrase_block_counts'] == r['procedural_phrase_block_counts']
+          assert m['target_page_population_signature_sha256'] == r['target_page_population_signature_sha256']
+          assert m['target_block_population_signature_sha256'] == r['target_block_population_signature_sha256']
+          assert m['terminal_candidate_population_signature_sha256'] == r['terminal_candidate_population_signature_sha256']
+          pages=[{k:p[k] for k in ('meeting_id','document_sha256','page','anchor_hits','page_text_sha256','page_text_byte_length')} for p in m['target_pages']]
+          blocks=[{k:b[k] for k in ('meeting_id','document_sha256','page','paragraph_index','line_start','line_end','anchor_hits','procedural_phrase_hits','block_text_sha256')} for b in m['target_blocks']]
+          assert pages == r['target_page_receipts']
+          assert blocks == r['target_block_receipts']
+          assert m['terminal_candidate_blocks'] == r['terminal_candidate_blocks']
+          assert m['authority_boundary'] == r['authority_boundary']
+          assert m['outcome'] == r['outcome']
+          PY
+      - name: Upload Committee minutes content evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-committee-minutes-content-audit
+          path: |
+            akron-committee-minutes-content-audit/
+            akron-committee-minutes-audit-retrieval/committee-minutes-document-retrieval.json
+          retention-days: 14

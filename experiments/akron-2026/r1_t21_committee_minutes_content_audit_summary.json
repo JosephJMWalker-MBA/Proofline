@@ -1,0 +1,135 @@
+{
+  "schema": "proofline-akron-t21-committee-minutes-content-audit-receipt/v1",
+  "stage": "frozen_target_local_committee_minutes_text_evidence_before_terminal_semantics",
+  "canonical_measurement": {
+    "workflow_run_id": 32856254288,
+    "job_id": 97828854364,
+    "head_sha": "ea0e43ca8c2a0addb90af777f321b55f19499c46",
+    "artifact_id": 9566303419,
+    "artifact_digest": "sha256:08e0313f6d27ec528bb018b70d393b2ec2801e6b1bfb476b7ad89e4e1a1b5e0f",
+    "raw_audit_byte_size": 15811,
+    "raw_audit_sha256": "a662324a1678375350c234e7499a15ca780fbf29fc2df19d5691dbb4855a0cef"
+  },
+  "pre_observation_plan_commit": "4da562c21557b4ea683c2e0e13a18f48362ccd11",
+  "plan_sha256": "2802e732eca628494a567b264adb6cddb52c72ca21ede28b35769e09d772fc51",
+  "source_document_receipt_population_signature_sha256": "4d744d2cd915672e13866da96536a472c984137ab1d85c27c47cde59860782ca",
+  "source_receipt_sha256": "313c1ebd8296632069458edf63e8e3513f0f60f28c6a866d983d93d097af1d5e",
+  "text_extraction": {
+    "engine": "PyMuPDF",
+    "literal_pattern_matching": "case-insensitive normalized whole phrase with alphanumeric boundaries",
+    "ocr_used": false,
+    "version": "1.28.2"
+  },
+  "counts": {
+    "document_count": 18,
+    "documents_with_target_pages": 2,
+    "page_count": 93,
+    "target_block_count": 2,
+    "target_page_count": 2,
+    "terminal_candidate_block_count": 0
+  },
+  "anchor_block_counts": {
+    "distinctive_title_phrase": 2,
+    "exact_address": 2,
+    "petition_label": 0,
+    "petitioner_name": 0,
+    "planning_case": 0,
+    "training_eastwood_cooccurrence": 2
+  },
+  "procedural_phrase_block_counts": {
+    "declared_passed": 0,
+    "favorable_report": 0,
+    "final_passage": 0,
+    "hearing_closed": 1,
+    "held": 1,
+    "motion": 0,
+    "motion_for_passage": 0,
+    "nay": 0,
+    "no_recommendation": 0,
+    "public_hearing": 2,
+    "recommended_approval": 1,
+    "recommended_denial": 0,
+    "referred": 1,
+    "second": 0,
+    "substitute": 0,
+    "tabled": 0,
+    "time": 0,
+    "vote": 0,
+    "withdrawn": 0,
+    "yea": 0
+  },
+  "target_page_population_signature_sha256": "0352a3d3f0dc2cbc274d07e513623b1845702bf8b8b61a2d893584e21df463a0",
+  "target_block_population_signature_sha256": "071492a257c53b00d46a8fb9336ebe9c86f119fbc66b3ec9d1bbeb842c37be69",
+  "terminal_candidate_population_signature_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "target_page_receipts": [
+    {
+      "meeting_id": 669,
+      "document_sha256": "ff9d6f901dfeedea9a4ce144a638f0417e472679370763b12cdffc5a9bfd8fab",
+      "page": 2,
+      "anchor_hits": ["exact_address", "distinctive_title_phrase", "training_eastwood_cooccurrence"],
+      "page_text_sha256": "c57ba2a46b96234b2e09e1d314b06c5828e82245e255f50959d76dd911daae6a",
+      "page_text_byte_length": 2594
+    },
+    {
+      "meeting_id": 671,
+      "document_sha256": "067d301524b89ad465b8415dee57c13765dd82f9118ae51090347e85c5816701",
+      "page": 1,
+      "anchor_hits": ["exact_address", "distinctive_title_phrase", "training_eastwood_cooccurrence"],
+      "page_text_sha256": "4392c3108a5e66312f8c37da1e581ab68ac20a400205c85601792c860c4dae23",
+      "page_text_byte_length": 2096
+    }
+  ],
+  "target_block_receipts": [
+    {
+      "meeting_id": 669,
+      "document_sha256": "ff9d6f901dfeedea9a4ce144a638f0417e472679370763b12cdffc5a9bfd8fab",
+      "page": 2,
+      "paragraph_index": 3,
+      "line_start": 14,
+      "line_end": 16,
+      "anchor_hits": ["exact_address", "distinctive_title_phrase", "training_eastwood_cooccurrence"],
+      "procedural_phrase_hits": ["referred", "public_hearing"],
+      "block_text_sha256": "c5b89bb28bac59b25c4e4dbf5729e28b8f818be0f82b6614d0137e0c82832cde"
+    },
+    {
+      "meeting_id": 671,
+      "document_sha256": "067d301524b89ad465b8415dee57c13765dd82f9118ae51090347e85c5816701",
+      "page": 1,
+      "paragraph_index": 9,
+      "line_start": 39,
+      "line_end": 45,
+      "anchor_hits": ["exact_address", "distinctive_title_phrase", "training_eastwood_cooccurrence"],
+      "procedural_phrase_hits": ["public_hearing", "hearing_closed", "recommended_approval", "held"],
+      "block_text_sha256": "beb4b20c5fae8ee72863caf4c64f3fb77fcedfab5db0aff86e2eb1a80398e502"
+    }
+  ],
+  "terminal_candidate_blocks": [],
+  "observations": {
+    "february_23": "Target-local Committee minutes state that the Eastwood ordinance was referred and advertised for Public Hearing on March 9, 2026.",
+    "march_9": "Target-local Committee minutes state that Planning Staff and Planning Commission recommended approval; the public hearing was closed, temporarily reopened, and closed again; discussion was held.",
+    "later_section_time_not_attributed": "The audit does not attribute section-wide or neighboring-item procedural language to Eastwood unless it occurs in the same target-local block.",
+    "petition_label_collision_avoided": "Whole-phrase boundary matching prevents Council Document D-140/D-141/D-142 from satisfying the predeclared D-14 anchor."
+  },
+  "authority_boundary": {
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "committee_recommendation_treated_as_final_council_disposition": false,
+    "detector_authorized": false,
+    "lead_count": null,
+    "ocr_used": false,
+    "page_text_extracted": true,
+    "procedural_phrase_hits_are_observations_only": true,
+    "source_pdf_population_verified": true,
+    "target_block_locality_enforced": true,
+    "terminal_outcome_assigned": false
+  },
+  "outcome": {
+    "reason": "This audit preserves target-local Committee minutes text and procedural phrase observations only. No terminal Council outcome is assigned.",
+    "status": "unknown"
+  },
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "terminal_candidate_count": 0,
+    "next_stage": "Reconcile the Committee-minutes evidence with the already-frozen Council-minutes evidence and decide whether any separately governed relationship primitive is needed; do not infer final disposition from absence or section-wide Time language."
+  }
+}
