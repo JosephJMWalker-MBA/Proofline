@@ -1,0 +1,74 @@
+{
+  "authority_boundary": {
+    "absence_is_not_disposition": true,
+    "causality_assigned": false,
+    "committee_recommendation_is_not_final_disposition": true,
+    "detector_authorized": false,
+    "lead_count": null,
+    "relationships_are_provenance_only": true,
+    "same_date_is_not_causality": true,
+    "terminal_semantics_authorized": false,
+    "time_language_is_not_terminal_disposition": true
+  },
+  "canonical_measurement": {
+    "artifact_digest": "sha256:445dad63fc4bdfe6888f646de70ce74f4477c2eed42dfe53060535727a22f532",
+    "artifact_id": 9566862393,
+    "head_sha": "cf650e217df0b33d9abfef0401d2da7e58c772a2",
+    "job_id": 97833749840,
+    "raw_measurement_byte_size": 13400,
+    "raw_measurement_sha256": "e670d78ba70b9bd525ad53913df4f3acb07d2861c1541c3d09b3301751578a82",
+    "workflow_run_id": 32857736276
+  },
+  "counts": {
+    "committee_evidence_node_count": 2,
+    "council_evidence_node_count": 6,
+    "evidence_node_count": 8,
+    "explicit_scheduling_count": 1,
+    "procedural_phase_corroboration_count": 2,
+    "relationship_count": 6,
+    "same_target_same_meeting_count": 3,
+    "unpaired_target_evidence_node_count": 3
+  },
+  "graph_signature_sha256": "2d646c748bb4d455b442d4b54eb64e46083410e05870410229b6526b8475bce4",
+  "interpretation": {
+    "cross_source_procedural_phase_corroboration_count": 2,
+    "cross_source_same_target_same_meeting_count": 3,
+    "eastwood_outcome_status": "Unknown",
+    "explicit_scheduling_relationship_count": 1,
+    "next_stage": "Integrate the frozen procedural placement sequence and candidate-search non-findings only if a separately governed chronology layer is needed; relationship evidence itself does not establish final disposition.",
+    "unpaired_later_council_evidence_meeting_ids": [672, 674, 689]
+  },
+  "node_population_signature_sha256": "8de7d8bf065f1338121d10a562e4843b66cfdabcd47765b92b0d7b528cc7ff77",
+  "nodes": [
+    {"anchor_hits":["distinctive_title_phrase","exact_address","training_eastwood_cooccurrence"],"document_sha256":"ff9d6f901dfeedea9a4ce144a638f0417e472679370763b12cdffc5a9bfd8fab","evidence_sha256":"c5b89bb28bac59b25c4e4dbf5729e28b8f818be0f82b6614d0137e0c82832cde","id":"evidence:committee_minutes:f2ab01261ba43c37b4be6ca41268b9081a8074290e61690a3e98ab055c77652a","locality_index":3,"meeting_date":"2026-02-23","meeting_id":669,"page":2,"procedural_phrase_hits":["public_hearing","referred"],"surface":"committee_minutes"},
+    {"anchor_hits":["distinctive_title_phrase","exact_address","training_eastwood_cooccurrence"],"document_sha256":"690086723fd9a3c4ca9edc6c00325da64be67a460de0490cbca534c6c3a0e5c3","evidence_sha256":"a4d0b7cb8e8e6213dbca1a80fbb1470d3dceff0ed223429a1055a020b1f56a07","id":"evidence:council_minutes:2e5c4f8be024dbcd29dd4e11e7954cadc1f5353ad1970109f7f0472483838973","locality_index":2,"meeting_date":"2026-02-23","meeting_id":669,"page":4,"procedural_phrase_hits":["referred_to_committee"],"surface":"council_minutes"},
+    {"anchor_hits":["distinctive_title_phrase","exact_address","training_eastwood_cooccurrence"],"document_sha256":"067d301524b89ad465b8415dee57c13765dd82f9118ae51090347e85c5816701","evidence_sha256":"beb4b20c5fae8ee72863caf4c64f3fb77fcedfab5db0aff86e2eb1a80398e502","id":"evidence:committee_minutes:0ec67557980d37ff9c6b19c2cb7a52682bc0f2841279bc0551ae2ff85d254d8b","locality_index":9,"meeting_date":"2026-03-09","meeting_id":671,"page":1,"procedural_phrase_hits":["hearing_closed","held","public_hearing","recommended_approval"],"surface":"committee_minutes"},
+    {"anchor_hits":["exact_address","training_eastwood_cooccurrence"],"document_sha256":"1c46f971942f696a8ee53b40c15059d943a51f9e93d607019afa3027b4495abd","evidence_sha256":"fce2dc88911de99b4a5b3feef72c6f52551716c3514e51909c6d7a8500ad29c8","id":"evidence:council_minutes:6e537f79916efcc0119b57d474ce7401d14ff3f02fa9a5086d97dbb841d8794c","locality_index":2,"meeting_date":"2026-03-09","meeting_id":671,"page":1,"procedural_phrase_hits":[],"surface":"council_minutes"},
+    {"anchor_hits":["distinctive_title_phrase","exact_address","training_eastwood_cooccurrence"],"document_sha256":"b884aea7924b96577176cbeb42817c59e3ca4ccb14fe2552648e44fcc5545890","evidence_sha256":"f13c435c24af4f3dd5c46d8825e20aba09a88e21459035f4cbaf83f22f380c75","id":"evidence:council_minutes:8541b037aba88d78c9ef6e7c39d1200f44210a3d1e1e72e96bfa0929a8d27555","locality_index":2,"meeting_date":"2026-03-09","meeting_id":671,"page":1,"procedural_phrase_hits":["committee_favorable_poll","committee_time_poll","public_hearing_closed","public_hearing_declared","substitute_read"],"surface":"council_minutes"},
+    {"anchor_hits":["exact_address","training_eastwood_cooccurrence"],"document_sha256":"deec8a6983eb5827b1787f7b6e1668a978748897fa93d09f6ccf1f78e38b4486","evidence_sha256":"e79c98fe4f39cf339fababb3b55f68047830d46d943553d6a0499336a811030f","id":"evidence:council_minutes:e381af4955daf66b044308f4e098ad5f974764f699ab40679adba2c32f3c3f21","locality_index":2,"meeting_date":"2026-03-16","meeting_id":672,"page":1,"procedural_phrase_hits":[],"surface":"council_minutes"},
+    {"anchor_hits":["exact_address","training_eastwood_cooccurrence"],"document_sha256":"bae7948e5f2508c66ef662b941d4e6b6ff27b3065a3917fe2d16cd99e8ae9594","evidence_sha256":"6729e27e305f93aa3c08f2ba0e3e6b17380528a7c0370edb54b92d885ad22a34","id":"evidence:council_minutes:7823986c518cdbf44c373db4b08da7f34de9c391d671c992feb4f064ba327929","locality_index":3,"meeting_date":"2026-03-23","meeting_id":674,"page":1,"procedural_phrase_hits":[],"surface":"council_minutes"},
+    {"anchor_hits":["training_eastwood_cooccurrence"],"document_sha256":"7f2f7c28161667b9ee74a9b32dd82e894e644bbaeb80a677c66026896c34c3b1","evidence_sha256":"dd5ee24a8dc5e10778705c2957eb21d380af8bcbf5b7ee5498c20705a2e004a8","id":"evidence:council_minutes:200f1906756acca45b55729e075890ae2553f0450bba863959b53a06763a8a5b","locality_index":2,"meeting_date":"2026-06-08","meeting_id":689,"page":1,"procedural_phrase_hits":[],"surface":"council_minutes"}
+  ],
+  "outcome": {"reason":"Cross-source relationships corroborate target identity and non-terminal procedural chronology only; they do not establish final legislative disposition.","status":"unknown"},
+  "relationship_population_signature_sha256": "906cfa23129ad49dd8dd4c67a29c5076fb4e49eab77d5c7f77a19d18b0b0529b",
+  "relationships": [
+    {"detail":{"authority":"explicit_schedule_reference_only_not_causality_or_disposition","resolution_source":"frozen_committee_minutes_date_search_receipt","resolved_meeting_id":671,"scheduled_date":"2026-03-09","scheduled_event":"public_hearing"},"id":"relationship:explicit_scheduling:9b72d7e79471c125ec544e26b58fd219b458cbc96243162c903145171590feee","source":"evidence:committee_minutes:f2ab01261ba43c37b4be6ca41268b9081a8074290e61690a3e98ab055c77652a","target":"evidence:committee_minutes:0ec67557980d37ff9c6b19c2cb7a52682bc0f2841279bc0551ae2ff85d254d8b","type":"explicit_scheduling"},
+    {"detail":{"authority":"independent_procedural_corroboration_only","meeting_date":"2026-03-09","meeting_id":671,"shared_procedural_phases":["public_hearing"]},"id":"relationship:procedural_phase_corroboration:dd719b201e2880b78e8fb8ececcec82492bb487585ed2e8698d2bc5878b4b973","source":"evidence:committee_minutes:0ec67557980d37ff9c6b19c2cb7a52682bc0f2841279bc0551ae2ff85d254d8b","target":"evidence:council_minutes:8541b037aba88d78c9ef6e7c39d1200f44210a3d1e1e72e96bfa0929a8d27555","type":"procedural_phase_corroboration"},
+    {"detail":{"authority":"independent_procedural_corroboration_only","meeting_date":"2026-02-23","meeting_id":669,"shared_procedural_phases":["referral"]},"id":"relationship:procedural_phase_corroboration:b53757d3923b3b1e668f27ab39246793b913eef42c2f0ef1966004d6d04aa3e8","source":"evidence:committee_minutes:f2ab01261ba43c37b4be6ca41268b9081a8074290e61690a3e98ab055c77652a","target":"evidence:council_minutes:2e5c4f8be024dbcd29dd4e11e7954cadc1f5353ad1970109f7f0472483838973","type":"procedural_phase_corroboration"},
+    {"detail":{"authority":"same_target_same_meeting_corroboration_only","meeting_date":"2026-03-09","meeting_id":671,"shared_strong_anchor_ids":["exact_address","training_eastwood_cooccurrence"]},"id":"relationship:same_target_same_meeting:108299c59061cac8aca54e4b1d2d290b8abc3ca8a629b1c63fa39588ab859156","source":"evidence:committee_minutes:0ec67557980d37ff9c6b19c2cb7a52682bc0f2841279bc0551ae2ff85d254d8b","target":"evidence:council_minutes:6e537f79916efcc0119b57d474ce7401d14ff3f02fa9a5086d97dbb841d8794c","type":"same_target_same_meeting"},
+    {"detail":{"authority":"same_target_same_meeting_corroboration_only","meeting_date":"2026-03-09","meeting_id":671,"shared_strong_anchor_ids":["distinctive_title_phrase","exact_address","training_eastwood_cooccurrence"]},"id":"relationship:same_target_same_meeting:c192659b960456d114484451cdf82ce79d7fd11cbe7b4cf3ffc0aae1757f6a01","source":"evidence:committee_minutes:0ec67557980d37ff9c6b19c2cb7a52682bc0f2841279bc0551ae2ff85d254d8b","target":"evidence:council_minutes:8541b037aba88d78c9ef6e7c39d1200f44210a3d1e1e72e96bfa0929a8d27555","type":"same_target_same_meeting"},
+    {"detail":{"authority":"same_target_same_meeting_corroboration_only","meeting_date":"2026-02-23","meeting_id":669,"shared_strong_anchor_ids":["distinctive_title_phrase","exact_address","training_eastwood_cooccurrence"]},"id":"relationship:same_target_same_meeting:e6ccb6c669ed7dd07a45bd627777b8015192278eaceb1015e732a1d923634edd","source":"evidence:committee_minutes:f2ab01261ba43c37b4be6ca41268b9081a8074290e61690a3e98ab055c77652a","target":"evidence:council_minutes:2e5c4f8be024dbcd29dd4e11e7954cadc1f5353ad1970109f7f0472483838973","type":"same_target_same_meeting"}
+  ],
+  "schema": "proofline-akron-t21-evidence-relationship-receipt/v1",
+  "source_receipts": {
+    "committee_minutes_content": {"file_sha256":"2aa4b29c2a5186b5ca6460514904f5ad50de21ddff994d788cbefee16865de9a","schema":"proofline-akron-t21-committee-minutes-content-audit-receipt/v1","target_block_population_signature_sha256":"071492a257c53b00d46a8fb9336ebe9c86f119fbc66b3ec9d1bbeb842c37be69","terminal_candidate_count":0},
+    "committee_minutes_dates": {"file_sha256":"ceeea8706d91f44861987decd62fce2f518bb8aa5c0f69310e49d014449980c9","response_population_signature_sha256":"338a07d852588efa94a519b4c5f0f8a4bcfcc6bb740b5af0e1f650bf15f973ea","schema":"proofline-akron-t21-committee-minutes-date-search-receipt/v1","stable_candidate_population_signature_sha256":"b01f52fe5e715076a1991f83fcf88086f89f4efd69991d1e5df766260e6df1ef"},
+    "council_minutes_content": {"file_sha256":"95ff18e07b0d17714f9c7dd58e5aca8c6f9a96a4150b639fc5b990bf7a4fe2d9","schema":"proofline-akron-t21-council-minutes-content-audit-receipt/v1","target_block_population_signature_sha256":"b196f1887873793e0f6057a99a4247cf09c2807a6a1637e29de2a12dc9ffaabd","terminal_candidate_count":0}
+  },
+  "stage": "frozen_cross_source_provenance_relationships_before_terminal_semantics",
+  "unpaired_target_evidence_node_ids": [
+    "evidence:council_minutes:200f1906756acca45b55729e075890ae2553f0450bba863959b53a06763a8a5b",
+    "evidence:council_minutes:7823986c518cdbf44c373db4b08da7f34de9c391d671c992feb4f064ba327929",
+    "evidence:council_minutes:e381af4955daf66b044308f4e098ad5f974764f699ab40679adba2c32f3c3f21"
+  ]
+}
