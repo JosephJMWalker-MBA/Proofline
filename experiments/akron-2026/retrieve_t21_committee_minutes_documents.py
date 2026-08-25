@@ -121,46 +121,25 @@ def document_base_uri(api_root: str, token: str) -> str:
 
 
 def metadata_request(uri: str, timeout: float = 45.0) -> tuple[dict, bytes]:
-    request = Request(
-        uri,
-        data=b"{}",
-        method="POST",
-        headers={
-            "User-Agent": "Proofline/0.1 committee-minutes retrieval",
-            "Accept": "application/json,*/*;q=0.5",
-            "Content-Type": "application/json",
-        },
-    )
+    request = Request(uri, data=b"{}", method="POST", headers={
+        "User-Agent": "Proofline/0.1 committee-minutes retrieval",
+        "Accept": "application/json,*/*;q=0.5",
+        "Content-Type": "application/json",
+    })
     try:
         with urlopen(request, timeout=timeout) as response:
             raw = response.read(MAX_METADATA_BYTES + 1)
             if len(raw) > MAX_METADATA_BYTES:
                 raise RuntimeError("document metadata exceeded size limit")
-            return {
-                "ok": True,
-                "requested_url": uri,
-                "final_url": response.geturl(),
-                "status": getattr(response, "status", 200),
-                "content_type": response.headers.get("Content-Type"),
-            }, raw
+            return {"ok": True, "requested_url": uri, "final_url": response.geturl(),
+                    "status": getattr(response, "status", 200), "content_type": response.headers.get("Content-Type")}, raw
     except HTTPError as exc:
-        return {
-            "ok": False,
-            "requested_url": uri,
-            "final_url": exc.geturl(),
-            "status": exc.code,
-            "content_type": exc.headers.get("Content-Type") if exc.headers else None,
-            "error": f"HTTP {exc.code}: {exc.reason}",
-        }, exc.read(MAX_METADATA_BYTES)
+        return {"ok": False, "requested_url": uri, "final_url": exc.geturl(), "status": exc.code,
+                "content_type": exc.headers.get("Content-Type") if exc.headers else None,
+                "error": f"HTTP {exc.code}: {exc.reason}"}, exc.read(MAX_METADATA_BYTES)
     except (URLError, TimeoutError, RuntimeError) as exc:
-        return {
-            "ok": False,
-            "requested_url": uri,
-            "final_url": uri,
-            "status": None,
-            "content_type": None,
-            "error": str(exc),
-        }, b""
+        return {"ok": False, "requested_url": uri, "final_url": uri, "status": None,
+                "content_type": None, "error": str(exc)}, b""
 
 
 def parse_document_metadata(raw: bytes) -> dict:
@@ -176,11 +155,7 @@ def parse_document_metadata(raw: bytes) -> dict:
     size = value.get("Size")
     if not isinstance(size, (int, float)) or isinstance(size, bool) or size < 0:
         raise ValueError("document metadata must include non-negative numeric Size")
-    return {
-        "Size": size,
-        "ViewerMode": viewer_mode,
-        "IsAboveDownloadThreshold": above,
-    }
+    return {"Size": size, "ViewerMode": viewer_mode, "IsAboveDownloadThreshold": above}
 
 
 def document_get_uri(base_uri: str, metadata: dict) -> tuple[str, str]:
@@ -194,47 +169,26 @@ def document_get_uri(base_uri: str, metadata: dict) -> tuple[str, str]:
 
 
 def document_request(uri: str, timeout: float = 90.0) -> tuple[dict, bytes]:
-    request = Request(
-        uri,
-        method="GET",
-        headers={
-            "User-Agent": "Proofline/0.1 committee-minutes retrieval",
-            "Accept": "application/pdf,application/octet-stream,*/*;q=0.5",
-        },
-    )
+    request = Request(uri, method="GET", headers={
+        "User-Agent": "Proofline/0.1 committee-minutes retrieval",
+        "Accept": "application/pdf,application/octet-stream,*/*;q=0.5",
+    })
     try:
         with urlopen(request, timeout=timeout) as response:
             raw = response.read(MAX_DOCUMENT_BYTES + 1)
             if len(raw) > MAX_DOCUMENT_BYTES:
                 raise RuntimeError("document exceeded size limit")
-            return {
-                "ok": True,
-                "requested_url": uri,
-                "final_url": response.geturl(),
-                "status": getattr(response, "status", 200),
-                "content_type": response.headers.get("Content-Type"),
-                "content_length_header": response.headers.get("Content-Length"),
-                "last_modified": response.headers.get("Last-Modified"),
-                "etag": response.headers.get("ETag"),
-            }, raw
+            return {"ok": True, "requested_url": uri, "final_url": response.geturl(),
+                    "status": getattr(response, "status", 200), "content_type": response.headers.get("Content-Type"),
+                    "content_length_header": response.headers.get("Content-Length"),
+                    "last_modified": response.headers.get("Last-Modified"), "etag": response.headers.get("ETag")}, raw
     except HTTPError as exc:
-        return {
-            "ok": False,
-            "requested_url": uri,
-            "final_url": exc.geturl(),
-            "status": exc.code,
-            "content_type": exc.headers.get("Content-Type") if exc.headers else None,
-            "error": f"HTTP {exc.code}: {exc.reason}",
-        }, exc.read(1_000_000)
+        return {"ok": False, "requested_url": uri, "final_url": exc.geturl(), "status": exc.code,
+                "content_type": exc.headers.get("Content-Type") if exc.headers else None,
+                "error": f"HTTP {exc.code}: {exc.reason}"}, exc.read(1_000_000)
     except (URLError, TimeoutError, RuntimeError) as exc:
-        return {
-            "ok": False,
-            "requested_url": uri,
-            "final_url": uri,
-            "status": None,
-            "content_type": None,
-            "error": str(exc),
-        }, b""
+        return {"ok": False, "requested_url": uri, "final_url": uri, "status": None,
+                "content_type": None, "error": str(exc)}, b""
 
 
 def retrieve_one(api_root: str, meeting_id: int, document: dict, output: Path) -> dict:
@@ -244,7 +198,6 @@ def retrieve_one(api_root: str, meeting_id: int, document: dict, output: Path) -
     if not metadata_http["ok"] or urlparse(metadata_http["final_url"]).hostname != PUBLISHER_HOST:
         raise RuntimeError(f"publisher metadata retrieval failed for meeting {meeting_id}")
     metadata = parse_document_metadata(metadata_raw)
-
     get_uri, representation = document_get_uri(base_uri, metadata)
     document_http, content = document_request(get_uri)
     if not document_http["ok"] or urlparse(document_http["final_url"]).hostname != PUBLISHER_HOST:
@@ -260,7 +213,6 @@ def retrieve_one(api_root: str, meeting_id: int, document: dict, output: Path) -
     document_path = meeting_dir / ("source.pdf" if representation == "pdf" else "source.native.bin")
     metadata_path.write_bytes(metadata_raw)
     document_path.write_bytes(content)
-
     return {
         "meeting_id": meeting_id,
         "opaque_token_sha256": sha256_bytes(token.encode("utf-8")),
@@ -282,34 +234,27 @@ def retrieve_one(api_root: str, meeting_id: int, document: dict, output: Path) -
 
 
 def stable_document_receipts(rows: list[dict]) -> list[dict]:
-    return [
-        {
-            "meeting_id": row["meeting_id"],
-            "stable_projection_sha256": row["stable_projection_sha256"],
-            "representation": row["representation"],
-            "document_sha256": row["document_sha256"],
-            "document_byte_length": row["document_byte_length"],
-            "document_pdf_signature": row["document_pdf_signature"],
-            "metadata_size": row["metadata"]["Size"],
-            "metadata_size_matches_document_bytes": row["metadata_size_matches_document_bytes"],
-            "viewer_mode": row["metadata"]["ViewerMode"],
-            "is_above_download_threshold": row["metadata"]["IsAboveDownloadThreshold"],
-        }
-        for row in sorted(rows, key=lambda item: item["meeting_id"])
-    ]
+    return [{
+        "meeting_id": row["meeting_id"],
+        "stable_projection_sha256": row["stable_projection_sha256"],
+        "representation": row["representation"],
+        "document_sha256": row["document_sha256"],
+        "document_byte_length": row["document_byte_length"],
+        "document_pdf_signature": row["document_pdf_signature"],
+        "metadata_size": row["metadata"]["Size"],
+        "metadata_size_matches_document_bytes": row["metadata_size_matches_document_bytes"],
+        "viewer_mode": row["metadata"]["ViewerMode"],
+        "is_above_download_threshold": row["metadata"]["IsAboveDownloadThreshold"],
+    } for row in sorted(rows, key=lambda item: item["meeting_id"])]
 
 
 def main() -> int:
     if len(sys.argv) != 4:
-        raise SystemExit(
-            "usage: retrieve_t21_committee_minutes_documents.py "
-            "<fresh-search.json> <frozen-search-receipt.json> <output-dir>"
-        )
+        raise SystemExit("usage: retrieve_t21_committee_minutes_documents.py <fresh-search.json> <frozen-search-receipt.json> <output-dir>")
     search_path = Path(sys.argv[1])
     receipt_path = Path(sys.argv[2])
     output = Path(sys.argv[3])
     output.mkdir(parents=True, exist_ok=True)
-
     search = load_json(search_path)
     receipt = load_json(receipt_path)
     validate_search_against_receipt(search, receipt)
@@ -325,7 +270,7 @@ def main() -> int:
         retrievals.append(retrieve_one(api_root, search_row["meeting_id"], documents[0], output))
 
     expected_count = receipt["counts"]["eastwood_returned_document_token_count"]
-    if len(retrievals) != expected_count != 18:
+    if expected_count != 18 or len(retrievals) != expected_count:
         raise RuntimeError("did not retrieve exactly the frozen 18 Committee minutes handles")
     if len({row["meeting_id"] for row in retrievals}) != 18:
         raise RuntimeError("retrieved Committee minutes meeting IDs are not unique")
@@ -375,10 +320,7 @@ def main() -> int:
             "detector_authorized": False,
             "lead_count": None,
         },
-        "outcome": {
-            "status": "unknown",
-            "reason": "Committee minutes source bytes are preserved before any content interpretation or disposition semantics."
-        },
+        "outcome": {"status": "unknown", "reason": "Committee minutes source bytes are preserved before any content interpretation or disposition semantics."},
         "non_claims": [
             "Retrieved Committee Meeting Minutes bytes do not by themselves establish final Council disposition.",
             "The four frozen Committee-minutes non-finding dates remain bounded non-findings only.",
@@ -386,9 +328,7 @@ def main() -> int:
             "No Committee minutes content is interpreted in this stage."
         ],
     }
-    (output / "committee-minutes-document-retrieval.json").write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    (output / "committee-minutes-document-retrieval.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"retrieved_handle_count": len(retrievals), "stable_group_count": len(stable_receipts)}, indent=2, sort_keys=True))
     return 0
 
