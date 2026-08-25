@@ -1,0 +1,126 @@
+name: r1-akron-t21-terminal-record-candidate-scan
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-terminal-record-candidate-scan.yml"
+      - "experiments/akron-2026/measure_t21_terminal_record_candidates.py"
+      - "experiments/akron-2026/r1_t21_terminal_record_target.json"
+      - "experiments/akron-2026/onbase-plan.json"
+      - "src/proofline/terminal_record_candidates.py"
+      - "src/proofline/onbase.py"
+      - "src/proofline/watcher.py"
+      - "src/proofline/ingest.py"
+      - "tests/test_terminal_record_candidates.py"
+      - "tests/test_t21_terminal_record_candidate_measurement.py"
+
+permissions:
+  contents: read
+
+jobs:
+  terminal-record-candidates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify frozen target and candidate primitive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object experiments/akron-2026/r1_t21_terminal_record_target.json)" = "daf41e1f0e008cace354314663f3e1ed53694230"
+          test "$(git hash-object src/proofline/terminal_record_candidates.py)" = "c05e05d896a3dd4d5c7316da151d960a53a043df"
+          test "$(git hash-object experiments/akron-2026/onbase-plan.json)" = "389a2c85399fe18dfdf00acef5973188e9902178"
+          python - <<'PY'
+          import json
+          p = json.load(open('experiments/akron-2026/r1_t21_terminal_record_target.json'))
+          assert p['schema'] == 'proofline-akron-t21-terminal-record-target/v1'
+          assert p['planning_case']['normalized_key'] == 'PC-2025-80-CU'
+          assert p['ordinance_title_sha256'] == '1c34ab1c1907c9d7d31a90b7e57cf7d0bc6b040a816c9b9a854b60ba1a33a421'
+          assert p['introduced_on_or_after'] == '2026-02-23'
+          assert p['authority_boundary']['terminal_outcome_assigned'] is False
+          PY
+
+      - name: Run full test suite and measurement smoke gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/measure_t21_terminal_record_candidates.py --help >/dev/null
+
+      - name: Scan complete bounded marked-agenda population
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-t21-terminal akron-t21-terminal
+          mkdir -p akron-t21-terminal
+          python experiments/akron-2026/measure_t21_terminal_record_candidates.py \
+            --state-dir .akron-t21-terminal \
+            --plan experiments/akron-2026/onbase-plan.json \
+            --target experiments/akron-2026/r1_t21_terminal_record_target.json \
+            --observation-time 2026-08-24T20:51:00-04:00 \
+            --output akron-t21-terminal/terminal-record-candidates.json \
+            > akron-t21-terminal/terminal-record-candidates-stdout.json
+          cat akron-t21-terminal/terminal-record-candidates-stdout.json
+
+      - name: Validate candidate-only authority and complete scan accounting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from datetime import datetime
+          p = json.load(open('akron-t21-terminal/terminal-record-candidates.json'))
+          assert p['schema'] == 'proofline-akron-t21-terminal-record-candidate-measurement/v1'
+          assert p['target']['planning_case']['normalized_key'] == 'PC-2025-80-CU'
+          assert p['target']['ordinance_title_sha256'] == '1c34ab1c1907c9d7d31a90b7e57cf7d0bc6b040a816c9b9a854b60ba1a33a421'
+          counts = p['counts']
+          assert counts['marked_agenda_count'] > 0
+          assert counts['marked_agenda_count'] == len(p['sources'])
+          assert counts['numbered_vote_candidate_count'] == len(p['candidates'])
+          assert counts['target_exact_title_match_count'] == len(p['target_matches'])
+          assert counts['terminal_outcomes_assigned'] == 0
+          assert p['scan_window']['eligible_marked_agenda_count'] == counts['marked_agenda_count']
+          observation = datetime.fromisoformat(p['observation_time'])
+          for source in p['sources']:
+              assert datetime.fromisoformat(source['meeting_time']) <= observation
+              assert source['artifact_sha256']
+              assert source['page_count'] > 0
+          for row in p['candidates']:
+              assert row['terminal_outcome_assigned'] is False
+          for row in p['target_matches']:
+              assert row['target_exact_title_match'] is True
+              assert row['instrument_type'] == 'ordinance'
+              assert row['terminal_outcome_assigned'] is False
+          b = p['authority_boundary']
+          assert b['candidate_is_review_target_only'] is True
+          assert b['exact_title_match_is_relationship_evidence_only'] is True
+          assert b['vote_arithmetic_interpreted'] is False
+          assert b['terminal_outcome_assigned'] is False
+          assert b['absence_treated_as_disposition'] is False
+          assert b['meeting_occurrence_asserted'] is False
+          assert b['causality_assigned'] is False
+          assert b['detector_authorized'] is False
+          assert b['lead_count'] is None
+          PY
+
+      - name: Upload T21 terminal-record candidate measurement
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-terminal-record-candidate-scan
+          path: |
+            akron-t21-terminal/terminal-record-candidates.json
+            akron-t21-terminal/terminal-record-candidates-stdout.json
+            experiments/akron-2026/r1_t21_terminal_record_target.json
+          if-no-files-found: error
+          retention-days: 14
