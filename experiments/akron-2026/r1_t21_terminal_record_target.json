@@ -1,0 +1,30 @@
+{
+  "schema": "proofline-akron-t21-terminal-record-target/v1",
+  "stage": "pre_terminal_record_candidate_scan",
+  "planning_case": {
+    "kind": "planning_case",
+    "normalized_key": "PC-2025-80-CU"
+  },
+  "ordinance_title": "ORDINANCE authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency.",
+  "ordinance_title_sha256": "1c34ab1c1907c9d7d31a90b7e57cf7d0bc6b040a816c9b9a854b60ba1a33a421",
+  "introduced_on_or_after": "2026-02-23",
+  "provenance": {
+    "official_legislation_publish_ids": [102587, 102592],
+    "publisher_meeting_ids_with_exact_title": [669, 670, 671, 672, 674, 675, 676, 677, 678, 682, 683, 685, 686, 688, 689, 690, 691, 692, 693, 694, 696, 697],
+    "record_family_selection_signature_sha256": "b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921"
+  },
+  "authority_boundary": {
+    "exact_title_match_is_relationship_evidence_only": true,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "vote_arithmetic_interpreted": false,
+    "meeting_occurrence_asserted": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "non_claims": [
+    "The target specification identifies the tracked Eastwood ordinance for exact mechanical matching; it does not assign a terminal outcome.",
+    "A numbered-vote candidate matching this title remains a disposition-review candidate until separately governed evidence evaluation.",
+    "Failure to find a matching candidate is not evidence of denial, withdrawal, failure, or any other disposition."
+  ]
+}
