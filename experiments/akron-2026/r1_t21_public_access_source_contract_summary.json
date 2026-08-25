@@ -1,0 +1,162 @@
+{
+  "schema": "proofline-akron-t21-public-access-source-contract-receipt/v1",
+  "stage": "frozen_public_access_source_contract_before_document_search",
+  "canonical_measurement": {
+    "workflow_run_id": 32801671813,
+    "job_id": 97663617611,
+    "head_sha": "a9e7458d9eed5ea85a37f3f916e436e77e87cd94",
+    "artifact_id": 9546702225,
+    "artifact_digest": "sha256:fab36b8f5ef6a2ded9d75b3e7ec6fc4162ab9583842eb72f7792b0a697a087b9"
+  },
+  "publisher_declaration": {
+    "agenda_online_home": "https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/",
+    "anchor_text": "Public Access Viewer.",
+    "resolved_url": "https://onlinedocs.akronohio.gov/PublicAccess/recordsearch/cq/index.html",
+    "purpose": "Passed Legislation & Meeting Minutes"
+  },
+  "stable_source_assets": {
+    "public-access-index.html": {
+      "byte_length": 1963,
+      "sha256": "ef0bfe36b0b63268f2a8e277bc67d55afc5d50c1f7d28199af7f044a70c3ee72"
+    },
+    "script-01.js": {
+      "byte_length": 3164248,
+      "sha256": "41f133a9398193679e218db53d050706c9fa1450d861e592865a03cd03430093"
+    },
+    "script-02.js": {
+      "byte_length": 796602,
+      "sha256": "a8eb480873ff4264388bc496108c4c07692c63d81125b1f4f023301fede5069a"
+    },
+    "obpa-config.json": {
+      "byte_length": 883,
+      "sha256": "ac69facdc096b762d5bf8c76f42c19336bfed9383f2673d1a77868c5258bcd2e"
+    },
+    "custom-queries.json": {
+      "byte_length": 1365,
+      "sha256": "b0a17406648dc959be7430c75a2479e5412dd15b23ca5bc434e87febda95baec"
+    },
+    "passed-legislation-keywords.json": {
+      "byte_length": 599,
+      "sha256": "ce1deeb6642a07df781e0f844691dd8f594294fbbee6e0a114cbdbf8a9886f9a"
+    }
+  },
+  "client_contract": {
+    "config_literal": "./obpa-config.json",
+    "api_url_config_key_declared": true,
+    "custom_query_get_declared": true,
+    "keywords_post_declared": true,
+    "keyword_search_post_declared": true,
+    "document_uri_declared": true,
+    "signature_sha256": "9cd67b6ba0fcf182ce8a680c8dba8eb372c9ea639ba16a018971f838daf113d5"
+  },
+  "configuration": {
+    "api_url": "../../api",
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "api_root_basis": "source_declared_config",
+    "query_limit": 0
+  },
+  "custom_queries": {
+    "count": 4,
+    "signature_sha256": "ad1a89062d3fb4acbda01be6a899fadeb2bad037eab862e58849c4cbda897c74",
+    "queries": [
+      {
+        "id": "202",
+        "name": "Committee Meeting Minutes",
+        "type": "DocumentType",
+        "date_search_option": "NoDate",
+        "requires_date_or_keyword": true,
+        "requires_keyword": false,
+        "requires_date": false
+      },
+      {
+        "id": "175",
+        "name": "Council Meeting Minutes",
+        "type": "DocumentType",
+        "date_search_option": "NoDate",
+        "requires_date_or_keyword": true,
+        "requires_keyword": false,
+        "requires_date": false
+      },
+      {
+        "id": "101",
+        "name": "Passed Legislation",
+        "type": "DocumentType",
+        "date_search_option": "NoDate",
+        "requires_date_or_keyword": true,
+        "requires_keyword": false,
+        "requires_date": false
+      },
+      {
+        "id": "104",
+        "name": "Street Cards",
+        "type": "Keyword",
+        "date_search_option": "ToFromDate",
+        "requires_date_or_keyword": false,
+        "requires_keyword": true,
+        "requires_date": false
+      }
+    ]
+  },
+  "passed_legislation_query": {
+    "id": "101",
+    "name": "Passed Legislation",
+    "type": "DocumentType",
+    "date_search_option": "NoDate",
+    "requires_date_or_keyword": true,
+    "requires_keyword": false,
+    "requires_date": false,
+    "instructions": "Search by Ordinance/Resolution number in the first field or search by keyword in the Title Clause field. Use an asterisk (*) before & after your search term. Examples:*331-2022* in the first field or *Main*St* or *Historic Landmark* in the second.",
+    "signature_sha256": "099bb8d717f7ca8afe59de0296b0bae5ef94d3d38b0c11a15f3b19e1616b8752"
+  },
+  "passed_legislation_keywords": {
+    "count": 3,
+    "signature_sha256": "d4f4038d2021653b00eb83870406d4728c7ad0d22180535970d9c908dd234952",
+    "keywords": [
+      {
+        "id": "102",
+        "name": "Ordinance/Resolution Number",
+        "data_type": "AlphaNumericSingleTable",
+        "required": false,
+        "max_length": 100
+      },
+      {
+        "id": "103",
+        "name": "Title Clause",
+        "data_type": "AlphaNumericSingleTable",
+        "required": false,
+        "max_length": 250
+      },
+      {
+        "id": "106",
+        "name": "Sponsor",
+        "data_type": "AlphaNumericSingleTable",
+        "required": false,
+        "max_length": 100
+      }
+    ]
+  },
+  "authority_boundary": {
+    "custom_query_metadata_requested": true,
+    "keyword_metadata_requested": true,
+    "document_search_submitted": false,
+    "query_id_guessed": false,
+    "document_token_enumerated": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null,
+    "signature_sha256": "d7601f2a1977dc45dfdc1747646d13fd9a948d4c90945889c64655849f67fb6e"
+  },
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "source_contract_proven": true,
+    "passed_legislation_query_governed": true,
+    "document_search_performed": false,
+    "next_stage": "Use only publisher-issued Passed Legislation query 101 and its declared keyword schema in a separately governed Eastwood document-search measurement."
+  },
+  "receipt_guard": {
+    "agenda_home_bytes_intentionally_not_pinned": true,
+    "reason": "Agenda Online home content legitimately rotates with recent/upcoming meetings; final reproduction pins the stable Public Access viewer/config/query/keyword contract instead."
+  }
+}
