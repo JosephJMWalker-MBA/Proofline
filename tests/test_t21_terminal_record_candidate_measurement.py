@@ -78,7 +78,7 @@ def test_agenda_pdf_uri_uses_only_publisher_declared_unique_name_and_meeting_id(
         agenda_unique_name="February 23, 2026 669 Agenda 2 23 2026 6 30 00 PM",
     )
     assert uri.startswith(
-        "https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFile/"
+        "https://onlinedocs.akronohio.gov/OnBaseAgendaOnline/Documents/DownloadFileBytes/"
     )
     assert "February%2023%2C%202026%20669%20Agenda" in uri
     assert uri.endswith(".pdf?documentType=1&meetingId=669")
