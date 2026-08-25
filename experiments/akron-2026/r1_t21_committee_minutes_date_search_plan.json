@@ -1,0 +1,105 @@
+{
+  "schema": "proofline-akron-t21-committee-minutes-date-search-plan/v1",
+  "stage": "pre_document_search",
+  "base_merge_commit": "bcf2a7781edddfe267a91dc50f2e3c09bd5a5d60",
+  "source_contract": {
+    "receipt_schema": "proofline-akron-t21-committee-minutes-source-contract-receipt/v1",
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "query_id": 202,
+    "query_name": "Committee Meeting Minutes",
+    "query_limit": 0,
+    "meeting_date_keyword": {
+      "id": 124,
+      "name": "Meeting Date",
+      "data_type": "Date",
+      "serialization": "MM/DD/YYYY"
+    },
+    "year_keyword": {
+      "id": 532,
+      "name": "Year",
+      "data_type": "SmallNumeric"
+    },
+    "committee_keyword": {
+      "id": 105,
+      "name": "Committee",
+      "data_type": "AlphaNumericSingleTable",
+      "value": "PLANNING & ECONOMIC DEVELOPMENT"
+    }
+  },
+  "positive_control": {
+    "request_id": "year_2026_planning_economic_development_control",
+    "query_id": 202,
+    "keywords": [
+      {
+        "ID": 532,
+        "Name": "Year",
+        "Value": "2026",
+        "KeywordOperator": "="
+      },
+      {
+        "ID": 105,
+        "Name": "Committee",
+        "Value": "PLANNING & ECONOMIC DEVELOPMENT",
+        "KeywordOperator": "="
+      }
+    ],
+    "QueryLimit": 0,
+    "included_in_eastwood_population": false,
+    "basis": "Both 2026 and PLANNING & ECONOMIC DEVELOPMENT are exact publisher dataset values frozen by the Committee Meeting Minutes source contract."
+  },
+  "eastwood_requests": [
+    {"meeting_id": 669, "meeting_date": "2026-02-23", "request_id": "meeting_669_2026_02_23", "keyword_value": "02/23/2026"},
+    {"meeting_id": 670, "meeting_date": "2026-03-02", "request_id": "meeting_670_2026_03_02", "keyword_value": "03/02/2026"},
+    {"meeting_id": 671, "meeting_date": "2026-03-09", "request_id": "meeting_671_2026_03_09", "keyword_value": "03/09/2026"},
+    {"meeting_id": 672, "meeting_date": "2026-03-16", "request_id": "meeting_672_2026_03_16", "keyword_value": "03/16/2026"},
+    {"meeting_id": 674, "meeting_date": "2026-03-23", "request_id": "meeting_674_2026_03_23", "keyword_value": "03/23/2026"},
+    {"meeting_id": 675, "meeting_date": "2026-03-30", "request_id": "meeting_675_2026_03_30", "keyword_value": "03/30/2026"},
+    {"meeting_id": 676, "meeting_date": "2026-04-06", "request_id": "meeting_676_2026_04_06", "keyword_value": "04/06/2026"},
+    {"meeting_id": 677, "meeting_date": "2026-04-13", "request_id": "meeting_677_2026_04_13", "keyword_value": "04/13/2026"},
+    {"meeting_id": 678, "meeting_date": "2026-04-20", "request_id": "meeting_678_2026_04_20", "keyword_value": "04/20/2026"},
+    {"meeting_id": 682, "meeting_date": "2026-04-27", "request_id": "meeting_682_2026_04_27", "keyword_value": "04/27/2026"},
+    {"meeting_id": 683, "meeting_date": "2026-05-04", "request_id": "meeting_683_2026_05_04", "keyword_value": "05/04/2026"},
+    {"meeting_id": 685, "meeting_date": "2026-05-11", "request_id": "meeting_685_2026_05_11", "keyword_value": "05/11/2026"},
+    {"meeting_id": 686, "meeting_date": "2026-05-18", "request_id": "meeting_686_2026_05_18", "keyword_value": "05/18/2026"},
+    {"meeting_id": 688, "meeting_date": "2026-06-01", "request_id": "meeting_688_2026_06_01", "keyword_value": "06/01/2026"},
+    {"meeting_id": 689, "meeting_date": "2026-06-08", "request_id": "meeting_689_2026_06_08", "keyword_value": "06/08/2026"},
+    {"meeting_id": 690, "meeting_date": "2026-06-15", "request_id": "meeting_690_2026_06_15", "keyword_value": "06/15/2026"},
+    {"meeting_id": 691, "meeting_date": "2026-06-22", "request_id": "meeting_691_2026_06_22", "keyword_value": "06/22/2026"},
+    {"meeting_id": 692, "meeting_date": "2026-06-29", "request_id": "meeting_692_2026_06_29", "keyword_value": "06/29/2026"},
+    {"meeting_id": 693, "meeting_date": "2026-07-06", "request_id": "meeting_693_2026_07_06", "keyword_value": "07/06/2026"},
+    {"meeting_id": 694, "meeting_date": "2026-07-13", "request_id": "meeting_694_2026_07_13", "keyword_value": "07/13/2026"},
+    {"meeting_id": 696, "meeting_date": "2026-07-20", "request_id": "meeting_696_2026_07_20", "keyword_value": "07/20/2026"},
+    {"meeting_id": 697, "meeting_date": "2026-07-27", "request_id": "meeting_697_2026_07_27", "keyword_value": "07/27/2026"}
+  ],
+  "selection_rule": {
+    "meeting_ids_are_exact_title_population_from_frozen_target": true,
+    "meeting_dates_are_inherited_from_frozen_agenda_status_sequence": true,
+    "committee_value_is_exact_publisher_dataset_value": true,
+    "positive_control_excluded": true,
+    "special_meetings_not_in_exact_title_population_excluded": true,
+    "future_publisher_rows_excluded": true,
+    "post_result_date_or_term_expansion_allowed": false,
+    "returned_documents_dereferenced_in_this_stage": false,
+    "opaque_tokens_are_not_stable_identity": true
+  },
+  "authority_boundary": {
+    "document_search_planned": true,
+    "document_search_submitted": false,
+    "query_id_guessed": false,
+    "keyword_id_guessed": false,
+    "committee_value_guessed": false,
+    "document_token_enumerated": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "non_claims": [
+    "A missing Committee Meeting Minutes result for an Eastwood-linked date is not evidence of denial, withdrawal, failure, non-passage, abandonment, or any terminal disposition.",
+    "A returned committee-minutes document is a retrieval candidate only until separately acquired and evaluated.",
+    "The 2026 committee control is a surface-health control and is structurally excluded from the Eastwood candidate population.",
+    "Committee polling or recommendation is not final Council passage or denial unless separately governed authoritative semantics establish that outcome."
+  ]
+}
