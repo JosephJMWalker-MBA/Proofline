@@ -7,6 +7,7 @@ on:
       - "experiments/akron-2026/measure_t21_passed_legislation_recall_expansion.py"
       - "experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json"
       - "tests/test_t21_passed_legislation_recall_expansion.py"
+      - "tests/test_t21_passed_legislation_recall_expansion_receipt.py"
       - ".github/workflows/r1-akron-t21-passed-legislation-recall-expansion.yml"
   workflow_dispatch:
 
@@ -54,7 +55,7 @@ jobs:
         if: hashFiles('experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json') != ''
         run: |
           python - <<'PY'
-          import json
+          import collections, json
           r=json.load(open('experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json'))
           m=json.load(open('akron-passed-legislation-recall-expansion/passed-legislation-recall-expansion.json'))
           assert m['plan']['sha256'] == r['plan_sha256']
@@ -62,6 +63,25 @@ jobs:
           assert m['counts'] == r['counts']
           assert m['candidate_population']['stable_population_signature_sha256'] == r['stable_population_signature_sha256']
           assert m['candidate_population']['target_screened_population_signature_sha256'] == r['target_screened_population_signature_sha256']
+          expected={row['request_id']: row for row in r['search_receipts']}
+          actual={row['request_id']: row for row in m['searches']}
+          assert set(actual) == set(expected)
+          for request_id, receipt in expected.items():
+              row=actual[request_id]
+              assert row['value'] == receipt['value']
+              assert row['request_payload_sha256'] == receipt['request_payload_sha256']
+              assert row['returned_document_count'] == receipt['canonical_returned_document_count']
+              assert row['stable_unique_projection_count'] == receipt['canonical_stable_unique_projection_count']
+              assert row['stable_result_signature_sha256'] == receipt['stable_result_signature_sha256']
+              assert row['truncated'] == receipt['truncated']
+          hit_counts=collections.Counter(
+              hit for group in m['candidate_population']['groups'] for hit in group['screening_hits']
+          )
+          obs=r['screening_observations']
+          assert hit_counts['action_and_location'] == obs['action_and_location_group_count']
+          assert hit_counts['street_number_and_location'] == obs['street_number_and_location_group_count']
+          assert hit_counts['distinctive_use_tokens'] == obs['distinctive_use_tokens_group_count']
+          assert hit_counts['use_and_location'] == obs['use_and_location_group_count']
           assert m['authority_boundary'] == r['authority_boundary']
           assert m['outcome'] == r['outcome']
           PY
