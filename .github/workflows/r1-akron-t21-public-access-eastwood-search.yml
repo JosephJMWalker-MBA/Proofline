@@ -1,0 +1,225 @@
+name: r1-akron-t21-public-access-eastwood-search
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-public-access-eastwood-search.yml"
+      - "experiments/akron-2026/measure_t21_public_access_eastwood_search.py"
+      - "experiments/akron-2026/r1_t21_public_access_eastwood_search_plan.json"
+      - "experiments/akron-2026/r1_t21_public_access_eastwood_search_summary.json"
+      - "experiments/akron-2026/r1_t21_public_access_source_contract_summary.json"
+      - "experiments/akron-2026/r1_t21_terminal_record_target.json"
+      - "tests/test_t21_public_access_eastwood_search_measurement.py"
+      - "tests/test_t21_public_access_eastwood_search_receipt.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eastwood-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify frozen plan and run full test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/measure_t21_public_access_eastwood_search.py
+
+      - name: Run positive control and two frozen Eastwood searches
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf akron-public-access-eastwood-search
+          python experiments/akron-2026/measure_t21_public_access_eastwood_search.py \
+            akron-public-access-eastwood-search \
+            | tee akron-public-access-eastwood-search-stdout.json
+          test -s akron-public-access-eastwood-search/eastwood-search-measurement.json
+          test -s akron-public-access-eastwood-search/positive-control-known_passed_ordinance_44_2026.json
+          test -s akron-public-access-eastwood-search/search-01-title_clause_address_anchor.json
+          test -s akron-public-access-eastwood-search/search-02-title_clause_distinctive_use_anchor.json
+
+      - name: Validate candidate-only authority complete responses and control
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from urllib.parse import urlparse
+
+          p = json.load(open('akron-public-access-eastwood-search/eastwood-search-measurement.json'))
+          plan = json.load(open('experiments/akron-2026/r1_t21_public_access_eastwood_search_plan.json'))
+          assert p['schema'] == 'proofline-akron-t21-public-access-eastwood-search-measurement/v1'
+          assert p['stage'] == 'publisher_passed_legislation_candidate_search_only'
+          assert p['source_contract'] == {
+              'schema': 'proofline-akron-t21-public-access-source-contract-receipt/v1',
+              'query_id': '101',
+              'query_name': 'Passed Legislation',
+              'title_clause_keyword_id': '103',
+              'ordinance_number_keyword_id': '102',
+              'api_root': 'https://onlinedocs.akronohio.gov/PublicAccess/api',
+              'query_limit': 0,
+          }
+          assert urlparse(p['endpoint']).hostname == 'onlinedocs.akronohio.gov'
+          assert p['plan']['request_ids'] == [
+              'title_clause_address_anchor',
+              'title_clause_distinctive_use_anchor',
+          ]
+          assert p['plan']['positive_control_id'] == 'known_passed_ordinance_44_2026'
+          assert p['plan']['post_result_term_expansion_allowed'] is False
+
+          control = p['positive_control']
+          required_prefix = plan['positive_control']['required_document_name_prefix']
+          assert required_prefix == 'O-44-2026 -'
+          assert control['control_id'] == 'known_passed_ordinance_44_2026'
+          assert control['excluded_from_candidate_population'] is True
+          assert control['passed'] is True
+          assert control['response']['ok'] is True
+          assert control['response']['same_host'] is True
+          assert control['truncated'] is False
+          assert control['returned_document_count'] >= 1
+          assert any(
+              isinstance(row.get('name'), str) and row['name'].startswith(required_prefix)
+              for row in control['returned_documents']
+          )
+          assert control['request_payload'] == {
+              'QueryID': 101,
+              'Keywords': [{
+                  'ID': 102,
+                  'Name': 'Ordinance/Resolution Number',
+                  'Value': '*44-2026*',
+                  'KeywordOperator': '=',
+              }],
+              'QueryLimit': 0,
+          }
+
+          assert p['counts']['frozen_eastwood_request_count'] == 2
+          assert p['counts']['successful_eastwood_request_count'] == 2
+          assert p['counts']['truncated_eastwood_request_count'] == 0
+          assert p['counts']['positive_control_returned_document_count'] >= 1
+          assert len(p['searches']) == 2
+          for row in p['searches']:
+              assert row['response']['ok'] is True
+              assert row['response']['same_host'] is True
+              assert row['truncated'] is False
+              assert row['request_payload']['QueryID'] == 101
+              assert row['request_payload']['QueryLimit'] == 0
+              assert len(row['request_payload']['Keywords']) == 1
+              keyword = row['request_payload']['Keywords'][0]
+              assert keyword['ID'] == 103
+              assert keyword['Name'] == 'Title Clause'
+              assert keyword['KeywordOperator'] == '='
+          assert p['candidate_population']['positive_control_excluded'] is True
+          assert p['candidate_population']['count'] == p['counts']['unique_returned_eastwood_document_count']
+          assert p['outcome']['status'] == 'unknown'
+          assert p['authority_boundary'] == {
+              'document_search_submitted': True,
+              'positive_control_submitted': True,
+              'positive_control_excluded_from_candidate_population': True,
+              'only_predeclared_eastwood_terms_used': True,
+              'post_result_term_expansion_performed': False,
+              'query_id_guessed': False,
+              'keyword_id_guessed': False,
+              'document_token_enumerated': False,
+              'returned_document_dereferenced': False,
+              'terminal_outcome_assigned': False,
+              'absence_treated_as_disposition': False,
+              'causality_assigned': False,
+              'detector_authorized': False,
+              'lead_count': None,
+          }
+          PY
+
+      - name: Reproduce frozen Eastwood search receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+
+          m = json.load(open('akron-public-access-eastwood-search/eastwood-search-measurement.json'))
+          r = json.load(open('experiments/akron-2026/r1_t21_public_access_eastwood_search_summary.json'))
+
+          assert m['plan']['sha256'] == r['plan']['sha256']
+          assert m['source_contract'] == {
+              'schema': r['source_contract']['schema'],
+              'query_id': r['source_contract']['query_id'],
+              'query_name': r['source_contract']['query_name'],
+              'title_clause_keyword_id': r['source_contract']['title_clause_keyword_id'],
+              'ordinance_number_keyword_id': r['source_contract']['ordinance_number_keyword_id'],
+              'api_root': r['source_contract']['api_root'],
+              'query_limit': r['source_contract']['query_limit'],
+          }
+          assert m['target']['planning_case'] == r['target']['planning_case']
+          assert m['target']['ordinance_title_sha256'] == r['target']['ordinance_title_sha256']
+
+          expected = {row['request_id']: row for row in r['eastwood_searches']}
+          assert set(expected) == {row['request_id'] for row in m['searches']}
+          for row in m['searches']:
+              frozen = expected[row['request_id']]
+              assert row['request_payload_sha256'] == frozen['request_payload_sha256']
+              assert row['request_payload']['Keywords'][0]['Value'] == frozen['value']
+              assert row['response']['byte_length'] == frozen['response_byte_size']
+              assert row['response']['sha256'] == frozen['response_sha256']
+              assert row['returned_document_count'] == frozen['returned_document_count']
+              assert row['truncated'] is frozen['truncated']
+
+          assert m['candidate_population']['count'] == r['candidate_population']['count']
+          assert m['candidate_population']['signature_sha256'] == r['candidate_population']['signature_sha256']
+          assert m['candidate_population']['positive_control_excluded'] is True
+
+          control = m['positive_control']
+          frozen_control = r['positive_control']
+          assert control['request_payload_sha256'] == frozen_control['request_payload_sha256']
+          assert control['passed'] is True
+          assert control['excluded_from_candidate_population'] is True
+          matches = [
+              row for row in control['returned_documents']
+              if isinstance(row.get('name'), str)
+              and row['name'].startswith(frozen_control['required_document_name_prefix'])
+          ]
+          assert matches
+          assert any(
+              hashlib.sha256(row['name'].encode('utf-8')).hexdigest()
+              == frozen_control['required_document_name_sha256']
+              for row in matches
+          )
+          assert any(
+              hashlib.sha256(
+                  json.dumps(
+                      [v.get('Value') for v in (row.get('display_column_values') or [])],
+                      sort_keys=True,
+                      separators=(',', ':'),
+                  ).encode('utf-8')
+              ).hexdigest() == frozen_control['required_document_display_values_sha256']
+              for row in matches
+          )
+
+          assert m['authority_boundary'] == r['authority_boundary']
+          assert m['outcome']['status'] == r['outcome']['status'] == 'unknown'
+          PY
+
+      - name: Upload Eastwood search measurement
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-public-access-eastwood-search
+          path: |
+            akron-public-access-eastwood-search/
+            akron-public-access-eastwood-search-stdout.json
+          if-no-files-found: error
+          retention-days: 14

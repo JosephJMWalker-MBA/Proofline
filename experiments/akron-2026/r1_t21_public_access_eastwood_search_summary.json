@@ -1,0 +1,98 @@
+{
+  "schema": "proofline-akron-t21-public-access-eastwood-search-receipt/v1",
+  "stage": "post_measurement_pre_document_retrieval_receipt",
+  "canonical_measurement": {
+    "workflow_run_id": 32802591993,
+    "job_id": 97666262991,
+    "head_sha": "093c5cfd6e0adfa0569909d6346c1597d7854833",
+    "artifact_id": 9547012486,
+    "artifact_digest": "sha256:77b78319cd941819fece7176bc024bb01d854f286219d567f8e638d7dbf963f3",
+    "observed_at_utc": "2026-08-25T02:45:36.200505+00:00",
+    "raw_measurement_byte_size": 9422,
+    "raw_measurement_json_sha256": "dcc0f560ddb0e5dda83798a21a131d4533e5a7c29fbb293622bf7894351bfa10"
+  },
+  "plan": {
+    "schema": "proofline-akron-t21-public-access-eastwood-search-plan/v1",
+    "sha256": "9c3b2007beb767c6a363df7b4cf8ed01edfc4a48e5ea458c10c0701a64047f3d",
+    "eastwood_request_count": 2,
+    "post_result_term_expansion_allowed": false
+  },
+  "source_contract": {
+    "schema": "proofline-akron-t21-public-access-source-contract-receipt/v1",
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "query_id": "101",
+    "query_name": "Passed Legislation",
+    "title_clause_keyword_id": "103",
+    "ordinance_number_keyword_id": "102",
+    "query_limit": 0
+  },
+  "target": {
+    "planning_case": "PC-2025-80-CU",
+    "ordinance_title_sha256": "484e8b7cd5bc9957938bc6aaf98063ae0c93ffb1bc2df86b10205501437a1c84"
+  },
+  "positive_control": {
+    "control_id": "known_passed_ordinance_44_2026",
+    "request_payload_sha256": "c7b7596f1664663a43aae08672e5abc0baa91edb829e8207d235e65b25c257b2",
+    "canonical_returned_document_count": 3,
+    "required_document_name_prefix": "O-44-2026 -",
+    "required_document_name_sha256": "6ef47671b74e187406a2153edef0eff7b6f2ae32c8a29fdf513e7978d2342ce4",
+    "required_document_display_values_sha256": "29883c67435fe356bf7447f59ff56516822be401d1ce4d9734d2c4941c7f661d",
+    "specific_known_record_returned": true,
+    "excluded_from_eastwood_candidate_population": true,
+    "opaque_document_tokens_intentionally_not_pinned": true
+  },
+  "eastwood_searches": [
+    {
+      "request_id": "title_clause_address_anchor",
+      "value": "*1928*Eastwood*Avenue*",
+      "request_payload_sha256": "33550cdd659c4ce2ca05d8a8636b87cd5c1a34a4ff4d75ee47cd5fc328124b07",
+      "response_byte_size": 51,
+      "response_sha256": "d067f87ce53dffb0023494b905888c578296914d68b0dd22b5a3210e50863aa9",
+      "returned_document_count": 0,
+      "truncated": false
+    },
+    {
+      "request_id": "title_clause_distinctive_use_anchor",
+      "value": "*defense*education*training*facility*",
+      "request_payload_sha256": "213411ccf9aaac76fbbfe3d6098def50153ce7c4c9957b6f45952d72a513bdd5",
+      "response_byte_size": 51,
+      "response_sha256": "d067f87ce53dffb0023494b905888c578296914d68b0dd22b5a3210e50863aa9",
+      "returned_document_count": 0,
+      "truncated": false
+    }
+  ],
+  "candidate_population": {
+    "count": 0,
+    "signature_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "positive_control_excluded": true
+  },
+  "authority_boundary": {
+    "document_search_submitted": true,
+    "positive_control_submitted": true,
+    "positive_control_excluded_from_candidate_population": true,
+    "only_predeclared_eastwood_terms_used": true,
+    "post_result_term_expansion_performed": false,
+    "query_id_guessed": false,
+    "keyword_id_guessed": false,
+    "document_token_enumerated": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "outcome": {
+    "status": "unknown",
+    "reason": "Both frozen Eastwood Title Clause searches returned complete non-truncated zero-result responses while an independent known-legislation positive control returned the specific O-44-2026 record. This validates the bounded search non-finding but does not establish any terminal disposition."
+  },
+  "receipt_guards": {
+    "eastwood_empty_response_bytes_pinned": true,
+    "positive_control_specific_human_readable_record_required": true,
+    "positive_control_full_population_not_pinned": true,
+    "positive_control_opaque_tokens_not_pinned": true,
+    "canonical_raw_measurement_preserved_for_provenance_but_not_exactly_replayed": true,
+    "reason": "Public Access emitted different opaque document tokens across repeated positive-control requests. Replay therefore pins the stable Eastwood empty responses and requires the specific O-44-2026 human-readable record without treating changing opaque tokens as stable identity."
+  },
+  "next_stage": "The bounded Passed Legislation search supplied no Eastwood retrieval candidate. T21 remains open and must pursue another authoritative disposition surface or a separately justified wording/query expansion without treating this non-finding as outcome."
+}
