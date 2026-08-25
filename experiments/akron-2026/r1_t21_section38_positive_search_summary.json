@@ -1,0 +1,132 @@
+{
+  "schema": "proofline-akron-t21-section38-positive-search-receipt/v1",
+  "stage": "frozen_section38_positive_only_search_before_clerk_request",
+  "canonical_measurement": {
+    "workflow_run_id": 32865761524,
+    "job_id": 97860509565,
+    "head_sha": "f34ca25bb335d09de861fc9a5309eed06edb7ca0",
+    "artifact_id": 9570021579,
+    "artifact_digest": "sha256:0030ffef550f0d62d6702f7095c785404cf37397f05d7c880bca3e7c99d7f01f",
+    "raw_measurement_byte_size": 5089,
+    "raw_measurement_sha256": "89297c93bd8413a0480466ec6d3947be6dc2a6693b713793a2e797c35e0ded2b"
+  },
+  "source_receipts": {
+    "discovery": {
+      "file_sha256": "21d7c6be5c5d605487b5954ba6ebb2fa6163ac027f5b7f01742e3a5c49b02414",
+      "observed_at_utc": "2026-08-25T15:17:00Z",
+      "path": "r1_t21_section38_discovery_observation.json",
+      "post_observation_query_expansion_performed": false,
+      "query_count": 4,
+      "unique_candidate_url_count": 1
+    },
+    "inventory": {
+      "file_sha256": "786387ec1967e3c9b70ec75874ccd2af743f784dc25aca56b5db2013d2ba3801",
+      "inventory_signature_sha256": "fda5333e4b866cf0b8246c069a61b67fdce15ca9df54b14e5c6cea79eead98d6",
+      "path": "r1_t21_disposition_surface_inventory_summary.json",
+      "surface_population_signature_sha256": "56ecb542c795ffae35bd27475c2fe9a3801189c3d9a80defccc2f9a8b48ac12f"
+    },
+    "plan": {
+      "file_sha256": "46f4f87208a2baf7169e06a8d3bd01ddbbfbf2ef2dfd75f464cdf42bc0965290",
+      "path": "r1_t21_section38_positive_search_plan.json",
+      "pre_observation_commit": "7b5c5a514fed0786f83029bc6bd2977d2840485e"
+    }
+  },
+  "positive_control": {
+    "byte_length": 133925,
+    "classification": {
+      "all_required_section38_markers_present": true,
+      "approval_or_effective_date_inferred": false,
+      "authorized_terminal_status": null,
+      "classification": "section38_non_target_document",
+      "classification_signature_sha256": "2841b6a1b1700dfa24d32704a154357b5ba01bc8755b3e2eafbf7787c0f6f244",
+      "identity_hits": [],
+      "minimum_target_identity_satisfied": false,
+      "schema": "proofline-section38-document-classification/v1",
+      "section38_marker_hits": [
+        "passed by Akron City Council",
+        "Clerk of Council",
+        "This summary is being published pursuant to Section 38 of the City Charter"
+      ],
+      "terminal_positive": false
+    },
+    "content_type": "application/pdf",
+    "excluded_from_target_population": true,
+    "final_url": "https://www.akroncitycouncil.org/sites/default/files/docs/Summary%20of%20O-40-2026.pdf",
+    "id": "known_section38_ordinance_40_2026",
+    "page_count": 1,
+    "requested_url": "https://www.akroncitycouncil.org/sites/default/files/docs/Summary%20of%20O-40-2026.pdf",
+    "sha256": "813b1c9c383dafe03e1fd1850a435696000c5bb99ff6ca382c88c745ee3eab04",
+    "text_length": 842,
+    "text_sha256": "ffe94a961479168bc45d3b6349492d2acb079f941edb09c2f0187158830ad83e"
+  },
+  "target_candidates": [
+    {
+      "byte_length": 213136,
+      "classification": {
+        "all_required_section38_markers_present": false,
+        "approval_or_effective_date_inferred": false,
+        "authorized_terminal_status": null,
+        "classification": "target_identity_nonterminal_document",
+        "classification_signature_sha256": "c96163274d68958fe122af3a8298dda30ff9c7a6ddbc136043dcd2afe5eeffcd",
+        "identity_hits": [
+          "exact_address",
+          "distinctive_use_tokens_and_location"
+        ],
+        "minimum_target_identity_satisfied": true,
+        "schema": "proofline-section38-document-classification/v1",
+        "section38_marker_hits": [
+          "Clerk of Council"
+        ],
+        "terminal_positive": false
+      },
+      "content_type": "application/pdf",
+      "final_url": "https://www.akroncitycouncil.org/sites/default/files/docs/advertise%20for%203.9%20public%20hearings.pdf",
+      "page_count": 1,
+      "requested_url": "https://www.akroncitycouncil.org/sites/default/files/docs/advertise%20for%203.9%20public%20hearings.pdf",
+      "sha256": "9125a5aa0267a53dafcb1378e5af78296cb34eb9a849988edfc441ddf4547cb4",
+      "text_length": 2354,
+      "text_sha256": "5414cfcd78b68e6cdb83e4fc98318b93c16538954d3be78862ecd699e246f5ff"
+    }
+  ],
+  "counts": {
+    "direct_candidate_retrieval_count": 1,
+    "frozen_discovery_query_count": 4,
+    "section38_terminal_positive_candidate_count": 0,
+    "target_identity_candidate_count": 1,
+    "unique_discovered_candidate_count": 1
+  },
+  "candidate_population_signature_sha256": "e3df9cdf4c11e1f5c1e8e0b1e55c9c8c8ebf5970c0bb81f72420b12b7e97360a",
+  "measurement_signature_sha256": "7d4bb85187f5d90c90cd8b4a086ff118920f6994fcf509646f1d0d6c6ac07c63",
+  "authority_boundary": {
+    "approval_or_effective_date_inference_authorized": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "direct_same_host_pdf_required_for_positive_outcome": true,
+    "external_discovery_is_non_authoritative": true,
+    "lead_count": null,
+    "notice_absence_is_non_passage": false,
+    "post_observation_query_expansion_performed": false,
+    "search_engine_nonfinding_is_disposition_evidence": false
+  },
+  "outcome": {
+    "reason": "The frozen external discovery produced no directly retrieved Section 38 passage summary satisfying the Eastwood identity contract. Search-index nonfindings and notice-surface absence are non-terminal by design.",
+    "status": "unknown"
+  },
+  "next_stage": "Use the official Clerk public-record request path for the Eastwood ordinance disposition rather than expanding discovery terms or inferring non-passage.",
+  "receipt_guards": {
+    "pre_observation_plan_commit_pinned": true,
+    "external_discovery_observation_preserved_but_not_replay_authoritative": true,
+    "direct_publisher_pdf_bytes_and_text_pinned": true,
+    "known_section38_positive_control_required": true,
+    "target_hearing_notice_must_remain_nonterminal": true,
+    "notice_absence_and_search_nonfindings_remain_nonterminal": true,
+    "post_result_query_expansion_forbidden": true
+  },
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "discovered_target_document_kind": "public_hearing_notice",
+    "section38_passage_summary_discovered": false,
+    "fallback_surface": "clerk_public_records_request",
+    "reason": "The direct Eastwood document corroborates the March 9 hearing record but does not contain the Clerk-authored Section 38 passage language required for terminal passage evidence."
+  }
+}

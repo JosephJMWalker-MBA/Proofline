@@ -1,0 +1,43 @@
+{
+  "schema": "proofline-akron-t21-section38-discovery-observation/v1",
+  "observed_at_utc": "2026-08-25T15:17:00Z",
+  "pre_observation_plan_commit": "7b5c5a514fed0786f83029bc6bd2977d2840485e",
+  "discovery_authority": "candidate_discovery_only_non_authoritative_non_exhaustive",
+  "queries": [
+    {
+      "id": "exact_address",
+      "returned_result_count_observed": 1,
+      "candidate_urls": [
+        "https://www.akroncitycouncil.org/sites/default/files/docs/advertise%20for%203.9%20public%20hearings.pdf"
+      ]
+    },
+    {
+      "id": "distinctive_use_phrase",
+      "returned_result_count_observed": 1,
+      "candidate_urls": [
+        "https://www.akroncitycouncil.org/sites/default/files/docs/advertise%20for%203.9%20public%20hearings.pdf"
+      ]
+    },
+    {
+      "id": "planning_case",
+      "returned_result_count_observed": 0,
+      "candidate_urls": []
+    },
+    {
+      "id": "petitioner_and_location",
+      "returned_result_count_observed": 0,
+      "candidate_urls": []
+    }
+  ],
+  "unique_candidate_urls": [
+    "https://www.akroncitycouncil.org/sites/default/files/docs/advertise%20for%203.9%20public%20hearings.pdf"
+  ],
+  "observation_boundary": {
+    "search_engine_nonfinding_is_disposition_evidence": false,
+    "search_engine_result_is_authoritative_source": false,
+    "direct_same_host_document_validation_required": true,
+    "post_observation_query_expansion_performed": false,
+    "zero_result_queries_do_not_mean_notice_absence": true,
+    "zero_result_queries_do_not_mean_non_passage": true
+  }
+}

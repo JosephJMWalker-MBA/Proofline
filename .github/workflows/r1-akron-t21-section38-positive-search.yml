@@ -1,0 +1,95 @@
+name: r1-akron-t21-section38-positive-search
+
+on:
+  pull_request:
+    paths:
+      - "src/proofline/section38_notices.py"
+      - "experiments/akron-2026/measure_t21_section38_positive_search.py"
+      - "experiments/akron-2026/r1_t21_section38_positive_search_plan.json"
+      - "experiments/akron-2026/r1_t21_section38_discovery_observation.json"
+      - "experiments/akron-2026/r1_t21_section38_positive_search_summary.json"
+      - "tests/test_t21_section38_notices.py"
+      - "tests/test_t21_section38_positive_search_receipt.py"
+      - ".github/workflows/r1-akron-t21-section38-positive-search.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  section38-positive-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile \
+            src/proofline/section38_notices.py \
+            experiments/akron-2026/measure_t21_section38_positive_search.py
+      - name: Retrieve and classify frozen Section 38 candidates
+        run: |
+          set -euo pipefail
+          rm -rf akron-section38-positive-search
+          python experiments/akron-2026/measure_t21_section38_positive_search.py \
+            experiments/akron-2026/r1_t21_section38_positive_search_plan.json \
+            experiments/akron-2026/r1_t21_disposition_surface_inventory_summary.json \
+            experiments/akron-2026/r1_t21_section38_discovery_observation.json \
+            akron-section38-positive-search
+      - name: Validate positive-only authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-section38-positive-search/section38-positive-search-measurement.json'))
+          assert p['counts']['frozen_discovery_query_count']==4
+          assert p['counts']['unique_discovered_candidate_count']==1
+          assert p['counts']['direct_candidate_retrieval_count']==1
+          assert p['counts']['target_identity_candidate_count']==1
+          assert p['counts']['section38_terminal_positive_candidate_count']==0
+          c=p['positive_control']['classification']
+          assert c['all_required_section38_markers_present'] is True
+          assert c['identity_hits']==[]
+          assert c['terminal_positive'] is False
+          t=p['target_candidates'][0]['classification']
+          assert 'exact_address' in t['identity_hits']
+          assert 'distinctive_use_tokens_and_location' in t['identity_hits']
+          assert t['all_required_section38_markers_present'] is False
+          assert t['terminal_positive'] is False
+          assert p['authority_boundary']['external_discovery_is_non_authoritative'] is True
+          assert p['authority_boundary']['search_engine_nonfinding_is_disposition_evidence'] is False
+          assert p['authority_boundary']['notice_absence_is_non_passage'] is False
+          assert p['authority_boundary']['post_observation_query_expansion_performed'] is False
+          assert p['outcome']['status']=='unknown'
+          assert 'Clerk public-record request' in p['next_stage']
+          PY
+      - name: Reproduce frozen Section 38 receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_section38_positive_search_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_section38_positive_search_summary.json'))
+          m=json.load(open('akron-section38-positive-search/section38-positive-search-measurement.json'))
+          assert m['source_receipts']==r['source_receipts']
+          assert m['positive_control']==r['positive_control']
+          assert m['target_candidates']==r['target_candidates']
+          assert m['counts']==r['counts']
+          assert m['candidate_population_signature_sha256']==r['candidate_population_signature_sha256']
+          assert m['measurement_signature_sha256']==r['measurement_signature_sha256']
+          assert m['authority_boundary']==r['authority_boundary']
+          assert m['outcome']==r['outcome']
+          assert m['next_stage']==r['next_stage']
+          PY
+      - name: Upload Section 38 measurement
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-section38-positive-search
+          path: akron-section38-positive-search/
+          retention-days: 14
