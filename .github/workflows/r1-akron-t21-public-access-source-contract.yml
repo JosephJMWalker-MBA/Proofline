@@ -45,6 +45,7 @@ jobs:
           test -s akron-public-access-probe/public-access-probe.json
           test -s akron-public-access-probe/obpa-config.json
           test -s akron-public-access-probe/custom-queries.json
+          test -s akron-public-access-probe/passed-legislation-keywords.json
 
       - name: Validate source-only authority boundary
         shell: bash
@@ -90,11 +91,19 @@ jobs:
           assert metadata['record']['same_host'] is True
           assert urlparse(metadata['endpoint']).hostname == 'onlinedocs.akronohio.gov'
 
+          passed = p['passed_legislation_query']
+          assert passed['query']['name'] == 'Passed Legislation'
+          assert passed['query']['id'].isdigit()
+          assert passed['keyword_metadata_record']['ok'] is True
+          assert passed['keyword_metadata_record']['same_host'] is True
+          assert urlparse(passed['keyword_metadata_endpoint']).hostname == 'onlinedocs.akronohio.gov'
+
           counts = p['counts']
           assert counts['declared_script_count'] == len(p['declared_assets']['script_urls'])
           assert counts['successful_script_count'] <= counts['declared_script_count']
           assert counts['route_candidate_count'] == len(p['route_candidates'])
           assert counts['publisher_custom_query_count'] == len(metadata['queries'])
+          assert counts['passed_legislation_keyword_count'] == len(passed['keywords'])
 
           for route in p['route_candidates']:
               assert urlparse(route).hostname == 'onlinedocs.akronohio.gov'
@@ -103,7 +112,7 @@ jobs:
           assert boundary == {
               'custom_query_metadata_requested': True,
               'document_search_submitted': False,
-              'keyword_metadata_requested': False,
+              'keyword_metadata_requested': True,
               'query_id_guessed': False,
               'document_token_enumerated': False,
               'terminal_outcome_assigned': False,
