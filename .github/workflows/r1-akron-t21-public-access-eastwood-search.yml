@@ -6,9 +6,11 @@ on:
       - ".github/workflows/r1-akron-t21-public-access-eastwood-search.yml"
       - "experiments/akron-2026/measure_t21_public_access_eastwood_search.py"
       - "experiments/akron-2026/r1_t21_public_access_eastwood_search_plan.json"
+      - "experiments/akron-2026/r1_t21_public_access_eastwood_search_summary.json"
       - "experiments/akron-2026/r1_t21_public_access_source_contract_summary.json"
       - "experiments/akron-2026/r1_t21_terminal_record_target.json"
       - "tests/test_t21_public_access_eastwood_search_measurement.py"
+      - "tests/test_t21_public_access_eastwood_search_receipt.py"
   workflow_dispatch:
 
 permissions:
@@ -140,6 +142,76 @@ jobs:
               'detector_authorized': False,
               'lead_count': None,
           }
+          PY
+
+      - name: Reproduce frozen Eastwood search receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+
+          m = json.load(open('akron-public-access-eastwood-search/eastwood-search-measurement.json'))
+          r = json.load(open('experiments/akron-2026/r1_t21_public_access_eastwood_search_summary.json'))
+
+          assert m['plan']['sha256'] == r['plan']['sha256']
+          assert m['source_contract'] == {
+              'schema': r['source_contract']['schema'],
+              'query_id': r['source_contract']['query_id'],
+              'query_name': r['source_contract']['query_name'],
+              'title_clause_keyword_id': r['source_contract']['title_clause_keyword_id'],
+              'ordinance_number_keyword_id': r['source_contract']['ordinance_number_keyword_id'],
+              'api_root': r['source_contract']['api_root'],
+              'query_limit': r['source_contract']['query_limit'],
+          }
+          assert m['target']['planning_case'] == r['target']['planning_case']
+          assert m['target']['ordinance_title_sha256'] == r['target']['ordinance_title_sha256']
+
+          expected = {row['request_id']: row for row in r['eastwood_searches']}
+          assert set(expected) == {row['request_id'] for row in m['searches']}
+          for row in m['searches']:
+              frozen = expected[row['request_id']]
+              assert row['request_payload_sha256'] == frozen['request_payload_sha256']
+              assert row['request_payload']['Keywords'][0]['Value'] == frozen['value']
+              assert row['response']['byte_length'] == frozen['response_byte_size']
+              assert row['response']['sha256'] == frozen['response_sha256']
+              assert row['returned_document_count'] == frozen['returned_document_count']
+              assert row['truncated'] is frozen['truncated']
+
+          assert m['candidate_population']['count'] == r['candidate_population']['count']
+          assert m['candidate_population']['signature_sha256'] == r['candidate_population']['signature_sha256']
+          assert m['candidate_population']['positive_control_excluded'] is True
+
+          control = m['positive_control']
+          frozen_control = r['positive_control']
+          assert control['request_payload_sha256'] == frozen_control['request_payload_sha256']
+          assert control['passed'] is True
+          assert control['excluded_from_candidate_population'] is True
+          matches = [
+              row for row in control['returned_documents']
+              if isinstance(row.get('name'), str)
+              and row['name'].startswith(frozen_control['required_document_name_prefix'])
+          ]
+          assert matches
+          assert any(
+              hashlib.sha256(row['name'].encode('utf-8')).hexdigest()
+              == frozen_control['required_document_name_sha256']
+              for row in matches
+          )
+          assert any(
+              hashlib.sha256(
+                  json.dumps(
+                      [v.get('Value') for v in (row.get('display_column_values') or [])],
+                      sort_keys=True,
+                      separators=(',', ':'),
+                  ).encode('utf-8')
+              ).hexdigest() == frozen_control['required_document_display_values_sha256']
+              for row in matches
+          )
+
+          assert m['authority_boundary'] == r['authority_boundary']
+          assert m['outcome']['status'] == r['outcome']['status'] == 'unknown'
           PY
 
       - name: Upload Eastwood search measurement
