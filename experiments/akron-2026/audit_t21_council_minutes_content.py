@@ -94,6 +94,7 @@ def main()->int:
     stable_blocks=[{k:b[k] for k in ("meeting_id","document_sha256","page","block_index","anchor_hits","procedural_phrase_hits","block_text_sha256")} for b in target_blocks]
     measurement={
       "schema":SCHEMA,"stage":"frozen_source_bytes_text_layer_page_and_record_block_audit",
+      "text_extraction":{"engine":"PyMuPDF","version":fitz.VersionBind,"ocr_used":False},
       "source_receipt":{"schema":receipt["schema"],"document_receipts_signature_sha256":receipt["document_receipts_signature_sha256"],"document_count":len(receipt["document_receipts"])},
       "plan":{"schema":plan["schema"],"sha256":sha256_json(plan)},
       "counts":{"document_count":len(docs),"page_count":total_pages,"documents_with_target_pages":sum(1 for d in docs if d["matched_page_count"]),"target_page_count":len(matched_pages),"target_record_block_count":len(target_blocks),"terminal_candidate_block_count":len(terminal_candidates)},
