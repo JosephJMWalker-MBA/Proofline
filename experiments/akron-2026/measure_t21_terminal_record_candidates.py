@@ -34,8 +34,12 @@ from proofline.watcher import CorpusWatcher, ManifestResource, SourceManifest
 SCHEMA = "proofline-akron-t21-terminal-record-candidate-measurement/v1"
 TARGET_SCHEMA = "proofline-akron-t21-terminal-record-target/v1"
 
+# Keep this prefix grammar coextensive with the frozen candidate primitive:
+# numbered instrument + four-digit year boundary. Any punctuation after the
+# identifier remains part of the legislative body and therefore cannot create a
+# false exact-title match.
 _PREFIX_RE = re.compile(
-    r"^(?P<kind>ORDINANCE|RESOLUTION)\s+NO\.?\s+\d+-\d{4}\s+",
+    r"^(?P<kind>ORDINANCE|RESOLUTION)\s+NO\.?\s+\d+-\d{4}\b\s*",
     re.IGNORECASE,
 )
 _VOTE_SUFFIX_RE = re.compile(r"\s+Vote\s*:\s*\d+\s*-\s*\d+\s*$", re.IGNORECASE)
