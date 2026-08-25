@@ -1,0 +1,110 @@
+{
+  "schema": "proofline-akron-t21-passed-legislation-recall-expansion-receipt/v1",
+  "stage": "frozen_predeclared_passed_legislation_recall_expansion_before_document_retrieval",
+  "canonical_measurement": {
+    "workflow_run_id": 32811066046,
+    "job_id": 97690365286,
+    "head_sha": "3472df0805d3ebe5344c233865552e834b866c38",
+    "artifact_id": 9549817573,
+    "artifact_digest": "sha256:aafede6ab09b49559f54235933ccdb98e6eb44ebb043173268653a8f0af32ac0",
+    "observed_at_utc": "2026-08-25T05:00:33.050344+00:00",
+    "raw_measurement_byte_size": 3129591,
+    "raw_measurement_sha256": "b50aba919f20d92bd80091435e965908524f8bf09bcd784dea8bf0304903bfdb"
+  },
+  "pre_observation_plan_commit": "c62eb20298d902b7bab24278cc86a0be67a95952",
+  "plan_sha256": "1eb1301eb09fb93c13856ab224c55d4d7b4cf1fb193dd149f71ffe19261a2c9f",
+  "preconditions": {
+    "minutes_outcome_status": "unknown",
+    "minutes_terminal_candidate_block_count": 0,
+    "prior_outcome_status": "unknown",
+    "prior_passed_legislation_candidate_count": 0
+  },
+  "positive_control": {
+    "control_id": "known_passed_ordinance_44_2026",
+    "request_payload_sha256": "c7b7596f1664663a43aae08672e5abc0baa91edb829e8207d235e65b25c257b2",
+    "canonical_returned_document_count": 3,
+    "specific_known_record_returned": true,
+    "excluded_from_candidate_population": true,
+    "opaque_tokens_not_pinned": true
+  },
+  "search_receipts": [
+    {
+      "request_id": "title_clause_location_token",
+      "value": "*Eastwood*",
+      "request_payload_sha256": "32506abd1269341f5baab44d12711023f42693d4cfcd5ff2b778f14e09c44a31",
+      "canonical_returned_document_count": 70,
+      "canonical_stable_unique_projection_count": 68,
+      "stable_result_signature_sha256": "1ccee9a88678b7501d066b9910f3c3a41f612d82ef7be499936eed96f67d7de0",
+      "truncated": false
+    },
+    {
+      "request_id": "title_clause_street_number_token",
+      "value": "*1928*",
+      "request_payload_sha256": "de8c7c428656ed097e62923a0f4f39b9be43180c9c6fc00e616c3d91fb2ea18f",
+      "canonical_returned_document_count": 0,
+      "canonical_stable_unique_projection_count": 0,
+      "stable_result_signature_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "truncated": false
+    },
+    {
+      "request_id": "title_clause_use_pair",
+      "value": "*training*facility*",
+      "request_payload_sha256": "3e286d2717c55628a21d471802fc9488d2f052b011335dcdabf609491ad95c4c",
+      "canonical_returned_document_count": 10,
+      "canonical_stable_unique_projection_count": 10,
+      "stable_result_signature_sha256": "4c96c0c17d754174a34caa67f5a2c6cd733da2da494b53adcece505e3cd6b58b",
+      "truncated": false
+    },
+    {
+      "request_id": "title_clause_action_pair",
+      "value": "*conditional*use*",
+      "request_payload_sha256": "473b37bdf246c26ae2ff3c33e2b877ebff659e8d923a3ec25f3d9946369fcc77",
+      "canonical_returned_document_count": 1477,
+      "canonical_stable_unique_projection_count": 1466,
+      "stable_result_signature_sha256": "5cc8f5f093a0b73c15d7f5172905bd0f3e067028d98022668182a59dffe283e8",
+      "truncated": false
+    }
+  ],
+  "counts": {
+    "request_count": 4,
+    "returned_retrieval_handle_count": 1557,
+    "stable_candidate_group_count": 1528,
+    "successful_request_count": 4,
+    "target_screened_candidate_group_count": 12,
+    "truncated_request_count": 0
+  },
+  "stable_population_signature_sha256": "322ca26d0210f2c06cc9eb6652e25d22f83bdf8b04de5e95b470ae113fd8de41",
+  "target_screened_population_signature_sha256": "ab634e33fa04a2da20b97f2918cbd602c90a75cd3d6debb1a1c825ba7b72a4a0",
+  "screening_observations": {
+    "action_and_location_group_count": 12,
+    "street_number_and_location_group_count": 0,
+    "distinctive_use_tokens_group_count": 0,
+    "use_and_location_group_count": 0,
+    "interpretation": "All 12 plan-screened groups are conditional-use plus Eastwood matches only and are older unrelated Eastwood matters. None contains 1928 plus Eastwood, the defense/education/training/facility token set, or training/facility plus Eastwood."
+  },
+  "authority_boundary": {
+    "only_predeclared_expansion_terms_used": true,
+    "post_result_term_expansion_performed": false,
+    "positive_control_excluded_from_candidate_population": true,
+    "opaque_document_token_treated_as_stable_identity": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "outcome": {
+    "status": "unknown",
+    "reason": "This stage broadens Passed Legislation candidate recall with four terms frozen before observation. Returned or absent candidates do not establish terminal disposition."
+  },
+  "receipt_guards": {
+    "query_vocabulary_precommitted": true,
+    "opaque_tokens_not_pinned": true,
+    "stable_metadata_populations_pinned": true,
+    "broad_matches_are_not_outcome": true,
+    "zero_1928_result_not_disposition": true,
+    "no_document_dereference": true
+  },
+  "next_stage": "The expanded authoritative Passed Legislation search produced no candidate carrying the target's street-number/location or use/location identity anchors. T21 remains open; proceed to another publisher-authoritative source surface rather than adding post-result Passed Legislation terms."
+}
