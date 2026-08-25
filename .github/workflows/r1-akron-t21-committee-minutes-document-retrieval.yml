@@ -1,0 +1,122 @@
+name: r1-akron-t21-committee-minutes-document-retrieval
+
+on:
+  pull_request:
+    paths:
+      - "experiments/akron-2026/retrieve_t21_committee_minutes_documents.py"
+      - "experiments/akron-2026/r1_t21_committee_minutes_date_search_plan.json"
+      - "experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json"
+      - "experiments/akron-2026/r1_t21_committee_minutes_document_retrieval_summary.json"
+      - "tests/test_t21_committee_minutes_document_retrieval.py"
+      - "tests/test_t21_committee_minutes_document_retrieval_receipt.py"
+      - ".github/workflows/r1-akron-t21-committee-minutes-document-retrieval.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  committee-minutes-document-retrieval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and retrieval syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/measure_t21_committee_minutes_date_search.py
+          python -m py_compile experiments/akron-2026/retrieve_t21_committee_minutes_documents.py
+      - name: Reproduce frozen Committee minutes candidate population
+        run: |
+          set -euo pipefail
+          rm -rf akron-committee-minutes-date-search
+          python experiments/akron-2026/measure_t21_committee_minutes_date_search.py \
+            akron-committee-minutes-date-search
+          test -s akron-committee-minutes-date-search/committee-minutes-date-search.json
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json'))
+          m=json.load(open('akron-committee-minutes-date-search/committee-minutes-date-search.json'))
+          assert m['counts']['eastwood_request_count']==22
+          assert m['counts']['eastwood_returned_document_token_count']==18
+          assert m['counts']['eastwood_stable_metadata_group_count']==18
+          assert m['counts']['eastwood_duplicate_metadata_group_count']==0
+          assert m['candidate_population']['stable_population_signature_sha256']==r['candidate_population']['stable_population_signature_sha256']
+          assert m['candidate_population']['response_population_signature_sha256']==r['candidate_population']['response_population_signature_sha256']
+          live=[{
+              'meeting_id':x['meeting_id'],
+              'meeting_date':x['meeting_date'],
+              'request_payload_sha256':x['request_payload_sha256'],
+              'returned_document_count':x['returned_document_count'],
+              'stable_unique_projection_count':x['stable_unique_projection_count'],
+              'stable_result_signature_sha256':x['stable_result_signature_sha256'],
+              'truncated':x['truncated'],
+          } for x in m['eastwood_searches']]
+          assert live==r['eastwood_searches']
+          PY
+      - name: Retrieve all current Committee minutes source bytes
+        run: |
+          set -euo pipefail
+          rm -rf akron-committee-minutes-document-retrieval
+          python experiments/akron-2026/retrieve_t21_committee_minutes_documents.py \
+            akron-committee-minutes-date-search/committee-minutes-date-search.json \
+            experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json \
+            akron-committee-minutes-document-retrieval
+          test -s akron-committee-minutes-document-retrieval/committee-minutes-document-retrieval.json
+      - name: Validate retrieval-only authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.load(open('akron-committee-minutes-document-retrieval/committee-minutes-document-retrieval.json'))
+          assert p['schema']=='proofline-akron-t21-committee-minutes-document-retrieval/v1'
+          assert p['counts']['retrieved_handle_count']==18
+          assert p['counts']['stable_group_count']==18
+          assert p['fresh_search']['population_reproduced_before_dereference'] is True
+          assert p['fresh_search']['returned_handle_count']==18
+          assert len(p['stable_document_receipts'])==18
+          a=p['authority_boundary']
+          assert a['fresh_candidate_population_reproduced'] is True
+          assert a['every_current_returned_handle_retrieved'] is True
+          assert a['source_bytes_preserved'] is True
+          assert a['document_content_interpreted'] is False
+          assert a['opaque_token_treated_as_stable_identity'] is False
+          assert a['terminal_outcome_assigned'] is False
+          assert a['absence_treated_as_disposition'] is False
+          assert p['outcome']['status']=='unknown'
+          for row in p['retrievals']:
+              path=Path('akron-committee-minutes-document-retrieval')/row['document_filename']
+              assert path.is_file() and path.stat().st_size==row['document_byte_length']
+              if row['representation']=='pdf':
+                  assert path.read_bytes().startswith(b'%PDF-')
+          PY
+      - name: Reproduce frozen Committee minutes source-byte receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_committee_minutes_document_retrieval_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_committee_minutes_document_retrieval_summary.json'))
+          m=json.load(open('akron-committee-minutes-document-retrieval/committee-minutes-document-retrieval.json'))
+          assert m['counts']==r['counts']
+          assert m['fresh_search']['stable_candidate_population_signature_sha256']==r['fresh_search']['stable_candidate_population_signature_sha256']
+          assert m['fresh_search']['response_population_signature_sha256']==r['fresh_search']['response_population_signature_sha256']
+          assert m['stable_document_receipts']==r['stable_document_receipts']
+          assert m['stable_document_receipt_population_signature_sha256']==r['stable_document_receipt_population_signature_sha256']
+          assert m['authority_boundary']==r['authority_boundary']
+          assert m['outcome']==r['outcome']
+          PY
+      - name: Upload Committee minutes source-byte evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-committee-minutes-document-retrieval
+          path: |
+            akron-committee-minutes-date-search/committee-minutes-date-search.json
+            akron-committee-minutes-document-retrieval/
+          retention-days: 14
