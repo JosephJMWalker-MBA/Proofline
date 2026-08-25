@@ -1,0 +1,86 @@
+name: r1-akron-t21-evidence-chronology
+
+on:
+  pull_request:
+    paths:
+      - "src/proofline/evidence_chronology.py"
+      - "experiments/akron-2026/build_t21_evidence_chronology.py"
+      - "experiments/akron-2026/r1_t21_evidence_chronology_summary.json"
+      - "tests/test_t21_evidence_chronology.py"
+      - ".github/workflows/r1-akron-t21-evidence-chronology.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-chronology:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile src/proofline/evidence_chronology.py experiments/akron-2026/build_t21_evidence_chronology.py
+      - name: Build deterministic evidence chronology
+        run: |
+          set -euo pipefail
+          rm -rf akron-evidence-chronology
+          python experiments/akron-2026/build_t21_evidence_chronology.py \
+            experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json \
+            experiments/akron-2026/r1_t21_evidence_relationship_summary.json \
+            experiments/akron-2026/r1_t21_terminal_record_candidate_scan_summary.json \
+            experiments/akron-2026/r1_t21_public_access_eastwood_search_summary.json \
+            experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json \
+            akron-evidence-chronology
+      - name: Validate chronology-only authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-evidence-chronology/t21-evidence-chronology.json'))
+          assert p['counts']['observed_publisher_placement_count']==23
+          assert p['counts']['future_publisher_metadata_count']==1
+          assert p['counts']['observed_referred_count']==1
+          assert p['counts']['observed_time_count']==22
+          assert p['counts']['placements_with_target_evidence_count']==5
+          assert p['counts']['target_evidence_node_count']==8
+          assert p['counts']['evidence_relationship_count']==6
+          assert p['counts']['search_checkpoint_count']==3
+          assert p['authority_boundary']['bounded_nonfinding_is_not_legislative_event'] is True
+          assert p['authority_boundary']['time_is_not_terminal_disposition'] is True
+          assert p['authority_boundary']['terminal_outcome_assigned'] is False
+          assert p['outcome']['status']=='unknown'
+          PY
+      - name: Reproduce frozen chronology receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_evidence_chronology_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_evidence_chronology_summary.json'))
+          m=json.load(open('akron-evidence-chronology/t21-evidence-chronology.json'))
+          assert m['source_receipts']==r['source_receipts']
+          assert m['counts']==r['counts']
+          assert m['publisher_placement_population_signature_sha256']==r['publisher_placement_population_signature_sha256']
+          assert m['future_metadata_population_signature_sha256']==r['future_metadata_population_signature_sha256']
+          assert m['search_checkpoint_population_signature_sha256']==r['search_checkpoint_population_signature_sha256']
+          assert m['chronology_signature_sha256']==r['chronology_signature_sha256']
+          assert m['publisher_placements']==r['publisher_placements']
+          assert m['future_publisher_metadata']==r['future_publisher_metadata']
+          assert m['search_checkpoints']==r['search_checkpoints']
+          assert m['authority_boundary']==r['authority_boundary']
+          assert m['outcome']==r['outcome']
+          PY
+      - name: Upload evidence chronology
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-evidence-chronology
+          path: akron-evidence-chronology/
+          retention-days: 14
