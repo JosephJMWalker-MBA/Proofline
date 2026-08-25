@@ -1,0 +1,60 @@
+{
+  "schema": "proofline-akron-t21-council-minutes-content-audit-plan/v1",
+  "stage": "predeclared_text_layer_page_and_record_block_audit",
+  "source_receipt_schema": "proofline-akron-t21-council-minutes-document-retrieval-receipt/v1",
+  "target": {
+    "reference": "PC-2025-80-CU",
+    "title": "authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency."
+  },
+  "text_extraction": {
+    "engine": "PyMuPDF text layer",
+    "ocr_allowed": false,
+    "page_numbers_one_based": true,
+    "matched_page_text_preserved": true
+  },
+  "target_anchors": [
+    {"id": "exact_address", "pattern": "1928 Eastwood Avenue"},
+    {"id": "distinctive_title_phrase", "pattern": "defense education training facility"},
+    {"id": "planning_case", "pattern": "PC-2025-80-CU"},
+    {"id": "petitioner_name", "pattern": "David Walker"},
+    {"id": "training_eastwood_cooccurrence", "requires": ["training facility", "Eastwood"]}
+  ],
+  "record_block_boundaries": [
+    "LEGAL NOTICE:",
+    "OFFERED BY ",
+    "PUBLIC COMMENT",
+    "PETITIONS AND COMMUNICATIONS",
+    "COMMITTEE REPORTS:",
+    "NEW LEGISLATION INTRODUCED",
+    "SCHEDULE OF MEETINGS",
+    "ORDINANCE NO.",
+    "RESOLUTION NO.",
+    "FILED:"
+  ],
+  "procedural_phrases": [
+    {"id": "referred_to_committee", "pattern": "was referred to the Planning and Economic Development Committee"},
+    {"id": "public_hearing_declared", "pattern": "A PUBLIC HEARING WAS DECLARED"},
+    {"id": "public_hearing_closed", "pattern": "Public Hearing was declared closed"},
+    {"id": "substitute_read", "pattern": "A Substitute Offered as an Amendment was read in"},
+    {"id": "committee_favorable_poll", "pattern": "polled the Committee for a Favorable Report"},
+    {"id": "committee_time_poll", "pattern": "polled the Committee for Time"},
+    {"id": "motion_for_passage", "pattern": "Motion by Fusco for passage"},
+    {"id": "final_passage", "pattern": "final passage"},
+    {"id": "declared_passed", "pattern": "said Ordinance was declared passed"}
+  ],
+  "terminal_candidate_phrase_ids": ["motion_for_passage", "final_passage", "declared_passed"],
+  "selection_rule": {
+    "page_selected_only_by_predeclared_target_anchor": true,
+    "procedural_phrase_must_be_in_same_target_record_block": true,
+    "absence_from_document_or_later_minutes_is_not_disposition": true
+  },
+  "authority_boundary": {
+    "page_text_is_source_evidence": true,
+    "procedural_phrase_hits_are_observations_only": true,
+    "terminal_candidate_phrase_is_not_terminal_outcome": true,
+    "terminal_outcome_assigned": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  }
+}
