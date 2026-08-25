@@ -54,8 +54,6 @@ jobs:
           assert p['keyword_metadata']['response']['same_host'] is True
           assert urlparse(p['keyword_metadata']['endpoint']).hostname=='onlinedocs.akronohio.gov'
           assert p['keyword_metadata']['count']==len(p['keyword_metadata']['keywords'])
-          assert p['keyword_metadata']['count'] > 0
-          assert all(row['id'] and row['name'] for row in p['keyword_metadata']['keywords'])
           assert p['authority_boundary']=={
               'custom_query_metadata_inherited':True,'keyword_metadata_requested':True,
               'document_search_submitted':False,'query_id_guessed':False,'keyword_id_guessed':False,
@@ -66,7 +64,6 @@ jobs:
           assert p['outcome']['status']=='unknown'
           PY
       - name: Reproduce frozen Committee minutes source contract
-        if: hashFiles('experiments/akron-2026/r1_t21_committee_minutes_source_contract_summary.json') != ''
         run: |
           python - <<'PY'
           import hashlib,json
@@ -75,17 +72,39 @@ jobs:
           live=json.load(open(root/'committee-minutes-source-contract.json'))
           receipt=json.load(open('experiments/akron-2026/r1_t21_committee_minutes_source_contract_summary.json'))
           raw=(root/'committee-minutes-keywords.json').read_bytes()
-          expected=receipt['keyword_metadata']
-          assert len(raw)==expected['raw_byte_length']
-          assert hashlib.sha256(raw).hexdigest()==expected['raw_sha256']
+          e=receipt['keyword_metadata']
+          assert len(raw)==e['raw_byte_length']==2472
+          assert hashlib.sha256(raw).hexdigest()==e['raw_sha256']
           assert live['source_contract']==receipt['source_contract']
-          assert live['keyword_metadata']['request_payload']==expected['request_payload']
-          assert live['keyword_metadata']['request_payload_sha256']==expected['request_payload_sha256']
-          assert live['keyword_metadata']['count']==expected['keyword_count']
-          assert live['keyword_metadata']['keywords_signature_sha256']==expected['keywords_signature_sha256']
-          assert live['keyword_metadata']['keywords']==expected['keywords']
+          assert live['keyword_metadata']['request_payload']==e['request_payload']=={'QueryID':202}
+          assert live['keyword_metadata']['request_payload_sha256']==e['request_payload_sha256']
+          assert live['keyword_metadata']['count']==e['keyword_count']==3
+          assert live['keyword_metadata']['keywords_signature_sha256']==e['keywords_signature_sha256']
+          k=live['keyword_metadata']['keywords']
+          assert [x['id'] for x in k]==e['keyword_ids']==['124','532','105']
+          assert [x['name'] for x in k]==e['keyword_names']==['Meeting Date','Year','Committee']
+          assert k[0]['data_type']==e['meeting_date']['data_type']=='Date'
+          assert k[0]['max_length']==e['meeting_date']['max_length']==27 and k[0]['dataset'] is None
+          years=k[1]['dataset']
+          assert k[1]['data_type']==e['year']['data_type']=='SmallNumeric'
+          assert k[1]['max_length']==e['year']['max_length']==9
+          assert len(years)==e['year']['dataset_count']==151
+          assert years[0]==e['year']['first']=='1900' and years[-1]==e['year']['last']=='2050'
+          assert ('2026' in years) is e['year']['contains_2026'] is True
+          committees=k[2]['dataset']
+          assert k[2]['data_type']==e['committee']['data_type']=='AlphaNumericSingleTable'
+          assert k[2]['max_length']==e['committee']['max_length']==100
+          assert len(committees)==e['committee']['dataset_count']==38
+          assert committees[0]==e['committee']['first']
+          assert committees[-1]==e['committee']['last']
+          digest=hashlib.sha256(json.dumps(committees,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          assert digest==e['committee']['dataset_signature_sha256']
+          assert e['committee']['planning_economic_development_value'] in committees
+          assert e['committee']['contains_planning_economic_development'] is True
           assert live['authority_boundary']==receipt['authority_boundary']
           assert live['outcome']==receipt['outcome']
+          assert receipt['interpretation']['document_search_performed'] is False
+          assert receipt['interpretation']['eastwood_outcome_status']=='Unknown'
           PY
       - name: Upload Committee minutes source-contract evidence
         uses: actions/upload-artifact@v4
@@ -94,4 +113,5 @@ jobs:
           path: |
             akron-committee-minutes-source-contract/
             akron-committee-minutes-source-contract-stdout.json
+            experiments/akron-2026/r1_t21_committee_minutes_source_contract_summary.json
           retention-days: 14
