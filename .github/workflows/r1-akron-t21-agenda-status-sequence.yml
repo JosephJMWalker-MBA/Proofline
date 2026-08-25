@@ -1,0 +1,217 @@
+name: r1-akron-t21-agenda-status-sequence
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-agenda-status-sequence.yml"
+      - "experiments/akron-2026/measure_t21_agenda_status_sequence.py"
+      - "experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json"
+      - "experiments/akron-2026/r1_t21_record_family_packet_selection.json"
+      - "experiments/akron-2026/measure_t21_record_family_evolution.py"
+      - "src/proofline/agenda_status.py"
+      - "src/proofline/onbase_agenda_status.py"
+      - "src/proofline/onbase.py"
+      - "src/proofline/onbase_attachments_cli.py"
+      - "tests/test_agenda_status.py"
+      - "tests/test_onbase_agenda_status.py"
+      - "tests/test_t21_agenda_status_sequence_receipt.py"
+
+permissions:
+  contents: read
+
+jobs:
+  status-sequence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify frozen T21 population and authority primitive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object experiments/akron-2026/r1_t21_record_family_packet_selection.json)" = "a6db311cf19b3fcb1f6856142df03866b91b0923"
+          test "$(git hash-object experiments/akron-2026/measure_t21_record_family_evolution.py)" = "da7335a4072a145c5b2e61e49de04a7faf15081a"
+          test "$(git hash-object src/proofline/agenda_status.py)" = "14aeaf15e7fb915c67c0b4f680b8cbfd9b14f9e8"
+          test "$(git hash-object src/proofline/onbase_attachments_cli.py)" = "eb3ec92694a877a6b4365db04271974392e9a402"
+          python - <<'PY'
+          import json
+          p = json.load(open('experiments/akron-2026/r1_t21_record_family_packet_selection.json'))
+          assert p['schema'] == 'proofline-akron-t21-record-family-packet-selection/v1'
+          assert p['selected_packet_count'] == 24
+          assert p['selection_signature_sha256'] == 'b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921'
+          assert p['reference']['normalized_key'] == 'PC-2025-80-CU'
+          PY
+
+      - name: Run full test suite and status smoke gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/measure_t21_agenda_status_sequence.py --help >/dev/null
+
+      - name: Rebuild canonical Akron parents and attachment relation graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .akron-t21-status akron-t21-status
+          mkdir -p akron-t21-status
+          proofline-onbase-attachments \
+            --state-dir .akron-t21-status \
+            --manifest-out akron-t21-status/attachment-manifest.json \
+            --relations-out akron-t21-status/discovered-relations.json \
+            --rejections-out akron-t21-status/rejections.json \
+            experiments/akron-2026/onbase-plan.json \
+            > akron-t21-status/discovery.json
+          test "$(sha256sum akron-t21-status/attachment-manifest.json | awk '{print $1}')" = "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a"
+          python - <<'PY'
+          import json
+          discovery = json.load(open('akron-t21-status/discovery.json'))
+          rejections = json.load(open('akron-t21-status/rejections.json'))
+          assert len(rejections) == 0
+          assert discovery['canonical']['meeting_count'] == len(discovery['canonical']['meetings'])
+          PY
+
+      - name: Prove frozen 24-item population against current publisher relations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import importlib.util
+          import json
+          from pathlib import Path
+          path = Path('experiments/akron-2026/measure_t21_record_family_evolution.py')
+          spec = importlib.util.spec_from_file_location('t21_evolution', path)
+          assert spec and spec.loader
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          selection = json.load(open('experiments/akron-2026/r1_t21_record_family_packet_selection.json'))
+          relations = json.load(open('akron-t21-status/discovered-relations.json'))
+          manifest = json.load(open('akron-t21-status/attachment-manifest.json'))
+          selected = module._selection_rows(selection)
+          verified = module.verify_publisher_relations(selection, relations)
+          bounded = module.selected_manifest(selection, verified, manifest)
+          assert len(selected) == len(verified) == len(bounded.resources) == 24
+          PY
+
+      - name: Measure structurally associated publisher status sequence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python experiments/akron-2026/measure_t21_agenda_status_sequence.py \
+            --state-dir .akron-t21-status \
+            --plan experiments/akron-2026/onbase-plan.json \
+            --selection experiments/akron-2026/r1_t21_record_family_packet_selection.json \
+            --observation-time 2026-08-24T20:51:00-04:00 \
+            --output akron-t21-status/agenda-status-sequence.json \
+            > akron-t21-status/agenda-status-sequence-stdout.json
+          cat akron-t21-status/agenda-status-sequence-stdout.json
+
+      - name: Validate procedural-only authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          p = json.load(open('akron-t21-status/agenda-status-sequence.json'))
+          assert p['schema'] == 'proofline-akron-t21-agenda-status-sequence/v1'
+          assert p['selection']['selection_signature_sha256'] == 'b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921'
+          assert p['counts']['selected_item_count'] == 24
+          assert len(p['sequence']) == 24
+          assert p['counts']['resolved_status_count'] + p['counts']['unresolved_status_count'] == 24
+          for row in p['sequence']:
+              if row['status'] is not None:
+                  assert row['status']['terminal_outcome_assigned'] is False
+          b = p['authority_boundary']
+          assert b['status_is_procedural_evidence_only'] is True
+          assert b['meeting_occurrence_asserted'] is False
+          assert b['hearing_occurrence_inferred_from_status'] is False
+          assert b['outcome_assigned'] is False
+          assert b['absence_treated_as_disposition'] is False
+          assert b['causality_assigned'] is False
+          assert b['detector_authorized'] is False
+          assert b['lead_count'] is None
+          PY
+
+      - name: Reproduce frozen status-sequence receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          receipt = json.load(open('experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json'))
+          raw_path = Path('akron-t21-status/agenda-status-sequence.json')
+          raw_bytes = raw_path.read_bytes()
+          live = json.loads(raw_bytes)
+
+          assert hashlib.sha256(raw_bytes).hexdigest() == receipt['canonical_run']['raw_sequence_json_sha256']
+          assert live['sequence_signature_sha256'] == receipt['sequence_signature_sha256']
+          assert live['counts'] == receipt['counts']
+          assert live['observation_time'] == receipt['observation_time']
+          assert live['reference'] == receipt['reference']
+          assert live['selection'] == receipt['selection']
+          assert live['publisher_discovery']['agenda_item_manifest_sha256'] == receipt['publisher_discovery']['agenda_item_manifest_sha256']
+          assert live['publisher_discovery']['meeting_count'] == receipt['publisher_discovery']['meeting_count']
+          assert live['publisher_discovery']['agenda_tree_count'] == receipt['publisher_discovery']['agenda_tree_count']
+          assert live['publisher_discovery']['agenda_item_count'] == receipt['publisher_discovery']['agenda_item_count']
+
+          columns = receipt['sequence_columns']
+          live_rows = []
+          item_text_hashes = set()
+          for row in live['sequence']:
+              item_text_hashes.add(row['selected_item']['item_text_sha256'])
+              live_rows.append([
+                  row['meeting']['meeting_id'],
+                  row['meeting']['time'],
+                  row['meeting']['publisher_time_relation_to_observation'],
+                  row['selected_item']['item_id'],
+                  row['selected_item']['publish_id'],
+                  row['agenda_tree']['artifact_sha256'],
+                  row['status_block_index'],
+                  row['status']['normalized_status'] if row['status'] else None,
+                  row['status']['procedural_category'] if row['status'] else None,
+              ])
+          assert columns == [
+              'meeting_id',
+              'time',
+              'publisher_time_relation_to_observation',
+              'item_id',
+              'publish_id',
+              'agenda_tree_artifact_sha256',
+              'status_block_index',
+              'normalized_status',
+              'procedural_category',
+          ]
+          assert live_rows == receipt['sequence_rows']
+          assert item_text_hashes == {receipt['shared_item_text_sha256']}
+          assert live['authority_boundary'] == receipt['authority_boundary']
+          PY
+
+      - name: Upload T21 agenda-status measurement
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-agenda-status-sequence
+          path: |
+            akron-t21-status/agenda-status-sequence.json
+            akron-t21-status/agenda-status-sequence-stdout.json
+            akron-t21-status/discovery.json
+            akron-t21-status/attachment-manifest.json
+            akron-t21-status/discovered-relations.json
+            akron-t21-status/rejections.json
+            experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json
+            experiments/akron-2026/r1_t21_record_family_packet_selection.json
+          if-no-files-found: error
+          retention-days: 14
