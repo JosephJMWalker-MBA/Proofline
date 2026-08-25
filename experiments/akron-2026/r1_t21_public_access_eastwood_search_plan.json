@@ -1,0 +1,71 @@
+{
+  "schema": "proofline-akron-t21-public-access-eastwood-search-plan/v1",
+  "stage": "pre_document_search",
+  "base_merge_commit": "20b2dd4a4e5c9f76de37400911faaba61b078b8f",
+  "source_contract": {
+    "receipt_schema": "proofline-akron-t21-public-access-source-contract-receipt/v1",
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "query_id": "101",
+    "query_name": "Passed Legislation",
+    "keyword_id": "103",
+    "keyword_name": "Title Clause",
+    "keyword_data_type": "AlphaNumericSingleTable",
+    "query_limit": 0,
+    "publisher_wildcard_instruction": true
+  },
+  "target": {
+    "planning_case": "PC-2025-80-CU",
+    "ordinance_title_sha256": "484e8b7cd5bc9957938bc6aaf98063ae0c93ffb1bc2df86b10205501437a1c84",
+    "ordinance_title": "authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency."
+  },
+  "requests": [
+    {
+      "request_id": "title_clause_address_anchor",
+      "query_id": 101,
+      "keyword": {
+        "ID": 103,
+        "Name": "Title Clause",
+        "Value": "*1928*Eastwood*Avenue*",
+        "KeywordOperator": "="
+      },
+      "QueryLimit": 0,
+      "derivation": "Ordered address tokens are copied from the frozen Eastwood ordinance title and wrapped using the publisher's declared Title Clause wildcard syntax."
+    },
+    {
+      "request_id": "title_clause_distinctive_use_anchor",
+      "query_id": 101,
+      "keyword": {
+        "ID": 103,
+        "Name": "Title Clause",
+        "Value": "*defense*education*training*facility*",
+        "KeywordOperator": "="
+      },
+      "QueryLimit": 0,
+      "derivation": "Ordered distinctive-use tokens are copied from the frozen Eastwood ordinance title and wrapped using the publisher's declared Title Clause wildcard syntax."
+    }
+  ],
+  "selection_rule": {
+    "candidate_population": "union_of_publisher_returned_document_ids_across_the_two_frozen_requests",
+    "deduplicate_by": "publisher_returned_document_id",
+    "post_result_term_expansion_allowed": false,
+    "document_retrieval_in_this_stage": false
+  },
+  "authority_boundary": {
+    "document_search_planned": true,
+    "document_search_submitted": false,
+    "query_id_guessed": false,
+    "keyword_id_guessed": false,
+    "document_token_enumerated": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "non_claims": [
+    "The two frozen requests are bounded candidate-discovery queries, not an exhaustive proof that no other wording could identify the matter.",
+    "A zero-result union is not evidence of denial, withdrawal, failure, non-passage, abandonment, or any other disposition.",
+    "A returned document is a retrieval candidate only until its publisher document is separately acquired and evaluated."
+  ]
+}
