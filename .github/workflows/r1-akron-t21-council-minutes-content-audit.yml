@@ -7,6 +7,7 @@ on:
       - "experiments/akron-2026/r1_t21_council_minutes_content_audit_plan.json"
       - "experiments/akron-2026/r1_t21_council_minutes_content_audit_summary.json"
       - "tests/test_t21_council_minutes_content_audit.py"
+      - "tests/test_t21_council_minutes_content_audit_receipt.py"
       - ".github/workflows/r1-akron-t21-council-minutes-content-audit.yml"
   workflow_dispatch:
 
@@ -66,10 +67,18 @@ jobs:
           m=json.load(open('akron-council-minutes-content-audit/council-minutes-content-audit.json'))
           assert m['plan']['sha256'] == r['plan_sha256']
           assert m['source_receipt']['document_receipts_signature_sha256'] == r['source_document_receipts_signature_sha256']
+          assert m['text_extraction'] == r['text_extraction']
           assert m['counts'] == r['counts']
           assert m['target_page_population_signature_sha256'] == r['target_page_population_signature_sha256']
           assert m['target_record_block_population_signature_sha256'] == r['target_record_block_population_signature_sha256']
-          assert m['terminal_candidate_blocks'] == r['terminal_candidate_blocks']
+          pages=[]
+          for d in m['documents']:
+              for p in d['matched_pages']:
+                  pages.append({k:p[k] for k in ('meeting_id','document_sha256','page','anchor_hits','page_text_sha256','page_text_byte_length')})
+          blocks=[{k:b[k] for k in ('meeting_id','document_sha256','page','block_index','anchor_hits','procedural_phrase_hits','block_text_sha256')} for b in m['target_record_blocks']]
+          assert pages == r['target_page_receipts']
+          assert blocks == r['target_record_block_receipts']
+          assert m['terminal_candidate_blocks'] == r['terminal_candidate_blocks'] == []
           assert m['authority_boundary'] == r['authority_boundary']
           assert m['outcome'] == r['outcome']
           PY
