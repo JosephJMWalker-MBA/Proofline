@@ -60,6 +60,7 @@ jobs:
           from urllib.parse import urlparse
 
           p = json.load(open('akron-public-access-eastwood-search/eastwood-search-measurement.json'))
+          plan = json.load(open('experiments/akron-2026/r1_t21_public_access_eastwood_search_plan.json'))
           assert p['schema'] == 'proofline-akron-t21-public-access-eastwood-search-measurement/v1'
           assert p['stage'] == 'publisher_passed_legislation_candidate_search_only'
           assert p['source_contract'] == {
@@ -80,6 +81,8 @@ jobs:
           assert p['plan']['post_result_term_expansion_allowed'] is False
 
           control = p['positive_control']
+          required_prefix = plan['positive_control']['required_document_name_prefix']
+          assert required_prefix == 'O-44-2026 -'
           assert control['control_id'] == 'known_passed_ordinance_44_2026'
           assert control['excluded_from_candidate_population'] is True
           assert control['passed'] is True
@@ -87,6 +90,10 @@ jobs:
           assert control['response']['same_host'] is True
           assert control['truncated'] is False
           assert control['returned_document_count'] >= 1
+          assert any(
+              isinstance(row.get('name'), str) and row['name'].startswith(required_prefix)
+              for row in control['returned_documents']
+          )
           assert control['request_payload'] == {
               'QueryID': 101,
               'Keywords': [{
