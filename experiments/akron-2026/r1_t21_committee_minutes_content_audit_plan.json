@@ -1,0 +1,74 @@
+{
+  "schema": "proofline-akron-t21-committee-minutes-content-audit-plan/v1",
+  "stage": "predeclared_text_layer_page_and_target_block_audit",
+  "base_merge_commit": "7e7694332ec1462dc0ce6ce050b3f467bc93a35b",
+  "source_receipt_schema": "proofline-akron-t21-committee-minutes-document-retrieval-receipt/v1",
+  "target": {
+    "reference": "PC-2025-80-CU",
+    "petition_label": "D-14",
+    "petitioner": "David Walker",
+    "title": "authorizing a Conditional Use to establish a defense education training facility at 1928 Eastwood Avenue; and declaring an emergency."
+  },
+  "text_extraction": {
+    "engine": "PyMuPDF text layer",
+    "ocr_allowed": false,
+    "page_numbers_one_based": true,
+    "case_insensitive_matching": true,
+    "whitespace_normalization": "collapse runs of Unicode whitespace to one ASCII space",
+    "matched_page_text_preserved": true
+  },
+  "target_anchors": [
+    {"id": "exact_address", "pattern": "1928 Eastwood Avenue"},
+    {"id": "planning_case", "pattern": "PC-2025-80-CU"},
+    {"id": "petition_label", "pattern": "D-14"},
+    {"id": "petitioner_name", "pattern": "David Walker"},
+    {"id": "distinctive_title_phrase", "pattern": "defense education training facility"},
+    {"id": "training_eastwood_cooccurrence", "requires": ["training facility", "Eastwood"]}
+  ],
+  "target_block": {
+    "selection": "For each selected page, identify the smallest contiguous paragraph/agenda-item region containing the target anchor hits. Adjacent unrelated agenda items are excluded. If deterministic block segmentation is not possible, preserve the full page and mark block_boundary_confidence as page_only rather than borrowing procedural language from elsewhere on the page.",
+    "cross_page_continuation_allowed": true,
+    "cross_page_rule": "A continuation page may join a target block only when the text visibly continues the same target item and no new top-level item heading intervenes."
+  },
+  "procedural_phrases": [
+    {"id": "referred", "pattern": "referred"},
+    {"id": "public_hearing", "pattern": "public hearing"},
+    {"id": "hearing_closed", "pattern": "hearing was declared closed"},
+    {"id": "substitute", "pattern": "substitute"},
+    {"id": "favorable_report", "pattern": "favorable report"},
+    {"id": "time", "pattern": "time"},
+    {"id": "no_recommendation", "pattern": "no recommendation"},
+    {"id": "recommended_approval", "pattern": "recommended approval"},
+    {"id": "recommended_denial", "pattern": "recommended denial"},
+    {"id": "motion", "pattern": "motion"},
+    {"id": "second", "pattern": "second"},
+    {"id": "vote", "pattern": "vote"},
+    {"id": "yea", "pattern": "yea"},
+    {"id": "nay", "pattern": "nay"},
+    {"id": "tabled", "pattern": "tabled"},
+    {"id": "held", "pattern": "held"},
+    {"id": "withdrawn", "pattern": "withdrawn"},
+    {"id": "motion_for_passage", "pattern": "motion", "requires_same_block_all": ["for passage"]},
+    {"id": "final_passage", "pattern": "final passage"},
+    {"id": "declared_passed", "pattern": "declared passed"}
+  ],
+  "terminal_candidate_phrase_ids": ["motion_for_passage", "final_passage", "declared_passed"],
+  "selection_rule": {
+    "document_population_fixed_by_source_receipt": true,
+    "page_selected_only_by_predeclared_target_anchor": true,
+    "procedural_phrase_must_be_in_same_target_block": true,
+    "post_observation_anchor_expansion_allowed": false,
+    "absence_from_document_or_later_minutes_is_not_disposition": true
+  },
+  "authority_boundary": {
+    "page_text_is_source_evidence": true,
+    "target_block_text_is_source_evidence": true,
+    "procedural_phrase_hits_are_observations_only": true,
+    "committee_recommendation_is_not_final_council_disposition": true,
+    "terminal_candidate_phrase_is_not_terminal_outcome": true,
+    "terminal_outcome_assigned": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  }
+}
