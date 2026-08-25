@@ -6,7 +6,9 @@ on:
       - ".github/workflows/r1-akron-t21-council-minutes-source-contract.yml"
       - "experiments/akron-2026/probe_t21_council_minutes_source_contract.py"
       - "experiments/akron-2026/r1_t21_public_access_source_contract_summary.json"
+      - "experiments/akron-2026/r1_t21_council_minutes_source_contract_summary.json"
       - "tests/test_t21_council_minutes_source_contract.py"
+      - "tests/test_t21_council_minutes_source_contract_receipt.py"
   workflow_dispatch:
 
 permissions:
@@ -91,6 +93,60 @@ jobs:
           assert p['outcome']['status'] == 'unknown'
           PY
 
+      - name: Reproduce frozen Council minutes source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('akron-council-minutes-source-contract')
+          live = json.load(open(root / 'council-minutes-source-contract.json'))
+          receipt = json.load(open(
+              'experiments/akron-2026/r1_t21_council_minutes_source_contract_summary.json'
+          ))
+
+          raw = (root / 'council-minutes-keywords.json').read_bytes()
+          expected = receipt['keyword_metadata']
+          assert len(raw) == expected['raw_byte_length']
+          assert hashlib.sha256(raw).hexdigest() == expected['raw_sha256']
+
+          assert live['source_contract']['api_root'] == receipt['source_contract']['api_root']
+          assert live['source_contract']['query'] == receipt['source_contract']['query']
+          assert live['source_contract']['query_signature_sha256'] == (
+              receipt['source_contract']['query_signature_sha256']
+          )
+          assert live['keyword_metadata']['endpoint'] == expected['endpoint']
+          assert live['keyword_metadata']['request_payload'] == expected['request_payload']
+          assert live['keyword_metadata']['request_payload_sha256'] == (
+              expected['request_payload_sha256']
+          )
+          assert live['keyword_metadata']['count'] == expected['keyword_count'] == 2
+          assert live['keyword_metadata']['keywords_signature_sha256'] == (
+              expected['keywords_signature_sha256']
+          )
+
+          keywords = live['keyword_metadata']['keywords']
+          assert [row['id'] for row in keywords] == ['124', '532']
+          assert [row['name'] for row in keywords] == ['Meeting Date', 'Year']
+          assert keywords[0]['data_type'] == 'Date'
+          assert keywords[0]['dataset'] is None
+          assert keywords[1]['data_type'] == 'SmallNumeric'
+          years = keywords[1]['dataset']
+          summary = expected['keywords'][1]['dataset_summary']
+          assert len(years) == summary['count']
+          assert years[0] == summary['first']
+          assert years[-1] == summary['last']
+          assert ('2026' in years) is summary['contains_2026']
+
+          assert live['authority_boundary'] == receipt['authority_boundary']
+          assert live['authority_boundary']['document_search_submitted'] is False
+          assert receipt['interpretation']['eastwood_outcome_status'] == 'Unknown'
+          assert receipt['interpretation']['document_search_performed'] is False
+          PY
+
       - name: Upload Council minutes source-contract evidence
         uses: actions/upload-artifact@v4
         with:
@@ -98,5 +154,6 @@ jobs:
           path: |
             akron-council-minutes-source-contract/
             akron-council-minutes-source-contract-stdout.json
+            experiments/akron-2026/r1_t21_council_minutes_source_contract_summary.json
           if-no-files-found: error
           retention-days: 14
