@@ -1,0 +1,353 @@
+{
+  "authority_boundary": {
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "hearing_occurrence_inferred_from_status": false,
+    "lead_count": null,
+    "meeting_occurrence_asserted": false,
+    "outcome_assigned": false,
+    "status_is_procedural_evidence_only": true
+  },
+  "canonical_run": {
+    "artifact_digest": "sha256:34f4042ad017f39d2174f11d790cda773297a7ecead58e1ab56a5cdb02ba4fb0",
+    "artifact_id": 9544854543,
+    "attachment_manifest_json_sha256": "7f3ad866a54c15c423589439826f45210a9be11a515e1886cf9e930ecda3e82a",
+    "discovered_relations_json_sha256": "d43e4abed06ce1ea742a1f315dbfb532e497b45571fe90dc631dabc54b48cdda",
+    "discovery_json_sha256": "a2f5817f6754d5caa0e4e1ced119ac13e82c331886c8095a594de0c47abcb6c1",
+    "head_sha": "b78dfec159e36452a150c0c1d1ad213835360b56",
+    "job_id": 97645841505,
+    "raw_sequence_json_sha256": "db8eb4f504d0d05a692d0549551ab18b0ad28c0ae4ed9ef74297d85cd76cf9ba",
+    "raw_sequence_stdout_sha256": "40bb2a1a16a0609cfadda5b62435245ace3831baeaab4cfd0b4942dd44f172fd",
+    "rejections_json_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "workflow_run_id": 32795506240
+  },
+  "counts": {
+    "by_normalized_status": {
+      "referred": 1,
+      "time": 23
+    },
+    "publisher_times_after_observation_count": 1,
+    "resolved_status_count": 24,
+    "selected_item_count": 24,
+    "unresolved_status_count": 0
+  },
+  "interpretation": {
+    "disposition": "Unknown",
+    "first_observed_status": "referred",
+    "future_publisher_row_count": 1,
+    "future_publisher_row_is_not_event_occurrence": true,
+    "recurring_time_is_not_terminal_disposition": true,
+    "subsequent_time_status_count": 23
+  },
+  "next_stage": {
+    "action": "Evaluate separately governed candidate terminal records beyond the frozen agenda-status sequence.",
+    "outcome_must_remain_unknown_until_explicit_authoritative_terminal_evidence": true
+  },
+  "observation_time": "2026-08-24T20:51:00-04:00",
+  "publisher_discovery": {
+    "agenda_item_count": 1475,
+    "agenda_item_manifest_sha256": "375fe1ca8843509adfef9616fc2d7fb65353ee8866e168d1c89218e9e5f8c9d0",
+    "agenda_tree_count": 33,
+    "meeting_count": 33,
+    "publisher_relation_count": 2327,
+    "publisher_relation_rejection_count": 0
+  },
+  "receipt_guards": {
+    "causal_explanation_assigned": false,
+    "detector_or_lead_authority_added": false,
+    "raw_agenda_text_embedded": false,
+    "source_uri_embedded": false,
+    "terminal_outcome_assigned": false
+  },
+  "reference": {
+    "kind": "planning_case",
+    "method": "proofline-explicit-public-record-reference/v1",
+    "normalized_key": "PC-2025-80-CU"
+  },
+  "schema": "proofline-akron-t21-agenda-status-sequence-receipt/v1",
+  "selection": {
+    "selected_item_count": 24,
+    "selection_signature_sha256": "b46265ee254267230fa62dfc6dbc4a537fa608bd5052844fd19ffedb2a320921"
+  },
+  "sequence_columns": [
+    "meeting_id",
+    "time",
+    "publisher_time_relation_to_observation",
+    "item_id",
+    "publish_id",
+    "agenda_tree_artifact_sha256",
+    "status_block_index",
+    "normalized_status",
+    "procedural_category"
+  ],
+  "sequence_rows": [
+    [
+      668,
+      "2026-02-09T18:30:00-05:00",
+      "at_or_before_observation",
+      46485,
+      100240,
+      "bbd292555fecdf84a45aa034dc7372c21a19914b04251332542d9dccc8f3e45a",
+      15,
+      "referred",
+      "referral"
+    ],
+    [
+      669,
+      "2026-02-23T18:30:00-05:00",
+      "at_or_before_observation",
+      46567,
+      100416,
+      "806207994531b3da66e2fb47525effd6820902505eb79e557cab1c0be4b6ca7a",
+      20,
+      "time",
+      "hold"
+    ],
+    [
+      670,
+      "2026-03-02T18:30:00-05:00",
+      "at_or_before_observation",
+      46660,
+      100575,
+      "d863d2aab5dac751f20d7f497eb4a580911eda247a6ff11d8dea1304a0aa2e35",
+      16,
+      "time",
+      "hold"
+    ],
+    [
+      671,
+      "2026-03-09T18:30:00-04:00",
+      "at_or_before_observation",
+      46751,
+      101011,
+      "be1476bbcdccb46c8047c0ff9ab9a2e2439c4a3bc2af02bdd0ae48cd15537bf6",
+      18,
+      "time",
+      "hold"
+    ],
+    [
+      672,
+      "2026-03-16T18:30:00-04:00",
+      "at_or_before_observation",
+      46855,
+      101174,
+      "04211c88995620f5fb1af580b27a509bbba1edfd96bd26e0edca0b1f8a56bd7c",
+      21,
+      "time",
+      "hold"
+    ],
+    [
+      674,
+      "2026-03-23T18:30:00-04:00",
+      "at_or_before_observation",
+      46991,
+      101428,
+      "f246ac3ccaa030b0f5f34df283a040fc8ecf24ca839f1f17665056a802f43839",
+      17,
+      "time",
+      "hold"
+    ],
+    [
+      675,
+      "2026-03-30T18:30:00-04:00",
+      "at_or_before_observation",
+      47078,
+      101690,
+      "e0829f746225e0e9dcd2e1b6fc66349bde643ea2c1306e9f83b7c9a6713b9333",
+      16,
+      "time",
+      "hold"
+    ],
+    [
+      676,
+      "2026-04-06T18:30:00-04:00",
+      "at_or_before_observation",
+      47185,
+      101858,
+      "3d3a65c6f2768391a821e0ed8d11f18bb0a0d88bd90bb5411352f4ea722d8ac3",
+      17,
+      "time",
+      "hold"
+    ],
+    [
+      677,
+      "2026-04-13T18:30:00-04:00",
+      "at_or_before_observation",
+      47261,
+      102001,
+      "a9dbb9d8e3b9348c8889229690efd76bafa630d62de4ef598e3f4b750b6e9512",
+      14,
+      "time",
+      "hold"
+    ],
+    [
+      678,
+      "2026-04-20T18:30:00-04:00",
+      "at_or_before_observation",
+      47341,
+      102256,
+      "8d4172e8c8b4b2b73b268d78d336c0098e45590dbb28ab1c4e1a689320821cbf",
+      10,
+      "time",
+      "hold"
+    ],
+    [
+      682,
+      "2026-04-27T18:30:00-04:00",
+      "at_or_before_observation",
+      47560,
+      102607,
+      "ef5ba27181019bef931e4d95dfb8d366b128bb5e58b2acd2b50265a979005c4a",
+      11,
+      "time",
+      "hold"
+    ],
+    [
+      683,
+      "2026-05-04T18:30:00-04:00",
+      "at_or_before_observation",
+      47649,
+      102760,
+      "34703b21ecca3a73c8c567e08e7c1a553bb71bf71f4cb73cda0b6783789e8e2d",
+      18,
+      "time",
+      "hold"
+    ],
+    [
+      685,
+      "2026-05-11T18:30:00-04:00",
+      "at_or_before_observation",
+      47823,
+      103127,
+      "4175b3104e7c71bb1c7c18c78d5661f3f01b5be71ec44ed5a454b793de763226",
+      20,
+      "time",
+      "hold"
+    ],
+    [
+      686,
+      "2026-05-18T18:30:00-04:00",
+      "at_or_before_observation",
+      47934,
+      103497,
+      "0a09890949ccf6592afa9df56e53927af78e4a68a6216ef52bbb97110a552936",
+      15,
+      "time",
+      "hold"
+    ],
+    [
+      688,
+      "2026-06-01T18:30:00-04:00",
+      "at_or_before_observation",
+      48069,
+      103839,
+      "54c82828795932448fc1d10ae5c7c412ba327dbbf8c722f726446d51e13789c5",
+      10,
+      "time",
+      "hold"
+    ],
+    [
+      689,
+      "2026-06-08T18:30:00-04:00",
+      "at_or_before_observation",
+      48193,
+      104067,
+      "357e90091b631d2287bdfb68a502b43ee6429b35da5c9ea34ed98e0391916b03",
+      31,
+      "time",
+      "hold"
+    ],
+    [
+      690,
+      "2026-06-15T18:30:00-04:00",
+      "at_or_before_observation",
+      48284,
+      104403,
+      "8783e63566e67b4ed8de8b80b1baf673f3f3348c67c1ac54060c7a994e4b780a",
+      16,
+      "time",
+      "hold"
+    ],
+    [
+      691,
+      "2026-06-22T18:30:00-04:00",
+      "at_or_before_observation",
+      48366,
+      104807,
+      "c769d4e7b0b5beb98c16dfa5abc18997bceb2552888d449681099a9aaf01582e",
+      11,
+      "time",
+      "hold"
+    ],
+    [
+      692,
+      "2026-06-29T18:30:00-04:00",
+      "at_or_before_observation",
+      48490,
+      105494,
+      "9f3949938cb479ef47fec95fbe040e678f32976997508e4559f8620cc9442c38",
+      30,
+      "time",
+      "hold"
+    ],
+    [
+      693,
+      "2026-07-06T18:30:00-04:00",
+      "at_or_before_observation",
+      48586,
+      105658,
+      "49086091060800f1204097ed2d794dc9872c13b8a744a887ec034dba2ea1df91",
+      18,
+      "time",
+      "hold"
+    ],
+    [
+      694,
+      "2026-07-13T18:30:00-04:00",
+      "at_or_before_observation",
+      48675,
+      105915,
+      "9b8fa41177c2a9e2945e09a4b165c907a4898473550b68cbf601dc5135015a2b",
+      22,
+      "time",
+      "hold"
+    ],
+    [
+      696,
+      "2026-07-20T18:30:00-04:00",
+      "at_or_before_observation",
+      48797,
+      106090,
+      "846e0bc6ccdb21603c5cdf762ee2601513ce4284742db5d24081bd4a5d8a7bcb",
+      13,
+      "time",
+      "hold"
+    ],
+    [
+      697,
+      "2026-07-27T18:30:00-04:00",
+      "at_or_before_observation",
+      48918,
+      106394,
+      "2951b7c4f86dea10f0354d966fc8baf393c17e530b71fdce40975c65cb268b97",
+      17,
+      "time",
+      "hold"
+    ],
+    [
+      698,
+      "2026-09-14T18:30:00-04:00",
+      "after_observation",
+      48997,
+      106472,
+      "13013c93c27de46a708088ab04e488761087ef2fe01558b63ed4e46d037eb2ef",
+      9,
+      "time",
+      "hold"
+    ]
+  ],
+  "sequence_signature_sha256": "b7dcaef68e02b2644397fef46479fd7322d964677d50bc27472856019ea9e906",
+  "shared_item_text_sha256": "f24e80ac974c1c604f81bc42ce053e719a1898791657b3ba8ae3e7fd087bdab7",
+  "stage": "frozen_publisher_agenda_status_sequence_before_terminal_outcome_trace"
+}
