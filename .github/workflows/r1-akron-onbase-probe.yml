@@ -32,6 +32,18 @@ jobs:
         run: |
           python experiments/akron-2026/probe_onbase_data.py akron-data-probe-results | tee akron-data-probe-results-summary.json
           test -s akron-data-probe-results/data-probe.json
+          python - <<'PY'
+          import json
+          p = json.load(open('akron-data-probe-results/data-probe.json'))
+          counts = p['counts']
+          assert counts['expected_pdf_samples'] >= 1
+          assert counts['pdf_magic_downloads'] == counts['expected_pdf_samples']
+          for row in p['agenda_samples']:
+              if row['agenda_unique_name']:
+                  assert row['agenda_pdf']['ok'] is True
+                  assert row['agenda_pdf']['is_pdf_magic'] is True
+                  assert '/Documents/DownloadFileBytes/' in row['agenda_pdf']['requested_url']
+          PY
 
       - name: Upload source-contract evidence
         if: always()
