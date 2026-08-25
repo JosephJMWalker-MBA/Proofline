@@ -1,0 +1,100 @@
+name: r1-akron-t21-public-access-source-contract
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-public-access-source-contract.yml"
+      - "experiments/akron-2026/probe_public_access.py"
+      - "experiments/akron-2026/probe_onbase.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-access-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite and probe smoke gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python experiments/akron-2026/probe_public_access.py --help >/dev/null 2>&1 || true
+
+      - name: Probe publisher-declared Public Access Viewer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf akron-public-access-probe
+          python experiments/akron-2026/probe_public_access.py akron-public-access-probe \
+            | tee akron-public-access-probe-stdout.json
+          test -s akron-public-access-probe/public-access-probe.json
+
+      - name: Validate source-only authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from urllib.parse import urlparse
+
+          p = json.load(open('akron-public-access-probe/public-access-probe.json'))
+          assert p['schema'] == 'proofline-akron-t21-public-access-source-contract-probe/v1'
+          assert p['stage'] == 'publisher_declared_public_access_source_contract_only'
+
+          declaration = p['publisher_declaration']
+          assert declaration['passed_legislation_and_meeting_minutes_claimed_by_publisher'] is True
+          assert 'public access viewer' in (declaration['anchor_text'] or '').casefold()
+          assert declaration['resolved_url'].startswith(
+              'https://onlinedocs.akronohio.gov/PublicAccess/'
+          )
+
+          viewer = p['public_access_viewer']
+          assert viewer['ok'] is True
+          assert viewer['same_host'] is True
+          assert urlparse(viewer['final_url']).hostname == 'onlinedocs.akronohio.gov'
+
+          counts = p['counts']
+          assert counts['declared_script_count'] == len(p['declared_assets']['script_urls'])
+          assert counts['successful_script_count'] <= counts['declared_script_count']
+          assert counts['route_candidate_count'] == len(p['route_candidates'])
+
+          for route in p['route_candidates']:
+              assert urlparse(route).hostname == 'onlinedocs.akronohio.gov'
+
+          boundary = p['authority_boundary']
+          assert boundary == {
+              'document_search_submitted': False,
+              'query_id_guessed': False,
+              'document_token_enumerated': False,
+              'terminal_outcome_assigned': False,
+              'absence_treated_as_disposition': False,
+              'causality_assigned': False,
+              'detector_authorized': False,
+              'lead_count': None,
+          }
+          PY
+
+      - name: Upload Public Access source-contract evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-public-access-source-contract
+          path: |
+            akron-public-access-probe/
+            akron-public-access-probe-stdout.json
+          if-no-files-found: error
+          retention-days: 14
