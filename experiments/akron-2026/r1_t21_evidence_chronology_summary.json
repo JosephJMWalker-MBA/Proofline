@@ -1,0 +1,106 @@
+{
+  "agenda_observation_time": "2026-08-24T20:51:00-04:00",
+  "authority_boundary": {
+    "bounded_nonfinding_is_not_disposition": true,
+    "bounded_nonfinding_is_not_legislative_event": true,
+    "causality_assigned": false,
+    "chronology_orders_evidence_only": true,
+    "detector_authorized": false,
+    "future_publisher_metadata_is_not_future_event_proof": true,
+    "lead_count": null,
+    "publisher_time_is_not_event_occurrence": true,
+    "referred_is_not_terminal_disposition": true,
+    "relationship_structure_is_not_causality": true,
+    "terminal_outcome_assigned": false,
+    "time_is_not_terminal_disposition": true
+  },
+  "canonical_measurement": {
+    "artifact_digest": "sha256:3cf04525186eba5676aa87b76e822c8376abeea14ab9e6e007414a12a59f63cb",
+    "artifact_id": 9567508275,
+    "head_sha": "bce5c36e0a13e404b55a2802a93d7d4ff320a501",
+    "job_id": 97839254230,
+    "raw_measurement_byte_size": 15917,
+    "raw_measurement_sha256": "d494b05991640d0a01161a17c9e3d4aa27acb11a13d58a75eda7cf8d4001d120",
+    "workflow_run_id": 32859374440
+  },
+  "chronology_signature_sha256": "87baac451279933ea0e0eceaa5702de9b3a518a4250d5eda79fb210068d1c8fe",
+  "counts": {
+    "evidence_relationship_count": 6,
+    "future_publisher_metadata_count": 1,
+    "observed_publisher_placement_count": 23,
+    "observed_referred_count": 1,
+    "observed_time_count": 22,
+    "placements_with_target_evidence_count": 5,
+    "search_checkpoint_count": 3,
+    "target_evidence_node_count": 8
+  },
+  "future_metadata_population_signature_sha256": "8a6fb1091f0fa8a2cb3ce6faec0f9fc7e6a4d01de820a1cbc4321b0510b9c91f",
+  "future_publisher_metadata": [
+    {
+      "evidence_relationship_ids": [],
+      "meeting_id": 698,
+      "normalized_status": "time",
+      "procedural_category": "hold",
+      "publisher_time": "2026-09-14T18:30:00-04:00",
+      "publisher_time_asserts_event_occurrence": false,
+      "publisher_time_relation_to_observation": "after_observation",
+      "target_evidence_node_ids": [],
+      "target_evidence_present": false
+    }
+  ],
+  "interpretation": {
+    "eastwood_outcome_status": "Unknown",
+    "latest_frozen_search_checkpoint_utc": "2026-08-25T05:00:33.050344Z",
+    "next_stage": "Use this chronology to identify which independently authoritative disposition surfaces remain untested; do not infer a terminal outcome from repeated TIME, later absence, future publisher metadata, or bounded search non-findings."
+  },
+  "observations": {
+    "future_metadata_separated": "Meeting 698 / Sep. 14 remains publisher metadata after the frozen Aug. 24 agenda observation and is excluded from observed placements.",
+    "march_9_multi_surface_coexistence": "Meeting 671 carries publisher agenda status TIME while frozen target-local minutes evidence records public-hearing/recommendation/poll details. The chronology preserves both surfaces without treating either as terminal or overriding the other.",
+    "nonfindings_separated": "Marked-agenda and Passed Legislation bounded search results are observation checkpoints, not legislative meeting events or disposition evidence."
+  },
+  "outcome": {
+    "reason": "The chronology orders frozen procedural placements, target-local provenance, and bounded search observations without converting any of them into terminal legislative disposition.",
+    "status": "unknown"
+  },
+  "publisher_placement_population_signature_sha256": "6e2e7fd9e6a5a2306f4905c5b6e8435b2c9313b76d8e2bf6f7279007d30053f1",
+  "publisher_placements": [
+    {"evidence_relationship_ids":[],"meeting_id":668,"normalized_status":"referred","procedural_category":"referral","publisher_time":"2026-02-09T18:30:00-05:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":["relationship:explicit_scheduling:9b72d7e79471c125ec544e26b58fd219b458cbc96243162c903145171590feee","relationship:procedural_phase_corroboration:b53757d3923b3b1e668f27ab39246793b913eef42c2f0ef1966004d6d04aa3e8","relationship:same_target_same_meeting:e6ccb6c669ed7dd07a45bd627777b8015192278eaceb1015e732a1d923634edd"],"meeting_id":669,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-02-23T18:30:00-05:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":["evidence:committee_minutes:f2ab01261ba43c37b4be6ca41268b9081a8074290e61690a3e98ab055c77652a","evidence:council_minutes:2e5c4f8be024dbcd29dd4e11e7954cadc1f5353ad1970109f7f0472483838973"],"target_evidence_present":true},
+    {"evidence_relationship_ids":[],"meeting_id":670,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-03-02T18:30:00-05:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":["relationship:explicit_scheduling:9b72d7e79471c125ec544e26b58fd219b458cbc96243162c903145171590feee","relationship:procedural_phase_corroboration:dd719b201e2880b78e8fb8ececcec82492bb487585ed2e8698d2bc5878b4b973","relationship:same_target_same_meeting:108299c59061cac8aca54e4b1d2d290b8abc3ca8a629b1c63fa39588ab859156","relationship:same_target_same_meeting:c192659b960456d114484451cdf82ce79d7fd11cbe7b4cf3ffc0aae1757f6a01"],"meeting_id":671,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-03-09T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":["evidence:committee_minutes:0ec67557980d37ff9c6b19c2cb7a52682bc0f2841279bc0551ae2ff85d254d8b","evidence:council_minutes:6e537f79916efcc0119b57d474ce7401d14ff3f02fa9a5086d97dbb841d8794c","evidence:council_minutes:8541b037aba88d78c9ef6e7c39d1200f44210a3d1e1e72e96bfa0929a8d27555"],"target_evidence_present":true},
+    {"evidence_relationship_ids":[],"meeting_id":672,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-03-16T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":["evidence:council_minutes:e381af4955daf66b044308f4e098ad5f974764f699ab40679adba2c32f3c3f21"],"target_evidence_present":true},
+    {"evidence_relationship_ids":[],"meeting_id":674,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-03-23T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":["evidence:council_minutes:7823986c518cdbf44c373db4b08da7f34de9c391d671c992feb4f064ba327929"],"target_evidence_present":true},
+    {"evidence_relationship_ids":[],"meeting_id":675,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-03-30T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":676,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-04-06T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":677,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-04-13T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":678,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-04-20T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":682,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-04-27T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":683,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-05-04T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":685,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-05-11T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":686,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-05-18T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":688,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-06-01T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":689,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-06-08T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":["evidence:council_minutes:200f1906756acca45b55729e075890ae2553f0450bba863959b53a06763a8a5b"],"target_evidence_present":true},
+    {"evidence_relationship_ids":[],"meeting_id":690,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-06-15T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":691,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-06-22T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":692,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-06-29T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":693,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-07-06T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":694,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-07-13T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":696,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-07-20T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false},
+    {"evidence_relationship_ids":[],"meeting_id":697,"normalized_status":"time","procedural_category":"hold","publisher_time":"2026-07-27T18:30:00-04:00","publisher_time_asserts_event_occurrence":false,"publisher_time_relation_to_observation":"at_or_before_observation","target_evidence_node_ids":[],"target_evidence_present":false}
+  ],
+  "schema": "proofline-akron-t21-evidence-chronology-receipt/v1",
+  "search_checkpoint_population_signature_sha256": "4ade72e56ea473b49da58e8200610b0e789b17bc12d11ef2fc209458ba4f5e4d",
+  "search_checkpoints": [
+    {"authority":"bounded_nonfinding_only_not_disposition","bounded_population":{"marked_agenda_count":26,"numbered_vote_candidate_count":215},"id":"search-checkpoint:marked-agenda-numbered-vote-scan","observed_at_utc":"2026-08-25T00:51:00Z","surface":"marked_agendas","target_result":{"exact_title_match_count":0}},
+    {"authority":"bounded_nonfinding_only_not_disposition","bounded_population":{"request_count":2},"id":"search-checkpoint:passed-legislation-narrow","observed_at_utc":"2026-08-25T02:45:36.200505Z","surface":"passed_legislation","target_result":{"candidate_count":0}},
+    {"authority":"bounded_screening_observation_only_not_disposition","bounded_population":{"plan_screened_group_count":12,"request_count":4,"stable_candidate_group_count":1528},"id":"search-checkpoint:passed-legislation-expanded","observed_at_utc":"2026-08-25T05:00:33.050344Z","surface":"passed_legislation","target_result":{"broad_action_and_location_group_count":12,"broad_matches_are_target_identity":false,"distinctive_use_tokens_group_count":0,"street_number_and_location_group_count":0,"use_and_location_group_count":0}}
+  ],
+  "source_receipts": {
+    "agenda_status_sequence": {"file_sha256":"f1003ee84613c92dbef380fd27bce657e5e4bcc19b9579f9d941ebc96161464d","path":"experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json"},
+    "evidence_relationships": {"file_sha256":"2632f88b3641db2f07fae968b962b4bfef2f1e3fc69484d66157fedf3a2c1065","path":"experiments/akron-2026/r1_t21_evidence_relationship_summary.json"},
+    "marked_agenda_terminal_candidate_scan": {"file_sha256":"8cb28a6d8eb0c79d6fc294e72f6972f22d2f26fa476088f9ad7c1e20c30f5a64","path":"experiments/akron-2026/r1_t21_terminal_record_candidate_scan_summary.json"},
+    "passed_legislation_expanded_search": {"file_sha256":"a1ec056961991fe78a9bd200fca071ea92e5f61253987bba46caf7c8481faf7c","path":"experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json"},
+    "passed_legislation_narrow_search": {"file_sha256":"ae59b2701375abdbc15e1dda6375a56f7076a243f5db852c5b8504b9af292cb9","path":"experiments/akron-2026/r1_t21_public_access_eastwood_search_summary.json"}
+  },
+  "stage": "frozen_nonterminal_evidence_chronology"
+}
