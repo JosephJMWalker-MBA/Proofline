@@ -38,7 +38,7 @@ jobs:
           pytest
           python -m py_compile experiments/akron-2026/measure_t21_public_access_eastwood_search.py
 
-      - name: Run two frozen Passed Legislation Title Clause searches
+      - name: Run positive control and two frozen Eastwood searches
         shell: bash
         run: |
           set -euo pipefail
@@ -47,10 +47,11 @@ jobs:
             akron-public-access-eastwood-search \
             | tee akron-public-access-eastwood-search-stdout.json
           test -s akron-public-access-eastwood-search/eastwood-search-measurement.json
+          test -s akron-public-access-eastwood-search/positive-control-known_passed_ordinance_44_2026.json
           test -s akron-public-access-eastwood-search/search-01-title_clause_address_anchor.json
           test -s akron-public-access-eastwood-search/search-02-title_clause_distinctive_use_anchor.json
 
-      - name: Validate candidate-only authority and complete responses
+      - name: Validate candidate-only authority complete responses and control
         shell: bash
         run: |
           set -euo pipefail
@@ -65,8 +66,8 @@ jobs:
               'schema': 'proofline-akron-t21-public-access-source-contract-receipt/v1',
               'query_id': '101',
               'query_name': 'Passed Legislation',
-              'keyword_id': '103',
-              'keyword_name': 'Title Clause',
+              'title_clause_keyword_id': '103',
+              'ordinance_number_keyword_id': '102',
               'api_root': 'https://onlinedocs.akronohio.gov/PublicAccess/api',
               'query_limit': 0,
           }
@@ -75,10 +76,32 @@ jobs:
               'title_clause_address_anchor',
               'title_clause_distinctive_use_anchor',
           ]
+          assert p['plan']['positive_control_id'] == 'known_passed_ordinance_44_2026'
           assert p['plan']['post_result_term_expansion_allowed'] is False
-          assert p['counts']['frozen_request_count'] == 2
-          assert p['counts']['successful_request_count'] == 2
-          assert p['counts']['truncated_request_count'] == 0
+
+          control = p['positive_control']
+          assert control['control_id'] == 'known_passed_ordinance_44_2026'
+          assert control['excluded_from_candidate_population'] is True
+          assert control['passed'] is True
+          assert control['response']['ok'] is True
+          assert control['response']['same_host'] is True
+          assert control['truncated'] is False
+          assert control['returned_document_count'] >= 1
+          assert control['request_payload'] == {
+              'QueryID': 101,
+              'Keywords': [{
+                  'ID': 102,
+                  'Name': 'Ordinance/Resolution Number',
+                  'Value': '*44-2026*',
+                  'KeywordOperator': '=',
+              }],
+              'QueryLimit': 0,
+          }
+
+          assert p['counts']['frozen_eastwood_request_count'] == 2
+          assert p['counts']['successful_eastwood_request_count'] == 2
+          assert p['counts']['truncated_eastwood_request_count'] == 0
+          assert p['counts']['positive_control_returned_document_count'] >= 1
           assert len(p['searches']) == 2
           for row in p['searches']:
               assert row['response']['ok'] is True
@@ -91,11 +114,14 @@ jobs:
               assert keyword['ID'] == 103
               assert keyword['Name'] == 'Title Clause'
               assert keyword['KeywordOperator'] == '='
-          assert p['candidate_population']['count'] == p['counts']['unique_returned_document_count']
+          assert p['candidate_population']['positive_control_excluded'] is True
+          assert p['candidate_population']['count'] == p['counts']['unique_returned_eastwood_document_count']
           assert p['outcome']['status'] == 'unknown'
           assert p['authority_boundary'] == {
               'document_search_submitted': True,
-              'only_predeclared_terms_used': True,
+              'positive_control_submitted': True,
+              'positive_control_excluded_from_candidate_population': True,
+              'only_predeclared_eastwood_terms_used': True,
               'post_result_term_expansion_performed': False,
               'query_id_guessed': False,
               'keyword_id_guessed': False,
