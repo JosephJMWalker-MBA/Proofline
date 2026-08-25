@@ -1,0 +1,46 @@
+name: r1-akron-t21-clerk-public-record-request-submission
+
+on:
+  pull_request:
+    paths:
+      - "experiments/akron-2026/r1_t21_clerk_public_record_request_submission_summary.json"
+      - "tests/test_t21_clerk_public_record_request_submission_receipt.py"
+      - ".github/workflows/r1-akron-t21-clerk-public-record-request-submission.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clerk-public-record-request-submission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and submission receipt gate
+        run: |
+          set -euo pipefail
+          pytest
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_clerk_public_record_request_submission_summary.json'))
+          assert r['submission']['submission_successful'] is True
+          assert r['submission']['gmail_message_id']=='1a039e0ad7fd78b4'
+          assert r['submission']['gmail_thread_id']=='1a039e0ad7fd78b4'
+          assert r['submission']['recipient']=='publicrecords@akronohio.gov'
+          assert r['authority_boundary']['duplicate_send_authorized'] is False
+          assert r['authority_boundary']['response_interpreted'] is False
+          assert r['authority_boundary']['response_polled_in_this_stage'] is False
+          assert r['authority_boundary']['terminal_outcome_assigned'] is False
+          assert r['outcome']['status']=='unknown'
+          PY
+      - name: No Gmail/send capability assertion
+        run: |
+          set -euo pipefail
+          ! grep -R "send_email\|send_draft\|gmail" .github/workflows/r1-akron-t21-clerk-public-record-request-submission.yml | grep -v "gmail_message_id\|gmail_thread_id"
