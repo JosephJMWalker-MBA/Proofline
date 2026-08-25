@@ -1,0 +1,73 @@
+name: r1-akron-t21-passed-legislation-recall-expansion
+
+on:
+  pull_request:
+    paths:
+      - "experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_plan.json"
+      - "experiments/akron-2026/measure_t21_passed_legislation_recall_expansion.py"
+      - "experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json"
+      - "tests/test_t21_passed_legislation_recall_expansion.py"
+      - ".github/workflows/r1-akron-t21-passed-legislation-recall-expansion.yml"
+  workflow_dispatch:
+
+jobs:
+  passed-legislation-recall-expansion:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and measurement syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/measure_t21_passed_legislation_recall_expansion.py
+      - name: Measure predeclared Passed Legislation recall expansion
+        run: |
+          set -euo pipefail
+          rm -rf akron-passed-legislation-recall-expansion
+          python experiments/akron-2026/measure_t21_passed_legislation_recall_expansion.py \
+            akron-passed-legislation-recall-expansion
+          test -s akron-passed-legislation-recall-expansion/passed-legislation-recall-expansion.json
+      - name: Validate non-terminal authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-passed-legislation-recall-expansion/passed-legislation-recall-expansion.json'))
+          assert p['plan']['post_result_term_expansion_allowed'] is False
+          assert p['positive_control']['passed'] is True
+          assert p['counts']['request_count'] == 4
+          assert p['counts']['successful_request_count'] == 4
+          assert p['counts']['truncated_request_count'] == 0
+          assert p['authority_boundary']['only_predeclared_expansion_terms_used'] is True
+          assert p['authority_boundary']['opaque_document_token_treated_as_stable_identity'] is False
+          assert p['authority_boundary']['returned_document_dereferenced'] is False
+          assert p['authority_boundary']['terminal_outcome_assigned'] is False
+          assert p['authority_boundary']['absence_treated_as_disposition'] is False
+          assert p['outcome']['status'] == 'unknown'
+          PY
+      - name: Reproduce frozen Passed Legislation recall-expansion receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_passed_legislation_recall_expansion_summary.json'))
+          m=json.load(open('akron-passed-legislation-recall-expansion/passed-legislation-recall-expansion.json'))
+          assert m['plan']['sha256'] == r['plan_sha256']
+          assert m['preconditions'] == r['preconditions']
+          assert m['counts'] == r['counts']
+          assert m['candidate_population']['stable_population_signature_sha256'] == r['stable_population_signature_sha256']
+          assert m['candidate_population']['target_screened_population_signature_sha256'] == r['target_screened_population_signature_sha256']
+          assert m['authority_boundary'] == r['authority_boundary']
+          assert m['outcome'] == r['outcome']
+          PY
+      - name: Upload Passed Legislation recall-expansion evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-passed-legislation-recall-expansion
+          path: akron-passed-legislation-recall-expansion/
+          retention-days: 14
