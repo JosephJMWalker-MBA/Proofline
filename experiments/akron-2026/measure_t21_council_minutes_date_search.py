@@ -122,12 +122,10 @@ def validate_inputs(plan: dict, source: dict, target: dict, sequence: dict) -> N
             raise ValueError(f"meeting {meeting_id} request ID changed")
 
     selection = plan["selection_rule"]
-    required_false = (
-        "post_result_date_or_term_expansion_allowed",
-        "returned_documents_dereferenced_in_this_stage",
-    )
-    if any(selection[key] is not False for key in required_false):
-        raise ValueError("search expansion or document dereference must remain forbidden")
+    if selection["post_result_date_or_term_expansion_allowed"] is not False:
+        raise ValueError("post-result expansion must remain forbidden")
+    if selection["returned_documents_dereferenced_in_this_stage"] is not False:
+        raise ValueError("document dereference must remain forbidden")
 
 
 def post_json(url: str, payload: dict, *, timeout: float = 45.0) -> tuple[dict, bytes]:
@@ -225,6 +223,14 @@ def run_one(endpoint: str, request_id: str, payload: dict, output: Path) -> dict
     display_columns = None
     if response["ok"]:
         documents, truncated, display_columns = parse_search_response(raw)
+    stable_rows = [d["stable_projection"] for d in documents]
+    stable_unique = []
+    seen = set()
+    for stable in stable_rows:
+        digest = sha256_json(stable)
+        if digest not in seen:
+            seen.add(digest)
+            stable_unique.append(stable)
     return {
         "request_id": request_id,
         "request_payload": payload,
@@ -233,10 +239,50 @@ def run_one(endpoint: str, request_id: str, payload: dict, output: Path) -> dict
         "truncated": truncated,
         "returned_document_count": len(documents),
         "returned_documents": documents,
-        "stable_result_signature_sha256": sha256_json([d["stable_projection"] for d in documents]),
+        "stable_unique_projection_count": len(stable_unique),
+        "stable_result_signature_sha256": sha256_json(stable_unique),
         "display_columns": display_columns,
         "raw_filename": filename,
     }
+
+
+def group_stable_candidates(searches: list[dict]) -> list[dict]:
+    grouped: dict[tuple[int, str], dict] = {}
+    for search in searches:
+        for document in search["returned_documents"]:
+            key = (search["meeting_id"], document["stable_projection_sha256"])
+            group = grouped.get(key)
+            if group is None:
+                group = {
+                    "meeting_id": search["meeting_id"],
+                    "meeting_date": search["meeting_date"],
+                    "stable_projection": document["stable_projection"],
+                    "stable_projection_sha256": document["stable_projection_sha256"],
+                    "observed_document_tokens": [],
+                    "observed_raw_row_sha256": [],
+                }
+                grouped[key] = group
+            group["observed_document_tokens"].append(document["document_token"])
+            group["observed_raw_row_sha256"].append(document["raw_row_sha256"])
+
+    result = []
+    for key in sorted(grouped, key=lambda item: (item[0], item[1])):
+        group = grouped[key]
+        group["observed_token_count"] = len(group["observed_document_tokens"])
+        result.append(group)
+    return result
+
+
+def stable_group_signature_projection(groups: list[dict]) -> list[dict]:
+    return [
+        {
+            "meeting_id": group["meeting_id"],
+            "meeting_date": group["meeting_date"],
+            "stable_projection": group["stable_projection"],
+            "stable_projection_sha256": group["stable_projection_sha256"],
+        }
+        for group in groups
+    ]
 
 
 def main() -> int:
@@ -278,15 +324,10 @@ def main() -> int:
     any_failure = (not control["response"]["ok"]) or any(not row["response"]["ok"] for row in searches)
     any_truncation = control["truncated"] or any(row["truncated"] for row in searches)
 
-    stable_candidates = []
-    for row in searches:
-        for document in row["returned_documents"]:
-            stable_candidates.append({
-                "meeting_id": row["meeting_id"],
-                "meeting_date": row["meeting_date"],
-                "stable_projection": document["stable_projection"],
-                "stable_projection_sha256": document["stable_projection_sha256"],
-            })
+    stable_groups = group_stable_candidates(searches)
+    stable_signature_rows = stable_group_signature_projection(stable_groups)
+    raw_token_count = sum(row["returned_document_count"] for row in searches)
+    duplicate_groups = sum(1 for group in stable_groups if group["observed_token_count"] > 1)
 
     measurement = {
         "schema": SCHEMA,
@@ -311,10 +352,12 @@ def main() -> int:
         "positive_control": control,
         "eastwood_searches": searches,
         "candidate_population": {
-            "identity_boundary": "meeting_id_plus_publisher_stable_projection_excluding_opaque_document_token",
-            "count": len(stable_candidates),
-            "documents": stable_candidates,
-            "signature_sha256": sha256_json(stable_candidates),
+            "identity_boundary": "meeting_id_plus_publisher_stable_projection; opaque tokens preserved only as observed retrieval handles",
+            "stable_group_count": len(stable_groups),
+            "raw_retrieval_token_count": raw_token_count,
+            "duplicate_metadata_group_count": duplicate_groups,
+            "groups": stable_groups,
+            "stable_signature_sha256": sha256_json(stable_signature_rows),
         },
         "counts": {
             "positive_control_returned_document_count": control["returned_document_count"],
@@ -322,7 +365,10 @@ def main() -> int:
             "successful_eastwood_request_count": sum(1 for row in searches if row["response"]["ok"]),
             "truncated_eastwood_request_count": sum(1 for row in searches if row["truncated"]),
             "eastwood_dates_with_results": sum(1 for row in searches if row["returned_document_count"] > 0),
-            "eastwood_returned_document_count": sum(row["returned_document_count"] for row in searches),
+            "eastwood_dates_without_results": sum(1 for row in searches if row["returned_document_count"] == 0),
+            "eastwood_returned_document_token_count": raw_token_count,
+            "eastwood_stable_metadata_group_count": len(stable_groups),
+            "eastwood_duplicate_metadata_group_count": duplicate_groups,
         },
         "authority_boundary": {
             "document_search_submitted": True,
@@ -332,6 +378,8 @@ def main() -> int:
             "query_id_guessed": False,
             "keyword_id_guessed": False,
             "opaque_document_token_treated_as_stable_identity": False,
+            "identical_visible_metadata_assumed_same_document": False,
+            "identical_visible_metadata_assumed_distinct_documents": False,
             "returned_document_dereferenced": False,
             "terminal_outcome_assigned": False,
             "absence_treated_as_disposition": False,
@@ -341,24 +389,25 @@ def main() -> int:
         },
         "outcome": {
             "status": "unknown",
-            "reason": "This stage measures publisher-returned Council Meeting Minutes retrieval candidates for predeclared dates only. Presence or absence is not disposition.",
+            "reason": "This stage measures publisher-returned Council Meeting Minutes retrieval candidates for predeclared dates only. Presence, absence, and duplicate visible metadata are not disposition.",
         },
-        "non_claims": plan["non_claims"],
+        "non_claims": plan["non_claims"] + [
+            "Two different opaque tokens with identical visible metadata are not assumed to be either the same underlying document or distinct underlying documents until separately retrieved."
+        ],
     }
     measurement["eastwood_response_population_signature_sha256"] = sha256_json([
         {
             "meeting_id": row["meeting_id"],
             "request_payload_sha256": row["request_payload_sha256"],
-            "response_sha256": row["response"]["sha256"],
             "truncated": row["truncated"],
             "returned_document_count": row["returned_document_count"],
+            "stable_unique_projection_count": row["stable_unique_projection_count"],
             "stable_result_signature_sha256": row["stable_result_signature_sha256"],
         }
         for row in searches
     ])
-    (output / "council-minutes-date-search-measurement.json").write_text(
-        json.dumps(measurement, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    path = output / "council-minutes-date-search-measurement.json"
+    path.write_text(json.dumps(measurement, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(measurement["counts"], indent=2, sort_keys=True))
 
     if any_failure:
