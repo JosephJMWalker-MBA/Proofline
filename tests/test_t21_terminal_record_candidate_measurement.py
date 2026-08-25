@@ -50,6 +50,14 @@ def test_near_match_fails_closed():
     assert module.candidate_matches_target(row, TARGET) is False
 
 
+def test_valid_candidate_with_punctuation_after_identifier_does_not_crash_relationship_scan():
+    row = _candidate(
+        "ORDINANCE NO. 144-2026: authorizing an unrelated example action.\nVote: 12-0."
+    )
+    assert module.candidate_legislative_body(row).startswith(": authorizing")
+    assert module.candidate_matches_target(row, TARGET) is False
+
+
 def test_target_hash_drift_fails_closed():
     row = _candidate(
         "ORDINANCE NO. 144-2026 authorizing a Conditional Use to establish a defense education "
