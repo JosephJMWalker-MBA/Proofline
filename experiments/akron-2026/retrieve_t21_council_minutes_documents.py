@@ -99,7 +99,7 @@ def validate_search_against_receipt(search: dict, receipt: dict) -> None:
             raise ValueError(f"fresh search population drifted at count {key}")
 
     if (
-        search["candidate_population"]["signature_sha256"]
+        search["candidate_population"]["stable_signature_sha256"]
         != receipt["stable_candidate_population_signature_sha256"]
     ):
         raise ValueError("stable candidate population drifted")
