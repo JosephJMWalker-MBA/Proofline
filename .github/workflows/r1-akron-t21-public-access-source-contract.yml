@@ -43,6 +43,8 @@ jobs:
           python experiments/akron-2026/probe_public_access.py akron-public-access-probe \
             | tee akron-public-access-probe-stdout.json
           test -s akron-public-access-probe/public-access-probe.json
+          test -s akron-public-access-probe/obpa-config.json
+          test -s akron-public-access-probe/custom-queries.json
 
       - name: Validate source-only authority boundary
         shell: bash
@@ -68,17 +70,40 @@ jobs:
           assert viewer['same_host'] is True
           assert urlparse(viewer['final_url']).hostname == 'onlinedocs.akronohio.gov'
 
+          client = p['client_contract']
+          assert client == {
+              'config_literal': './obpa-config.json',
+              'custom_query_get_declared': True,
+              'keywords_post_declared': True,
+              'keyword_search_post_declared': True,
+              'document_uri_declared': True,
+              'api_url_config_key_declared': True,
+          }
+
+          config = p['configuration']
+          assert config['record']['ok'] is True
+          assert config['record']['same_host'] is True
+          assert urlparse(config['api_root']).hostname == 'onlinedocs.akronohio.gov'
+
+          metadata = p['custom_query_metadata']
+          assert metadata['record']['ok'] is True
+          assert metadata['record']['same_host'] is True
+          assert urlparse(metadata['endpoint']).hostname == 'onlinedocs.akronohio.gov'
+
           counts = p['counts']
           assert counts['declared_script_count'] == len(p['declared_assets']['script_urls'])
           assert counts['successful_script_count'] <= counts['declared_script_count']
           assert counts['route_candidate_count'] == len(p['route_candidates'])
+          assert counts['publisher_custom_query_count'] == len(metadata['queries'])
 
           for route in p['route_candidates']:
               assert urlparse(route).hostname == 'onlinedocs.akronohio.gov'
 
           boundary = p['authority_boundary']
           assert boundary == {
+              'custom_query_metadata_requested': True,
               'document_search_submitted': False,
+              'keyword_metadata_requested': False,
               'query_id_guessed': False,
               'document_token_enumerated': False,
               'terminal_outcome_assigned': False,
