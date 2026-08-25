@@ -1,0 +1,197 @@
+name: r1-akron-t21-council-minutes-document-retrieval
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-council-minutes-document-retrieval.yml"
+      - "experiments/akron-2026/retrieve_t21_council_minutes_documents.py"
+      - "experiments/akron-2026/measure_t21_council_minutes_date_search.py"
+      - "experiments/akron-2026/r1_t21_council_minutes_date_search_plan.json"
+      - "experiments/akron-2026/r1_t21_council_minutes_date_search_summary.json"
+      - "experiments/akron-2026/r1_t21_council_minutes_document_retrieval_summary.json"
+      - "tests/test_t21_council_minutes_document_retrieval.py"
+      - "tests/test_t21_council_minutes_document_retrieval_receipt.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  council-minutes-document-retrieval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite and retrieval syntax gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/measure_t21_council_minutes_date_search.py
+          python -m py_compile experiments/akron-2026/retrieve_t21_council_minutes_documents.py
+
+      - name: Reproduce frozen 22-date Council minutes candidate population
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf akron-council-minutes-retrieval-search
+          python experiments/akron-2026/measure_t21_council_minutes_date_search.py \
+            akron-council-minutes-retrieval-search \
+            | tee akron-council-minutes-retrieval-search-stdout.json
+          test -s akron-council-minutes-retrieval-search/council-minutes-date-search-measurement.json
+
+      - name: Retrieve every current Council minutes document handle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf akron-council-minutes-document-retrieval
+          python experiments/akron-2026/retrieve_t21_council_minutes_documents.py \
+            akron-council-minutes-retrieval-search/council-minutes-date-search-measurement.json \
+            experiments/akron-2026/r1_t21_council_minutes_date_search_summary.json \
+            akron-council-minutes-document-retrieval \
+            | tee akron-council-minutes-document-retrieval-stdout.json
+          test -s akron-council-minutes-document-retrieval/council-minutes-document-retrieval.json
+
+      - name: Validate retrieval-only authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('akron-council-minutes-document-retrieval')
+          p = json.load(open(root / 'council-minutes-document-retrieval.json'))
+          assert p['schema'] == 'proofline-akron-t21-council-minutes-document-retrieval/v1'
+          assert p['stage'] == 'publisher_council_minutes_source_byte_retrieval_before_content_interpretation'
+          assert p['fresh_search']['population_reproduced_before_dereference'] is True
+          assert p['fresh_search']['returned_handle_count'] == 26
+
+          counts = p['counts']
+          assert counts['retrieved_handle_count'] == 26
+          assert counts['stable_group_count'] == 21
+          assert counts['duplicate_metadata_group_count'] == 5
+          assert (
+              counts['duplicate_groups_with_identical_retrieved_bytes']
+              + counts['duplicate_groups_with_distinct_retrieved_bytes']
+              == 5
+          )
+          assert counts['pdf_retrieval_count'] + counts['native_retrieval_count'] == 26
+
+          boundary = p['authority_boundary']
+          assert boundary == {
+              'fresh_candidate_population_reproduced': True,
+              'every_current_returned_handle_retrieved': True,
+              'opaque_token_treated_as_stable_identity': False,
+              'source_bytes_preserved': True,
+              'duplicate_group_equivalence_inferred_from_metadata': False,
+              'retrieved_byte_equality_recorded_as_observation_only': True,
+              'document_content_interpreted': False,
+              'terminal_outcome_assigned': False,
+              'absence_treated_as_disposition': False,
+              'causality_assigned': False,
+              'detector_authorized': False,
+              'lead_count': None,
+          }
+          assert p['outcome']['status'] == 'unknown'
+
+          for row in p['retrievals']:
+              assert row['document_byte_length'] > 0
+              assert len(row['document_sha256']) == 64
+              assert len(row['metadata_raw_sha256']) == 64
+              assert len(row['opaque_token_sha256']) == 64
+              assert (root / row['metadata_filename']).is_file()
+              assert (root / row['document_filename']).is_file()
+              if row['representation'] == 'pdf':
+                  assert row['document_pdf_signature'] is True
+          PY
+
+      - name: Reproduce frozen Council minutes source-byte receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+
+          live = json.load(open(
+              'akron-council-minutes-document-retrieval/council-minutes-document-retrieval.json'
+          ))
+          receipt = json.load(open(
+              'experiments/akron-2026/r1_t21_council_minutes_document_retrieval_summary.json'
+          ))
+
+          assert receipt['schema'] == (
+              'proofline-akron-t21-council-minutes-document-retrieval-receipt/v1'
+          )
+          assert live['counts'] == receipt['counts']
+          assert live['authority_boundary'] == receipt['authority_boundary']
+          assert live['fresh_search']['population_reproduced_before_dereference'] is True
+          assert live['fresh_search']['returned_handle_count'] == 26
+          assert (
+              live['fresh_search']['frozen_receipt_sha256']
+              == receipt['fresh_search']['frozen_receipt_sha256']
+          )
+          assert (
+              live['stable_group_comparison_signature_sha256']
+              == receipt['stable_group_comparison_signature_sha256']
+          )
+
+          docs = sorted(
+              [
+                  {
+                      'meeting_id': row['meeting_id'],
+                      'stable_projection_sha256': row['stable_projection_sha256'],
+                      'document_sha256': row['document_sha256'],
+                      'document_byte_length': row['document_byte_length'],
+                      'viewer_mode': row['metadata']['ViewerMode'],
+                      'metadata_size': row['metadata']['Size'],
+                      'representation': row['representation'],
+                  }
+                  for row in live['retrievals']
+              ],
+              key=lambda row: (
+                  row['meeting_id'],
+                  row['stable_projection_sha256'],
+                  row['document_sha256'],
+              ),
+          )
+          assert docs == receipt['document_receipts']
+          raw = json.dumps(
+              docs, sort_keys=True, separators=(',', ':'), ensure_ascii=False
+          ).encode('utf-8')
+          assert hashlib.sha256(raw).hexdigest() == receipt['document_receipts_signature_sha256']
+
+          duplicates = [row for row in live['stable_groups'] if row['handle_count'] > 1]
+          assert duplicates == receipt['duplicate_group_results']
+          assert receipt['interpretation']['eastwood_outcome_status'] == 'Unknown'
+          assert receipt['interpretation']['unique_retrieved_pdf_sha256_count'] == 26
+          assert receipt['interpretation']['all_retrieved_representations_pdf'] is True
+          assert receipt['interpretation']['all_metadata_sizes_match_document_bytes'] is True
+          assert receipt['receipt_guards']['opaque_token_hashes_not_pinned'] is True
+          assert receipt['receipt_guards']['http_headers_not_pinned'] is True
+          PY
+
+      - name: Upload Council minutes source-byte evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-council-minutes-document-retrieval
+          path: |
+            akron-council-minutes-retrieval-search/
+            akron-council-minutes-retrieval-search-stdout.json
+            akron-council-minutes-document-retrieval/
+            akron-council-minutes-document-retrieval-stdout.json
+            experiments/akron-2026/r1_t21_council_minutes_document_retrieval_summary.json
+          if-no-files-found: error
+          retention-days: 14
