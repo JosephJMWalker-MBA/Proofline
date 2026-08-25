@@ -1,0 +1,248 @@
+{
+  "authority_boundary": {
+    "absence_treated_as_disposition": false,
+    "candidate_is_review_target_only": true,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "exact_title_match_is_relationship_evidence_only": true,
+    "lead_count": null,
+    "meeting_occurrence_asserted": false,
+    "terminal_outcome_assigned": false,
+    "vote_arithmetic_interpreted": false
+  },
+  "candidate_population_signature_sha256": "43cbba8bdcfde7ce4a2d037a29087946d37a28bb8affd88ff6806329c163f848",
+  "canonical_run": {
+    "artifact_digest": "sha256:023b6bb47eadbcc73803c7a41e8a1b32ef713a32964f10ab454d8a5cad2ea410",
+    "artifact_id": 9546329454,
+    "head_sha": "52819316e3c057850aac693de52041c167332498",
+    "job_id": 97660306254,
+    "raw_measurement_byte_size": 254275,
+    "raw_measurement_json_sha256": "b3c846e6f3eec81e96f9c2e0008b6ddb0d4bec182d0e8f5aee9e093451a0b952",
+    "workflow_run_id": 32800525222
+  },
+  "counts": {
+    "marked_agenda_count": 26,
+    "numbered_vote_candidate_count": 215,
+    "target_exact_title_match_count": 0,
+    "terminal_outcomes_assigned": 0
+  },
+  "observation_time": "2026-08-24T20:51:00-04:00",
+  "outcome": {
+    "reason": "The complete bounded marked-agenda scan produced no exact numbered-vote candidate matching the frozen Eastwood legislative body. Absence of such a candidate is not a terminal disposition.",
+    "status": "unknown"
+  },
+  "publisher_discovery": {
+    "agenda_item_count": 1475,
+    "agenda_item_manifest_sha256": "375fe1ca8843509adfef9616fc2d7fb65353ee8866e168d1c89218e9e5f8c9d0",
+    "agenda_tree_count": 33,
+    "meeting_count": 33
+  },
+  "receipt_guards": {
+    "candidate_population_signature_frozen": true,
+    "complete_eligible_marked_agenda_coverage_required": true,
+    "exact_raw_measurement_sha256_frozen": true,
+    "source_artifact_sha256_frozen": true,
+    "zero_match_is_not_disposition": true
+  },
+  "scan_window": {
+    "eligible_marked_agenda_count": 26,
+    "meetings_before_target_introduction_excluded": 6,
+    "publisher_meetings_after_observation_excluded": 1
+  },
+  "schema": "proofline-akron-t21-terminal-record-candidate-scan-receipt/v1",
+  "source_population_signature_sha256": "089c1b0c4104ecb6752cc2c1bdd34355abca40b29c63a1c989a935842ed0eec5",
+  "source_receipts": [
+    {
+      "artifact_sha256": "0b6199724e0fe111bb4a2d555337bf5ef33dbdbb4e2edbb9d8ac27ecb8d0a997",
+      "candidate_count": 10,
+      "meeting_id": 669,
+      "meeting_time": "2026-02-23T18:30:00-05:00",
+      "page_count": 8
+    },
+    {
+      "artifact_sha256": "92ebb3cbbc1877f4f30bf89e85ae780fc0509d191ce32cddbb60ce3bb32ee2c8",
+      "candidate_count": 11,
+      "meeting_id": 670,
+      "meeting_time": "2026-03-02T18:30:00-05:00",
+      "page_count": 8
+    },
+    {
+      "artifact_sha256": "6277cfb783e6cb555f1d2cf1b5d0fc4b76ebabdadb8eb06cf820b54f66b8b2e3",
+      "candidate_count": 8,
+      "meeting_id": 671,
+      "meeting_time": "2026-03-09T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "edf5ec630183f328d39e64b872013946d634895e1a6e6fc2d0851ba19f2d6bef",
+      "candidate_count": 8,
+      "meeting_id": 672,
+      "meeting_time": "2026-03-16T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "749c146ebfc9f1611089a902d99984d619f83f30a32d201e21cecadb4cd28e99",
+      "candidate_count": 0,
+      "meeting_id": 673,
+      "meeting_time": "2026-03-17T15:00:00-04:00",
+      "page_count": 1
+    },
+    {
+      "artifact_sha256": "6d5fe64a3d1ec08086ff8fa5f3c8bab973cb7db5a8acc9a21b837e8e42f782bf",
+      "candidate_count": 12,
+      "meeting_id": 674,
+      "meeting_time": "2026-03-23T18:30:00-04:00",
+      "page_count": 8
+    },
+    {
+      "artifact_sha256": "ce8ce4fd794d6fc71cc2471205f4eb6c66f64da944df2cb30ac0d73289b8020e",
+      "candidate_count": 9,
+      "meeting_id": 675,
+      "meeting_time": "2026-03-30T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "e3e56580be5a47068dd94fccc503de57f520541fb2110ac4f646d9cedc2c4432",
+      "candidate_count": 11,
+      "meeting_id": 676,
+      "meeting_time": "2026-04-06T18:30:00-04:00",
+      "page_count": 7
+    },
+    {
+      "artifact_sha256": "a6e493a21f7c112870efac79129febedc924b86f750a0165484870e69c8a7b4d",
+      "candidate_count": 7,
+      "meeting_id": 677,
+      "meeting_time": "2026-04-13T18:30:00-04:00",
+      "page_count": 6
+    },
+    {
+      "artifact_sha256": "378c318c316259b0c8b855f4ca86daaf9446a8fbc738198382d75151653cd9ff",
+      "candidate_count": 2,
+      "meeting_id": 678,
+      "meeting_time": "2026-04-20T18:30:00-04:00",
+      "page_count": 5
+    },
+    {
+      "artifact_sha256": "b0c38460a9776598b8a7a4573e36688ca6a2ba5424f325f56df929529618755e",
+      "candidate_count": 0,
+      "meeting_id": 681,
+      "meeting_time": "2026-04-22T12:45:00-04:00",
+      "page_count": 1
+    },
+    {
+      "artifact_sha256": "33217774947c39547efbcfd50d058c2f1c32f74aad1292bed80553ffd4a1c5c3",
+      "candidate_count": 1,
+      "meeting_id": 682,
+      "meeting_time": "2026-04-27T18:30:00-04:00",
+      "page_count": 7
+    },
+    {
+      "artifact_sha256": "e519b24fb384d8e57afd49fddbd5b8cdc9b04b38c33a08244ad26595e3c70792",
+      "candidate_count": 0,
+      "meeting_id": 684,
+      "meeting_time": "2026-05-01T13:30:00-04:00",
+      "page_count": 1
+    },
+    {
+      "artifact_sha256": "b8403614741ac42ca26daded89284c8cab32cd12e1ead20c3ae100a14ca22aa2",
+      "candidate_count": 3,
+      "meeting_id": 683,
+      "meeting_time": "2026-05-04T18:30:00-04:00",
+      "page_count": 8
+    },
+    {
+      "artifact_sha256": "69e6fd860165e6b5b922e702f85088ec8c5e2d14ba8ddf58d1aa375884b7b285",
+      "candidate_count": 11,
+      "meeting_id": 685,
+      "meeting_time": "2026-05-11T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "86f90a547e428f7d427ebedb8e4c15bc452598abe367e1b37c3a746c4467fec0",
+      "candidate_count": 12,
+      "meeting_id": 686,
+      "meeting_time": "2026-05-18T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "ae7f174eec488f35995a106eb075ca21a9bc24436d220724a8b11cfef6396215",
+      "candidate_count": 13,
+      "meeting_id": 688,
+      "meeting_time": "2026-06-01T18:30:00-04:00",
+      "page_count": 10
+    },
+    {
+      "artifact_sha256": "ed11af35628f8d8a4c1555479ee1d482f8e7820d607f62c272f3cc9c26ec0596",
+      "candidate_count": 8,
+      "meeting_id": 689,
+      "meeting_time": "2026-06-08T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "43cb37f9733bacdc2acba0eb194b56a0437b64a3fca47ea97180dbd91ee2531e",
+      "candidate_count": 15,
+      "meeting_id": 690,
+      "meeting_time": "2026-06-15T18:30:00-04:00",
+      "page_count": 8
+    },
+    {
+      "artifact_sha256": "fc63ebb9be1faec90ec94cedc934c40622e6bb7c457cc24ce8e8e7dcc6985727",
+      "candidate_count": 8,
+      "meeting_id": 691,
+      "meeting_time": "2026-06-22T18:30:00-04:00",
+      "page_count": 10
+    },
+    {
+      "artifact_sha256": "00a407d65cc1c41e393a737597b708e43e46920963e6958b4b6630ee42bd13d9",
+      "candidate_count": 12,
+      "meeting_id": 692,
+      "meeting_time": "2026-06-29T18:30:00-04:00",
+      "page_count": 10
+    },
+    {
+      "artifact_sha256": "a8f4d2dcaedafa9a52754a1b23708ac4efd62a9b6453892d092a800fcd391467",
+      "candidate_count": 20,
+      "meeting_id": 693,
+      "meeting_time": "2026-07-06T18:30:00-04:00",
+      "page_count": 9
+    },
+    {
+      "artifact_sha256": "b31dacced987f9102978714d58cd065545fe083088929b3b9a0176045ad0dd50",
+      "candidate_count": 9,
+      "meeting_id": 694,
+      "meeting_time": "2026-07-13T18:30:00-04:00",
+      "page_count": 8
+    },
+    {
+      "artifact_sha256": "8ecfa51732fa8688eb9640f80db73612fd931e419646f6fc536340e9e5548fa3",
+      "candidate_count": 0,
+      "meeting_id": 695,
+      "meeting_time": "2026-07-20T15:00:00-04:00",
+      "page_count": 1
+    },
+    {
+      "artifact_sha256": "e2088453f505e31da8992b35dd27492f4995302081cd2b988cce0da013fe3096",
+      "candidate_count": 9,
+      "meeting_id": 696,
+      "meeting_time": "2026-07-20T18:30:00-04:00",
+      "page_count": 10
+    },
+    {
+      "artifact_sha256": "957124203c2e5c2367c25a1961775eac5a3af5d7293fdf412d0aa51e5cea0290",
+      "candidate_count": 16,
+      "meeting_id": 697,
+      "meeting_time": "2026-07-27T18:30:00-04:00",
+      "page_count": 9
+    }
+  ],
+  "stage": "post_measurement_pre_disposition_receipt",
+  "target": {
+    "introduced_on_or_after": "2026-02-23",
+    "ordinance_title_sha256": "484e8b7cd5bc9957938bc6aaf98063ae0c93ffb1bc2df86b10205501437a1c84",
+    "planning_case": {
+      "kind": "planning_case",
+      "normalized_key": "PC-2025-80-CU"
+    }
+  },
+  "target_matches": []
+}
