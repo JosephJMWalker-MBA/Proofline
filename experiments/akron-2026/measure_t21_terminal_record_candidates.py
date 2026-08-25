@@ -86,16 +86,16 @@ def _instance_root(plan: OnBaseAgendaPlan) -> str:
 def agenda_pdf_uri(plan: OnBaseAgendaPlan, *, meeting_id: int, agenda_unique_name: str) -> str:
     """Derive the marked-agenda PDF from publisher-declared meeting metadata.
 
-    This is the same transport contract already exercised by the Akron OnBase
-    data probe: ``AgendaUniqueName`` plus the publisher meeting ID. No numeric ID
-    sweep or guessed filename is used.
+    Akron currently serves marked-agenda bytes through ``DownloadFileBytes``.
+    The path uses only the publisher-declared ``AgendaUniqueName`` plus the
+    publisher meeting ID. No numeric ID sweep or guessed filename is used.
     """
     if meeting_id <= 0:
         raise ValueError("meeting_id must be positive")
     if not agenda_unique_name.strip():
         raise ValueError("agenda_unique_name must be non-empty")
     root = _instance_root(plan)
-    path = "Documents/DownloadFile/" + quote(agenda_unique_name, safe="") + ".pdf"
+    path = "Documents/DownloadFileBytes/" + quote(agenda_unique_name, safe="") + ".pdf"
     query = urlencode({"documentType": "1", "meetingId": str(meeting_id)})
     return urljoin(root, path) + "?" + query
 
@@ -262,6 +262,7 @@ def measure(
                 "instrument_year": candidate.instrument_year,
                 "vote_ayes": candidate.vote_ayes,
                 "vote_nays": candidate.vote_nays,
+                "normalized_record_text": candidate.normalized_record_text,
                 "normalized_record_text_sha256": _sha256_text(candidate.normalized_record_text),
                 "target_exact_title_match": target_match,
                 "terminal_outcome_assigned": candidate.terminal_outcome_assigned,
