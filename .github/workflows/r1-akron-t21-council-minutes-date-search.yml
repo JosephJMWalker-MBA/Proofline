@@ -6,10 +6,12 @@ on:
       - ".github/workflows/r1-akron-t21-council-minutes-date-search.yml"
       - "experiments/akron-2026/measure_t21_council_minutes_date_search.py"
       - "experiments/akron-2026/r1_t21_council_minutes_date_search_plan.json"
+      - "experiments/akron-2026/r1_t21_council_minutes_date_search_summary.json"
       - "experiments/akron-2026/r1_t21_council_minutes_source_contract_summary.json"
       - "experiments/akron-2026/r1_t21_terminal_record_target.json"
       - "experiments/akron-2026/r1_t21_agenda_status_sequence_summary.json"
       - "tests/test_t21_council_minutes_date_search_measurement.py"
+      - "tests/test_t21_council_minutes_date_search_receipt.py"
   workflow_dispatch:
 
 permissions:
@@ -97,7 +99,15 @@ jobs:
               assert row['request_payload']['Keywords'][0]['Name'] == 'Meeting Date'
               assert row['request_payload']['Keywords'][0]['KeywordOperator'] == '='
 
-          assert p['candidate_population']['count'] == p['counts']['eastwood_returned_document_count']
+          candidates = p['candidate_population']
+          assert candidates['raw_retrieval_token_count'] == p['counts']['eastwood_returned_document_token_count']
+          assert candidates['stable_group_count'] == p['counts']['eastwood_stable_metadata_group_count']
+          assert candidates['duplicate_metadata_group_count'] == p['counts']['eastwood_duplicate_metadata_group_count']
+          assert candidates['stable_group_count'] <= candidates['raw_retrieval_token_count']
+          for group in candidates['groups']:
+              assert group['observed_token_count'] == len(group['observed_document_tokens'])
+              assert group['observed_token_count'] == len(group['observed_raw_row_sha256'])
+
           assert p['outcome']['status'] == 'unknown'
           assert p['authority_boundary'] == {
               'document_search_submitted': True,
@@ -107,6 +117,8 @@ jobs:
               'query_id_guessed': False,
               'keyword_id_guessed': False,
               'opaque_document_token_treated_as_stable_identity': False,
+              'identical_visible_metadata_assumed_same_document': False,
+              'identical_visible_metadata_assumed_distinct_documents': False,
               'returned_document_dereferenced': False,
               'terminal_outcome_assigned': False,
               'absence_treated_as_disposition': False,
@@ -116,6 +128,55 @@ jobs:
           }
           PY
 
+      - name: Reproduce frozen Council minutes date-search receipt
+        if: ${{ hashFiles('experiments/akron-2026/r1_t21_council_minutes_date_search_summary.json') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+
+          live = json.load(open('akron-council-minutes-date-search/council-minutes-date-search-measurement.json'))
+          receipt = json.load(open('experiments/akron-2026/r1_t21_council_minutes_date_search_summary.json'))
+
+          assert receipt['schema'] == 'proofline-akron-t21-council-minutes-date-search-receipt/v1'
+          assert live['plan']['sha256'] == receipt['plan_sha256']
+          assert live['source_contract'] == receipt['source_contract']
+          assert live['counts']['eastwood_request_count'] == 22
+          assert live['counts']['successful_eastwood_request_count'] == 22
+          assert live['counts']['truncated_eastwood_request_count'] == 0
+          assert live['counts']['eastwood_dates_with_results'] == receipt['counts']['eastwood_dates_with_results']
+          assert live['counts']['eastwood_dates_without_results'] == receipt['counts']['eastwood_dates_without_results']
+          assert live['counts']['eastwood_returned_document_token_count'] == receipt['counts']['eastwood_returned_document_token_count']
+          assert live['counts']['eastwood_stable_metadata_group_count'] == receipt['counts']['eastwood_stable_metadata_group_count']
+          assert live['counts']['eastwood_duplicate_metadata_group_count'] == receipt['counts']['eastwood_duplicate_metadata_group_count']
+          assert live['candidate_population']['stable_signature_sha256'] == receipt['stable_candidate_population_signature_sha256']
+          assert live['eastwood_response_population_signature_sha256'] == receipt['eastwood_response_population_signature_sha256']
+
+          live_rows = [
+              {
+                  'meeting_id': row['meeting_id'],
+                  'meeting_date': row['meeting_date'],
+                  'request_payload_sha256': row['request_payload_sha256'],
+                  'returned_document_count': row['returned_document_count'],
+                  'stable_unique_projection_count': row['stable_unique_projection_count'],
+                  'stable_result_signature_sha256': row['stable_result_signature_sha256'],
+              }
+              for row in live['eastwood_searches']
+          ]
+          assert live_rows == receipt['date_receipts']
+
+          control = live['positive_control']
+          assert control['response']['ok'] is True
+          assert control['truncated'] is False
+          assert control['returned_document_count'] >= 1
+          assert control['request_payload_sha256'] == receipt['positive_control']['request_payload_sha256']
+          assert receipt['positive_control']['population_not_pinned'] is True
+
+          assert live['authority_boundary'] == receipt['authority_boundary']
+          assert live['outcome']['status'] == receipt['outcome']['status'] == 'unknown'
+          PY
+
       - name: Upload Council minutes date-search measurement
         uses: actions/upload-artifact@v4
         with:
@@ -123,5 +184,6 @@ jobs:
           path: |
             akron-council-minutes-date-search/
             akron-council-minutes-date-search-stdout.json
-          if-no-files-found: error
+            experiments/akron-2026/r1_t21_council_minutes_date_search_summary.json
+          if-no-files-found: warn
           retention-days: 14
