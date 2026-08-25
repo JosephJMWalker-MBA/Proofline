@@ -1,0 +1,122 @@
+{
+  "schema": "proofline-akron-t21-committee-minutes-date-search-receipt/v1",
+  "stage": "frozen_committee_minutes_exact_date_candidate_search_before_document_retrieval",
+  "canonical_measurement": {
+    "workflow_run_id": 32813575525,
+    "job_id": 97697438789,
+    "head_sha": "141c19b41d3e22657367816eb0ba04f853a63658",
+    "artifact_id": 9550637156,
+    "artifact_digest": "sha256:daf69ccc1b8d4ab7097ed62fb5208bd104185bc43d0a7a2f1762779f6407dcbe",
+    "observed_at_utc": "2026-08-25T05:37:59.745811+00:00",
+    "raw_measurement_byte_size": 98480,
+    "raw_measurement_sha256": "1681d7f6f1ec57d2cc396be43fa51d6111b718f70a074cd3dc820e98ff6e1039"
+  },
+  "plan": {
+    "schema": "proofline-akron-t21-committee-minutes-date-search-plan/v1",
+    "sha256": "ea6df962689496c219c7a3ab111a4ad2dd08028ad3fc66781e2c1f62f8030ac3",
+    "pre_observation_plan_commit": "de6d2aa0b533bd620ee43a820ee4243f618aacfa",
+    "eastwood_request_count": 22,
+    "committee_value": "PLANNING & ECONOMIC DEVELOPMENT",
+    "post_result_expansion_allowed": false
+  },
+  "source_contract": {
+    "schema": "proofline-akron-t21-committee-minutes-source-contract-receipt/v1",
+    "api_root": "https://onlinedocs.akronohio.gov/PublicAccess/api",
+    "query_id": "202",
+    "query_name": "Committee Meeting Minutes",
+    "meeting_date_keyword_id": "124",
+    "year_keyword_id": "532",
+    "committee_keyword_id": "105",
+    "committee_value": "PLANNING & ECONOMIC DEVELOPMENT",
+    "query_limit": 0
+  },
+  "positive_control": {
+    "request_id": "year_2026_planning_economic_development_control",
+    "request_payload_sha256": "45cb1b5f262bfef40ff5adf49dffbaa38ba4a1db58db39b6538b9cb6b97c50c3",
+    "canonical_returned_document_count": 23,
+    "canonical_stable_unique_projection_count": 23,
+    "canonical_stable_result_signature_sha256": "6c06e0d32280eface9e2b4baa9c5c62c384c70129b5bdee810376bfeac3c7155",
+    "minimum_returned_document_count": 1,
+    "excluded_from_eastwood_population": true,
+    "population_not_pinned_for_replay": true
+  },
+  "counts": {
+    "positive_control_returned_document_count": 23,
+    "eastwood_request_count": 22,
+    "successful_eastwood_request_count": 22,
+    "truncated_eastwood_request_count": 0,
+    "eastwood_dates_with_results": 18,
+    "eastwood_dates_without_results": 4,
+    "eastwood_returned_document_token_count": 18,
+    "eastwood_stable_metadata_group_count": 18,
+    "eastwood_duplicate_metadata_group_count": 0
+  },
+  "eastwood_searches": [
+    {"meeting_id":669,"meeting_date":"2026-02-23","request_payload_sha256":"a34478d68de522689d6a541e2464579493168c387b886a8b6b042de2de4a7837","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"891c8c6513519118e7df35acdeb5cab8536d887aa41a5156107fbd3b80644d45","truncated":false},
+    {"meeting_id":670,"meeting_date":"2026-03-02","request_payload_sha256":"8ea374ccd55962c9781e6bec848ca4913de183f6dd4fdbd6f7952a747a1ab923","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"b0f5595dcb1f3f0564055a90b0168a7c1f904db15c51240bb188f413726f2e7b","truncated":false},
+    {"meeting_id":671,"meeting_date":"2026-03-09","request_payload_sha256":"2ff119d1499684a2e9284323569f062df0ce23e5e74d2af475ff46ed13bcd571","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"6c665a3c2b42ae031c64ff61ea8e0417f63de0fa5fd29326166dddfe3da6466d","truncated":false},
+    {"meeting_id":672,"meeting_date":"2026-03-16","request_payload_sha256":"19894e8d15cb89f6bb69eff0e975f32b4ad4f8d0a8a6d08fdbecd59f92d30243","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"5b39653365266cf4e9ce6358195a0af703a39d44ea71105fbd430b26808024f2","truncated":false},
+    {"meeting_id":674,"meeting_date":"2026-03-23","request_payload_sha256":"07bf5b87c7432175f7add35a646f38a8e5117318b3bcb241c8d7cbf889df24e0","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"137079f32418504b95ff30406051cbfa0c888fa62675c13022c356f6a47a1ed2","truncated":false},
+    {"meeting_id":675,"meeting_date":"2026-03-30","request_payload_sha256":"af6bc0039ebe0cddd9b58afe50be19bdf5045f2d9b856e651837dc3105f7a222","returned_document_count":0,"stable_unique_projection_count":0,"stable_result_signature_sha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","truncated":false},
+    {"meeting_id":676,"meeting_date":"2026-04-06","request_payload_sha256":"64fa5d39481cfff31e848b4739fe15392ed62946eff9fb6ee169237f9aa3aaed","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"3f9ce904b3c3e4670e9e1f4ad97a2e2d8851f4af17784051296a25507a4152f1","truncated":false},
+    {"meeting_id":677,"meeting_date":"2026-04-13","request_payload_sha256":"80e43aed1c31b0cd8ee8fcc71297cd8c349cf515114e9d7fc3c6e45e31f2e48c","returned_document_count":0,"stable_unique_projection_count":0,"stable_result_signature_sha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","truncated":false},
+    {"meeting_id":678,"meeting_date":"2026-04-20","request_payload_sha256":"6ed7b4506d71e57f04f034de37b63d5be12277e37db9d3cd0035ca97e26a67e1","returned_document_count":0,"stable_unique_projection_count":0,"stable_result_signature_sha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","truncated":false},
+    {"meeting_id":682,"meeting_date":"2026-04-27","request_payload_sha256":"9c016b7b3b83a0adcae3c214eaa95d8f0fe6eb3f1ac85590ce83d5c555acd9f5","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"3cda066afeb23f895a41f64fdef045397a4f231bc66c236131b39dd0733c1ef4","truncated":false},
+    {"meeting_id":683,"meeting_date":"2026-05-04","request_payload_sha256":"483ed2d70019ad40c3e274508d8de97526c0f6b27b9091dc1115a52d51c20848","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"4f6dd8c90b948ae14f7ab1a16d3269cb34da2f412d5daee6ac0c300b238d7a38","truncated":false},
+    {"meeting_id":685,"meeting_date":"2026-05-11","request_payload_sha256":"458e5b8fcb9ddb2880cfc61fa494675f9318f37eba0bdfc0ed37062a2b12b7b5","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"d8bee30fc3d3c309693db4de2fa242180661410a5d7011afef8afa122e25e5f8","truncated":false},
+    {"meeting_id":686,"meeting_date":"2026-05-18","request_payload_sha256":"81d0b9b9eb34d0890b25c06fd3918ebd2c939a19be80f524d97c32265d1d4f9d","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"cdde378461e41716b3f9062aa693ec56580623df67ecdd2d240def3c55fcb45b","truncated":false},
+    {"meeting_id":688,"meeting_date":"2026-06-01","request_payload_sha256":"be4e7db32cb57f4ec3c94711c2b6a5c32b4b5ad6190d4bef8bbca78e56976f95","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"0730a1558c23cd29fe97031c84fb14e3219e6bd6c130a8f678227abf96c85713","truncated":false},
+    {"meeting_id":689,"meeting_date":"2026-06-08","request_payload_sha256":"2f136c1dfab1c46244485318bd31e51f4e244abc7a2e94649640ba36d18d5119","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"34a8c4df3cf0533a7858afb697dbb182f4b8244615a01e8148c0856fd043dd10","truncated":false},
+    {"meeting_id":690,"meeting_date":"2026-06-15","request_payload_sha256":"85694d812d70ad93387767f32c14f3ab8bcd62b66354f2cb53b94f4e787d5a1f","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"2b4b3d4392a3abc2a305c6eb30a81610b253a7c233167d83d32a86e354604bc0","truncated":false},
+    {"meeting_id":691,"meeting_date":"2026-06-22","request_payload_sha256":"0f23440d7b8c4c291220c17c23b254e8295232f000588d9185e8c5507c6b861c","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"8c26105683fec2a7e6cb057f47376a157340ff856a768a4db99ff0dbabce875a","truncated":false},
+    {"meeting_id":692,"meeting_date":"2026-06-29","request_payload_sha256":"484414bee7172f5827210c3fd6b3b4c361ba7c9f4f64873ace7e14cdc85bf904","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"b670c5c03fb7d4fa5fe2da576b500979b926950ed0fc1e912c9691fc283bc2ba","truncated":false},
+    {"meeting_id":693,"meeting_date":"2026-07-06","request_payload_sha256":"6da5241c391992490f2ce8307ec139b2d7a308b75a6079d9b9fcc38d2cd0c2ed","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"ea582d82bcd2b5947a0beb113a369ab3b53d4b3332fe5fd596f8959a84b8ec2e","truncated":false},
+    {"meeting_id":694,"meeting_date":"2026-07-13","request_payload_sha256":"b7a70aafaadbd906242292fad61251ddc889d45230f33b406fae60432a0cd5c4","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"4cb893adb308077c68493128820c4c42a140bb2a25c00fa9bc1227ab0bbddaa8","truncated":false},
+    {"meeting_id":696,"meeting_date":"2026-07-20","request_payload_sha256":"b5cb1004431f3192e57beb00459079fe59dc787362bbee5e11d0b99e48591d7e","returned_document_count":1,"stable_unique_projection_count":1,"stable_result_signature_sha256":"19524a07ee9f2968f875114b5c976a38dea23bbe0740cb312d1fef68ee33f950","truncated":false},
+    {"meeting_id":697,"meeting_date":"2026-07-27","request_payload_sha256":"5403d1c421f65adc9f0e06c238b7e9df086b061f34dd185f4576741b8c9ba282","returned_document_count":0,"stable_unique_projection_count":0,"stable_result_signature_sha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","truncated":false}
+  ],
+  "candidate_population": {
+    "identity_boundary": "meeting_id_plus_publisher_stable_projection; opaque tokens preserved only as observed retrieval handles",
+    "stable_population_signature_sha256": "b01f52fe5e715076a1991f83fcf88086f89f4efd69991d1e5df766260e6df1ef",
+    "response_population_signature_sha256": "338a07d852588efa94a519b4c5f0f8a4bcfcc6bb740b5af0e1f650bf15f973ea"
+  },
+  "bounded_nonfinding_dates": [
+    {"meeting_id":675,"meeting_date":"2026-03-30"},
+    {"meeting_id":677,"meeting_date":"2026-04-13"},
+    {"meeting_id":678,"meeting_date":"2026-04-20"},
+    {"meeting_id":697,"meeting_date":"2026-07-27"}
+  ],
+  "authority_boundary": {
+    "document_search_submitted": true,
+    "positive_control_submitted": true,
+    "positive_control_excluded_from_eastwood_population": true,
+    "only_predeclared_dates_used": true,
+    "exact_publisher_committee_value_used": true,
+    "post_result_expansion_performed": false,
+    "query_id_guessed": false,
+    "keyword_id_guessed": false,
+    "committee_value_guessed": false,
+    "opaque_document_token_treated_as_stable_identity": false,
+    "returned_document_dereferenced": false,
+    "terminal_outcome_assigned": false,
+    "absence_treated_as_disposition": false,
+    "causality_assigned": false,
+    "detector_authorized": false,
+    "lead_count": null
+  },
+  "outcome": {
+    "status": "unknown",
+    "reason": "This stage measures publisher-returned Committee Meeting Minutes retrieval candidates for predeclared Eastwood dates and the exact publisher Planning & Economic Development committee value only. Presence or absence is not disposition."
+  },
+  "receipt_guards": {
+    "opaque_document_tokens_not_pinned": true,
+    "raw_rows_with_opaque_tokens_not_pinned": true,
+    "positive_control_population_not_pinned": true,
+    "per_date_request_payloads_pinned": true,
+    "per_date_return_counts_pinned": true,
+    "per_date_stable_visible_metadata_signatures_pinned": true,
+    "token_free_stable_candidate_population_signature_pinned": true,
+    "zero_minutes_result_is_not_disposition": true
+  },
+  "next_stage": "Re-run the exact frozen date+committee searches, require the token-independent Eastwood population to reproduce, then dereference every current handle for the 18 returned stable groups from that same observation. Preserve source bytes/hashes and audit target-local Committee minutes content without treating committee recommendation as final Council disposition."
+}

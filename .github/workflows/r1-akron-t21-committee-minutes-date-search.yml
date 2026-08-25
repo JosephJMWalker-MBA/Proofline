@@ -1,0 +1,111 @@
+name: r1-akron-t21-committee-minutes-date-search
+
+on:
+  pull_request:
+    paths:
+      - "experiments/akron-2026/r1_t21_committee_minutes_date_search_plan.json"
+      - "experiments/akron-2026/measure_t21_committee_minutes_date_search.py"
+      - "experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json"
+      - "tests/test_t21_committee_minutes_date_search_measurement.py"
+      - "tests/test_t21_committee_minutes_date_search_receipt.py"
+      - ".github/workflows/r1-akron-t21-committee-minutes-date-search.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  committee-minutes-date-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run full test suite and measurement syntax gate
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/measure_t21_committee_minutes_date_search.py
+      - name: Measure predeclared Committee minutes date searches
+        run: |
+          set -euo pipefail
+          rm -rf akron-committee-minutes-date-search
+          python experiments/akron-2026/measure_t21_committee_minutes_date_search.py \
+            akron-committee-minutes-date-search \
+            | tee akron-committee-minutes-date-search-stdout.json
+          test -s akron-committee-minutes-date-search/committee-minutes-date-search.json
+      - name: Validate non-terminal authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('akron-committee-minutes-date-search/committee-minutes-date-search.json'))
+          assert p['schema']=='proofline-akron-t21-committee-minutes-date-search-measurement/v1'
+          assert p['positive_control']['passed'] is True
+          assert p['counts']['eastwood_request_count']==22
+          assert p['counts']['successful_eastwood_request_count']==22
+          assert p['counts']['truncated_eastwood_request_count']==0
+          assert p['plan']['post_result_expansion_allowed'] is False
+          a=p['authority_boundary']
+          assert a['document_search_submitted'] is True
+          assert a['positive_control_excluded_from_eastwood_population'] is True
+          assert a['only_predeclared_dates_used'] is True
+          assert a['exact_publisher_committee_value_used'] is True
+          assert a['post_result_expansion_performed'] is False
+          assert a['query_id_guessed'] is False
+          assert a['keyword_id_guessed'] is False
+          assert a['committee_value_guessed'] is False
+          assert a['opaque_document_token_treated_as_stable_identity'] is False
+          assert a['returned_document_dereferenced'] is False
+          assert a['terminal_outcome_assigned'] is False
+          assert a['absence_treated_as_disposition'] is False
+          assert p['outcome']['status']=='unknown'
+          PY
+      - name: Reproduce frozen Committee minutes date-search receipt
+        if: hashFiles('experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('experiments/akron-2026/r1_t21_committee_minutes_date_search_summary.json'))
+          m=json.load(open('akron-committee-minutes-date-search/committee-minutes-date-search.json'))
+          assert m['plan']['sha256']==r['plan']['sha256']
+          assert m['source_contract']==r['source_contract']
+          assert m['counts']['eastwood_request_count']==r['counts']['eastwood_request_count']==22
+          assert m['counts']['successful_eastwood_request_count']==22
+          assert m['counts']['truncated_eastwood_request_count']==0
+          assert m['counts']['eastwood_dates_with_results']==r['counts']['eastwood_dates_with_results']
+          assert m['counts']['eastwood_dates_without_results']==r['counts']['eastwood_dates_without_results']
+          assert m['counts']['eastwood_returned_document_token_count']==r['counts']['eastwood_returned_document_token_count']
+          assert m['counts']['eastwood_stable_metadata_group_count']==r['counts']['eastwood_stable_metadata_group_count']
+          assert m['counts']['eastwood_duplicate_metadata_group_count']==r['counts']['eastwood_duplicate_metadata_group_count']
+          assert m['candidate_population']['stable_population_signature_sha256']==r['candidate_population']['stable_population_signature_sha256']
+          assert m['candidate_population']['response_population_signature_sha256']==r['candidate_population']['response_population_signature_sha256']
+          live_rows=[{
+              'meeting_id':x['meeting_id'],
+              'meeting_date':x['meeting_date'],
+              'request_payload_sha256':x['request_payload_sha256'],
+              'returned_document_count':x['returned_document_count'],
+              'stable_unique_projection_count':x['stable_unique_projection_count'],
+              'stable_result_signature_sha256':x['stable_result_signature_sha256'],
+              'truncated':x['truncated'],
+          } for x in m['eastwood_searches']]
+          assert live_rows==r['eastwood_searches']
+          assert m['authority_boundary']==r['authority_boundary']
+          assert m['outcome']==r['outcome']
+          assert m['positive_control']['response']['ok'] is True
+          assert m['positive_control']['response']['same_host'] is True
+          assert m['positive_control']['truncated'] is False
+          assert m['positive_control']['returned_document_count']>0
+          PY
+      - name: Upload Committee minutes date-search evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-committee-minutes-date-search
+          path: |
+            akron-committee-minutes-date-search/
+            akron-committee-minutes-date-search-stdout.json
+          retention-days: 14
