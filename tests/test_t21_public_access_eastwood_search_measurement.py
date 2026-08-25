@@ -20,7 +20,7 @@ def load(name: str) -> dict:
     return json.loads((EXPERIMENT / name).read_text(encoding="utf-8"))
 
 
-def test_frozen_search_plan_inherits_source_contract_and_target() -> None:
+def test_frozen_search_plan_inherits_source_contract_target_and_control() -> None:
     plan = load("r1_t21_public_access_eastwood_search_plan.json")
     source = load("r1_t21_public_access_source_contract_summary.json")
     target = load("r1_t21_terminal_record_target.json")
@@ -31,6 +31,7 @@ def test_frozen_search_plan_inherits_source_contract_and_target() -> None:
     assert [row["keyword"]["Value"] for row in plan["requests"]] == list(module.EXPECTED_VALUES)
     assert plan["selection_rule"]["post_result_term_expansion_allowed"] is False
     assert plan["selection_rule"]["document_retrieval_in_this_stage"] is False
+    assert plan["selection_rule"]["positive_control_excluded"] is True
 
     for request in plan["requests"]:
         assert request["query_id"] == 101
@@ -40,6 +41,23 @@ def test_frozen_search_plan_inherits_source_contract_and_target() -> None:
         assert request["keyword"]["KeywordOperator"] == "="
         assert module.tokens_appear_in_order(request["keyword"]["Value"], target["ordinance_title"])
 
+    control = plan["positive_control"]
+    assert control["control_id"] == module.EXPECTED_CONTROL_ID
+    assert control["excluded_from_candidate_population"] is True
+    assert control["minimum_returned_documents"] == 1
+    assert module.request_payload(control) == {
+        "QueryID": 101,
+        "Keywords": [
+            {
+                "ID": 102,
+                "Name": "Ordinance/Resolution Number",
+                "Value": "*44-2026*",
+                "KeywordOperator": "=",
+            }
+        ],
+        "QueryLimit": 0,
+    }
+
 
 def test_plan_rejects_post_result_term_expansion() -> None:
     plan = load("r1_t21_public_access_eastwood_search_plan.json")
@@ -48,6 +66,16 @@ def test_plan_rejects_post_result_term_expansion() -> None:
     plan["selection_rule"]["post_result_term_expansion_allowed"] = True
 
     with pytest.raises(ValueError, match="term expansion"):
+        module.validate_inputs(plan, source, target)
+
+
+def test_plan_rejects_positive_control_candidate_contamination() -> None:
+    plan = load("r1_t21_public_access_eastwood_search_plan.json")
+    source = load("r1_t21_public_access_source_contract_summary.json")
+    target = load("r1_t21_terminal_record_target.json")
+    plan["positive_control"]["excluded_from_candidate_population"] = False
+
+    with pytest.raises(ValueError, match="excluded"):
         module.validate_inputs(plan, source, target)
 
 
