@@ -1,0 +1,102 @@
+name: r1-akron-t21-council-minutes-source-contract
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/r1-akron-t21-council-minutes-source-contract.yml"
+      - "experiments/akron-2026/probe_t21_council_minutes_source_contract.py"
+      - "experiments/akron-2026/r1_t21_public_access_source_contract_summary.json"
+      - "tests/test_t21_council_minutes_source_contract.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  council-minutes-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and tests
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run full test suite and probe syntax gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest
+          python -m py_compile experiments/akron-2026/probe_t21_council_minutes_source_contract.py
+
+      - name: Probe publisher-issued Council Meeting Minutes metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf akron-council-minutes-source-contract
+          python experiments/akron-2026/probe_t21_council_minutes_source_contract.py \
+            akron-council-minutes-source-contract \
+            | tee akron-council-minutes-source-contract-stdout.json
+          test -s akron-council-minutes-source-contract/council-minutes-source-contract.json
+          test -s akron-council-minutes-source-contract/council-minutes-keywords.json
+
+      - name: Validate metadata-only authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from urllib.parse import urlparse
+
+          p = json.load(open(
+              'akron-council-minutes-source-contract/council-minutes-source-contract.json'
+          ))
+          assert p['schema'] == 'proofline-akron-t21-council-minutes-source-contract/v1'
+          assert p['stage'] == 'publisher_council_minutes_query_metadata_only'
+          assert p['source_contract']['api_root'] == (
+              'https://onlinedocs.akronohio.gov/PublicAccess/api'
+          )
+          query = p['source_contract']['query']
+          assert query['id'] == '175'
+          assert query['name'] == 'Council Meeting Minutes'
+          assert query['type'] == 'DocumentType'
+          assert p['keyword_metadata']['request_payload'] == {'QueryID': 175}
+          assert p['keyword_metadata']['response']['ok'] is True
+          assert p['keyword_metadata']['response']['same_host'] is True
+          assert urlparse(p['keyword_metadata']['endpoint']).hostname == (
+              'onlinedocs.akronohio.gov'
+          )
+          assert p['keyword_metadata']['count'] == len(p['keyword_metadata']['keywords'])
+          assert p['authority_boundary'] == {
+              'custom_query_metadata_inherited': True,
+              'keyword_metadata_requested': True,
+              'document_search_submitted': False,
+              'query_id_guessed': False,
+              'keyword_id_guessed': False,
+              'document_token_enumerated': False,
+              'returned_document_dereferenced': False,
+              'terminal_outcome_assigned': False,
+              'absence_treated_as_disposition': False,
+              'causality_assigned': False,
+              'detector_authorized': False,
+              'lead_count': None,
+          }
+          assert p['outcome']['status'] == 'unknown'
+          PY
+
+      - name: Upload Council minutes source-contract evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: r1-akron-t21-council-minutes-source-contract
+          path: |
+            akron-council-minutes-source-contract/
+            akron-council-minutes-source-contract-stdout.json
+          if-no-files-found: error
+          retention-days: 14
