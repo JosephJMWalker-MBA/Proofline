@@ -33,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           pytest
-          python experiments/akron-2026/probe_public_access.py --help >/dev/null 2>&1 || true
+          python -m py_compile experiments/akron-2026/probe_public_access.py
 
       - name: Probe publisher-declared Public Access Viewer
         shell: bash
