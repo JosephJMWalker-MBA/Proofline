@@ -3,6 +3,7 @@ name: Verify Proofline R0/R1 publication artifacts
 on:
   push:
     branches:
+      - main
       - research/publication-r0-r1
     paths:
       - "research/publications/proofline-r0-r1/**"
@@ -47,7 +48,7 @@ jobs:
           test "$first" = "$second"
           echo "$second"
 
-      - name: Upload measurement-package release candidate
+      - name: Upload measurement package
         uses: actions/upload-artifact@v4
         with:
           name: proofline-r0-r1-measurement-package
