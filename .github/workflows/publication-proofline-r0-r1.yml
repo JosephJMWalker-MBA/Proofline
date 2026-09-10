@@ -8,12 +8,16 @@ on:
       - "research/publications/proofline-r0-r1/**"
       - "experiments/canton-2026/retrieval/**"
       - "experiments/akron-2026/retrieval/**"
+      - "experiments/canton-2026/reviews/**"
+      - "docs/REVIEW_RECORDS.md"
       - ".github/workflows/publication-proofline-r0-r1.yml"
   pull_request:
     paths:
       - "research/publications/proofline-r0-r1/**"
       - "experiments/canton-2026/retrieval/**"
       - "experiments/akron-2026/retrieval/**"
+      - "experiments/canton-2026/reviews/**"
+      - "docs/REVIEW_RECORDS.md"
       - ".github/workflows/publication-proofline-r0-r1.yml"
   workflow_dispatch:
 
@@ -31,3 +35,24 @@ jobs:
 
       - name: Verify durable artifact hashes
         run: python research/publications/proofline-r0-r1/verify_artifacts.py
+
+      - name: Build deterministic measurement package
+        run: python research/publications/proofline-r0-r1/build_measurement_package.py
+
+      - name: Rebuild and prove archive determinism
+        run: |
+          first="$(cat dist/proofline-r0-r1-measurement-package-v1.tar.gz.sha256)"
+          python research/publications/proofline-r0-r1/build_measurement_package.py
+          second="$(cat dist/proofline-r0-r1-measurement-package-v1.tar.gz.sha256)"
+          test "$first" = "$second"
+          echo "$second"
+
+      - name: Upload measurement-package release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofline-r0-r1-measurement-package
+          path: |
+            dist/proofline-r0-r1-measurement-package-v1.tar.gz
+            dist/proofline-r0-r1-measurement-package-v1.tar.gz.sha256
+            dist/measurement-package-manifest.json
+          if-no-files-found: error
