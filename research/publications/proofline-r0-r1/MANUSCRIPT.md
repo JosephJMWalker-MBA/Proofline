@@ -1,9 +1,13 @@
 # Proofline: Provenance-First Retrieval Across Heterogeneous Municipal Public-Record Systems
 
 **Joseph JM Walker**  
-ORCID: 0009-0005-5099-807X
+ORCID: 0009-0005-5099-807X  
+Paper DOI: https://doi.org/10.5281/zenodo.22698012  
+Companion measurement-package DOI: https://doi.org/10.5281/zenodo.22697967  
+Version: 1.0 (archival release candidate)  
+License: CC BY 4.0
 
-> **Publication status:** Release Candidate 1. Not yet published. DOI pending reservation. Results are bounded to the frozen Canton and Akron benchmark artifacts identified below. This manuscript intentionally excludes the still-open Akron T21 terminal-disposition investigation. Intended manuscript license at deposit: CC BY 4.0.
+> **Publication status:** Archival release candidate. The Zenodo DOIs above are reserved but the records are not yet published. Results are bounded to the frozen Canton and Akron benchmark artifacts identified below. This manuscript intentionally excludes the still-open Akron T21 terminal-disposition investigation. Intended manuscript license at deposit: CC BY 4.0.
 
 ## Abstract
 
@@ -32,15 +36,15 @@ The operating rule is:
 
 > **Gold may be wrong. Silver must be reproducible. Bronze must remain immutable.**
 
-This report does not claim that provenance, document retrieval, government-information retrieval, or evidence traceability are novel concepts. The W3C PROV family provides general provenance models and access mechanisms [1]; digital-forensics work such as DEX addresses reproducible transformation lineage [2]; government-information retrieval and large-scale government-document processing are established research areas [3,4]; and recent work addresses municipal metadata extraction, evidence attribution, epistemic action selection, and temporally evolving authoritative documents [5–8]. The contribution evaluated here is narrower: a provenance-first retrieval architecture is tested through benchmark identities frozen before scoring, then transferred across two materially different municipal publisher stacks while preserving explicit source authority and bounded claims. A separate R0 lineage demonstrates that human review authority is bound to an exact deterministic lead identity rather than silently inherited when that identity changes.
+This report does not claim that provenance, document retrieval, government-information retrieval, or evidence traceability are novel concepts. The W3C PROV family provides general provenance models and access mechanisms [1]; digital-forensics work such as DEX addresses reproducible transformation lineage [2]; government-information retrieval and large-scale government-document processing are established research areas [3,4]; and recent work addresses municipal metadata extraction, evidence attribution, epistemic action selection, and temporally evolving authoritative documents [5-8]. The contribution evaluated here is narrower: a provenance-first retrieval architecture is tested through benchmark identities frozen before scoring, then transferred across two materially different municipal publisher stacks while preserving explicit source authority and bounded claims. A separate R0 lineage demonstrates that human review authority is bound to an exact deterministic lead identity rather than silently inherited when that identity changes.
 
 ### 1.1 Research questions
 
-**RQ1 — Bounded retrieval and provenance.** Within a frozen canonical municipal-record benchmark, can Proofline recover the expected evidence targets while preserving exact provenance and negative controls?
+**RQ1 - Bounded retrieval and provenance.** Within a frozen canonical municipal-record benchmark, can Proofline recover the expected evidence targets while preserving exact provenance and negative controls?
 
-**RQ2 — Transfer.** Can the same evidence, retrieval, provenance-resolution, and evaluation contracts transfer to a second municipal publisher stack whose canonical evidence boundary differs materially from the first?
+**RQ2 - Transfer.** Can the same evidence, retrieval, provenance-resolution, and evaluation contracts transfer to a second municipal publisher stack whose canonical evidence boundary differs materially from the first?
 
-**RQ3 — Complexity gate.** Do the frozen benchmark populations expose a repeatable deterministic retrieval failure class that justifies adding semantic/vector retrieval?
+**RQ3 - Complexity gate.** Do the frozen benchmark populations expose a repeatable deterministic retrieval failure class that justifies adding semantic/vector retrieval?
 
 A fourth concern is methodological rather than performance-oriented: can the system surface a candidate for human review without turning recurrence, missing information, or procedural facts into an accusation or terminal conclusion, and can that human judgment remain explicitly bound to the evidence-derived identity it reviewed?
 
@@ -220,7 +224,7 @@ When the subsequent segmentation correction changed the deterministic lead ident
 
 This sequence provides a concrete authority-lineage result:
 
-**evidence/segmentation change → deterministic identity change → prior human authority stops for the corrected object → new human review → prior judgment remains historically preserved.**
+**evidence/segmentation change -> deterministic identity change -> prior human authority stops for the corrected object -> new human review -> prior judgment remains historically preserved.**
 
 The case does not prove fairness, calibrated judgment, or inter-rater reliability. It demonstrates a narrower property: Proofline's review machinery can prevent a recorded human conclusion from silently migrating to a changed evidence-derived object, while still preserving the prior judgment for audit.
 
@@ -350,7 +354,7 @@ The authoritative research artifacts for this report are version-controlled in t
 - `.github/workflows/publication-proofline-r0-r1.yml`
 - successful publication-verifier workflow run: `34528385659`
 
-The first measurement-package deposit is intentionally limited to research-owned artifacts. Third-party municipal source bytes are excluded by default. The package preserves source URLs, source roles, evidence locators, hashes, and other provenance needed to identify the evaluated sources without asserting a new license over third-party material. Proofline software is also outside the license scope of this paper and measurement package.
+The companion measurement package is reserved at https://doi.org/10.5281/zenodo.22697967. The first measurement-package deposit is intentionally limited to research-owned artifacts. Third-party municipal source bytes are excluded by default. The package preserves source URLs, source roles, evidence locators, hashes, and other provenance needed to identify the evaluated sources without asserting a new license over third-party material. Proofline software is also outside the license scope of this paper and measurement package.
 
 ## 12. Conclusion
 
@@ -363,10 +367,10 @@ The next research step is not to broaden this result rhetorically, but to repeat
 ## References
 
 1. Klyne, G., & Groth, P. (eds.). *PROV-AQ: Provenance Access and Query.* W3C Working Group Note, 30 April 2013. https://www.w3.org/TR/prov-aq/
-2. Levine, B. N., & Liberatore, M. “DEX: Digital Evidence Provenance Supporting Reproducibility and Comparison.” *Digital Investigation* 6, Supplement (September 2009): S48–S56. https://doi.org/10.1016/j.diin.2009.06.011
-3. Freund, L., Jinglewski, M., & Kessler, K. “Introducing FRED: Faceted Retrieval of E-Government Documents.” *Proceedings of the American Society for Information Science and Technology* 49(1): 1–4 (2012; first published online 24 January 2013). https://doi.org/10.1002/meet.14504901310
-4. Lee, B. C. G., & Owens, T. “Grappling with the Scale of Born-Digital Government Publications: Toward Pipelines for Processing and Searching Millions of PDFs.” *International Journal of Digital Humanities* 3 (2022): 91–114. https://doi.org/10.1007/s42803-022-00042-x
-5. Batista, R., Cunha, L. F., Silvano, P., Guimarães, N., Jorge, A., Amorim, E., & Campos, R. “MiNER: A Two-Stage Pipeline for Metadata Extraction from Municipal Meeting Minutes.” *Advances in Information Retrieval. ECIR 2026*, Lecture Notes in Computer Science 16484 (2026). https://doi.org/10.1007/978-3-032-21300-6_33 ; arXiv:2602.00316.
-6. Faizan, M., & Alharthi, D. “ProvenAI: Provenance-Native Traces of Evidence in Generated Answers.” arXiv:2606.26449 (2026). https://doi.org/10.48550/arXiv.2606.26449
-7. Kinalioglu, I. H. “EPRAG: An Epistemic Policy Framework for Action Selection in Multi-Source Enterprise Retrieval-Augmented Generation.” *Knowledge-Based Systems* (2026). https://doi.org/10.1016/j.knosys.2026.116929
-8. Sobhani, M. E., Sayeedi, M. F. A., Chowdhury, F. H., Arefeen, M. A., Sadeque, F., Bari, M. F., & Shatabda, S. “Time Present and Time Past: Benchmarking Large Language Models on Temporally Evolving Document Understanding.” arXiv:2608.08512 (2026).
+2. Levine, B. N., & Liberatore, M. "DEX: Digital Evidence Provenance Supporting Reproducibility and Comparison." *Digital Investigation* 6, Supplement (September 2009): S48-S56. https://doi.org/10.1016/j.diin.2009.06.011
+3. Freund, L., Jinglewski, M., & Kessler, K. "Introducing FRED: Faceted Retrieval of E-Government Documents." *Proceedings of the American Society for Information Science and Technology* 49(1): 1-4 (2012; first published online 24 January 2013). https://doi.org/10.1002/meet.14504901310
+4. Lee, B. C. G., & Owens, T. "Grappling with the Scale of Born-Digital Government Publications: Toward Pipelines for Processing and Searching Millions of PDFs." *International Journal of Digital Humanities* 3 (2022): 91-114. https://doi.org/10.1007/s42803-022-00042-x
+5. Batista, R., Cunha, L. F., Silvano, P., Guimaraes, N., Jorge, A., Amorim, E., & Campos, R. "MiNER: A Two-Stage Pipeline for Metadata Extraction from Municipal Meeting Minutes." *Advances in Information Retrieval. ECIR 2026*, Lecture Notes in Computer Science 16484 (2026). https://doi.org/10.1007/978-3-032-21300-6_33 ; arXiv:2602.00316.
+6. Faizan, M., & Alharthi, D. "ProvenAI: Provenance-Native Traces of Evidence in Generated Answers." arXiv:2606.26449 (2026). https://doi.org/10.48550/arXiv.2606.26449
+7. Kinalioglu, I. H. "EPRAG: An Epistemic Policy Framework for Action Selection in Multi-Source Enterprise Retrieval-Augmented Generation." *Knowledge-Based Systems* (2026). https://doi.org/10.1016/j.knosys.2026.116929
+8. Sobhani, M. E., Sayeedi, M. F. A., Chowdhury, F. H., Arefeen, M. A., Sadeque, F., Bari, M. F., & Shatabda, S. "Time Present and Time Past: Benchmarking Large Language Models on Temporally Evolving Document Understanding." arXiv:2608.08512 (2026).
