@@ -1,0 +1,33 @@
+name: Verify Proofline R0/R1 publication artifacts
+
+on:
+  push:
+    branches:
+      - research/publication-r0-r1
+    paths:
+      - "research/publications/proofline-r0-r1/**"
+      - "experiments/canton-2026/retrieval/**"
+      - "experiments/akron-2026/retrieval/**"
+      - ".github/workflows/publication-proofline-r0-r1.yml"
+  pull_request:
+    paths:
+      - "research/publications/proofline-r0-r1/**"
+      - "experiments/canton-2026/retrieval/**"
+      - "experiments/akron-2026/retrieval/**"
+      - ".github/workflows/publication-proofline-r0-r1.yml"
+  workflow_dispatch:
+
+jobs:
+  verify-publication-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify durable artifact hashes
+        run: python research/publications/proofline-r0-r1/verify_artifacts.py
