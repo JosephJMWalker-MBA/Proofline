@@ -126,7 +126,7 @@ Frozen benchmark SHA-256:
 
 `aee4d01b3b7fa505d008296e226bbaff43af6022c025ad9764f14b412e9cfbbc`
 
-The suite included lexical/entity, exact-money, exact-date, publisher-native identifier, and negative-control cases. Retrieval results were not consulted before the benchmark was frozen.
+The suite included lexical/entity, exact-money, exact-date, publisher-native identifier, and negative-control cases. Retrieval results for this canonical-v2 suite were not consulted before that suite was frozen.
 
 ### 4.3 Akron transfer benchmark
 
@@ -188,7 +188,7 @@ These metrics evaluate the frozen target population. They do not measure univers
 
 All 42 canonical Canton cases were scorable. The benchmark produced no deterministic retrieval miss, partial target recall, unexpected negative-control result, or provenance failure.
 
-An earlier Canton benchmark had included volatile discovery/support targets and produced unresolved targets. The canonical policy corrected the benchmark definition rather than changing retrieval results after scoring: positive targets were restricted to canonical evidence. The canonical benchmark was then frozen and scored as a distinct version.
+An earlier Canton benchmark had included volatile discovery/support targets and produced unresolved targets. That earlier failure informed a canonical-source target policy. The policy restricted positive targets to canonical evidence; a distinct canonical-v2 benchmark was then constructed, inspected while unscored, frozen, and only afterward given its first retrieval score. The v2 freeze therefore prevents post-score editing of the v2 target set; it does not erase or conceal the fact that its benchmark policy was developed after diagnostic evidence from the earlier suite.
 
 ### 5.2 Akron transfer result
 
@@ -220,7 +220,7 @@ When the subsequent segmentation correction changed the deterministic lead ident
 
 This sequence provides a concrete authority-lineage result:
 
-**evidence/segmentation change → deterministic identity change → prior human authority stops → new human review → prior judgment remains historically preserved.**
+**evidence/segmentation change → deterministic identity change → prior human authority stops for the corrected object → new human review → prior judgment remains historically preserved.**
 
 The case does not prove fairness, calibrated judgment, or inter-rater reliability. It demonstrates a narrower property: Proofline's review machinery can prevent a recorded human conclusion from silently migrating to a changed evidence-derived object, while still preserving the prior judgment for audit.
 
@@ -255,7 +255,7 @@ Akron directly invalidated one symmetry assumption: canonical agenda-item pages 
 
 A benchmark can become deceptively easy if target definitions are adjusted after retrieval results are known. Proofline therefore preserves benchmark freeze receipts, exact artifact identities, and score artifacts as separate historical objects. A later correction creates a new benchmark version rather than rewriting the old result.
 
-This does not eliminate researcher degrees of freedom during benchmark construction, but it makes one critical boundary inspectable: the scored target set existed before the score.
+This does not eliminate researcher degrees of freedom during benchmark construction, nor does it make a later benchmark independent of lessons learned from earlier experiments. It makes one narrower boundary inspectable: the scored target set for a particular frozen version existed before that version's score.
 
 ### 8.4 Execution witness versus archival research record
 
@@ -274,9 +274,11 @@ The resulting publication model is therefore deliberately layered:
 
 The evaluation covers two Ohio municipalities and two publisher stacks. These are not a representative sample of all municipal, state, federal, or international public-record systems. The results cannot be generalized to arbitrary government archives without further transfer studies.
 
-### 9.2 Benchmark construction
+### 9.2 Benchmark construction and query distribution
 
-The benchmark cases were curated under documented source-role and question-quality rules rather than drawn as a probability sample of all possible information needs. Perfect bounded scores therefore should not be interpreted as population-level retrieval accuracy.
+The benchmark cases were curated under documented source-role and question-quality rules rather than drawn as a probability sample of all possible information needs. Lexical cases are source-grounded entity/phrase queries drawn from the corpus rather than a representative sample of natural-language user searches. Perfect bounded scores therefore should not be interpreted as population-level natural-language retrieval accuracy or evidence that arbitrary user queries would obtain the same result.
+
+The Canton canonical-v2 suite was also not the project's first benchmark attempt. An earlier Canton suite exposed volatile discovery/support targets and produced unresolved/unscorable cases. That diagnostic informed the canonical target-source policy used to construct v2. Canonical v2 was then frozen before its own first score. Accordingly, the freeze demonstrates that the v2 target set was not revised in response to the v2 score; it does not demonstrate that v2's design was independent of earlier retrieval and benchmark-development experience.
 
 ### 9.3 Publisher drift
 
@@ -305,6 +307,7 @@ This report does **not** claim that:
 - Proofline detects corruption or misconduct;
 - a recurrence, missing record, search non-finding, recommendation, vote arithmetic, or procedural status implies wrongdoing or terminal disposition;
 - the benchmark scores represent universal retrieval completeness;
+- the curated/source-grounded benchmark represents natural-language user-query performance generally;
 - deterministic retrieval is generally superior to semantic/vector retrieval;
 - the two municipalities are representative of public-record systems generally;
 - provenance guarantees truth;
